@@ -7,10 +7,15 @@ import 'world5.dart';
 import 'world6.dart';
 import 'world7.dart';
 import 'world8.dart';
+import 'world9.dart';
+import 'world10.dart';
+import 'world11.dart';
+import 'world12.dart';
 
 /// The full campaign in order.
 final List<World> kWorlds = [
   world1, world2, world3, world4, world5, world6, world7, world8,
+  world9, world10, world11, world12,
 ];
 
 /// Flattened list of every level in campaign order.
