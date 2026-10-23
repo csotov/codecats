@@ -82,6 +82,17 @@ class Progress extends ChangeNotifier {
   /// Consecutive victories — resets on a failed battle.
   int streak = 0;
 
+  /// Daily training streak — a little every day beats a lot once
+  /// a week (the Gomel/China training rule).
+  int dayStreak = 0;
+
+  /// 'yyyy-mm-dd' of the last day a level was solved.
+  String lastSolveDay = '';
+
+  /// Epoch-day of the first solve — anchors the ghost rival's
+  /// steady advance (~1 level every 2 days).
+  int ghostStartDay = 0;
+
   final List<Profile> profiles = [];
   Profile? active;
 
@@ -127,6 +138,9 @@ class Progress extends ChangeNotifier {
         orElse: () => profiles.first);
     xp = 0;
     streak = 0;
+    dayStreak = 0;
+    lastSolveDay = '';
+    ghostStartDay = 0;
     levels.clear();
     unlockedCats.clear();
     final raw = prefs.getString(_keyFor(active!.id));
@@ -139,6 +153,9 @@ class Progress extends ChangeNotifier {
               LevelProgress.fromJson(Map<String, dynamic>.from(v as Map));
         });
         streak = (j['st'] as num?)?.toInt() ?? 0;
+        dayStreak = (j['dsk'] as num?)?.toInt() ?? 0;
+        lastSolveDay = j['rd'] as String? ?? '';
+        ghostStartDay = (j['gh'] as num?)?.toInt() ?? 0;
         unlockedCats
           ..clear()
           ..addAll((j['cats'] as List? ?? const [])
@@ -158,6 +175,9 @@ class Progress extends ChangeNotifier {
         jsonEncode({
           'xp': xp,
           'st': streak,
+          'dsk': dayStreak,
+          'rd': lastSolveDay,
+          'gh': ghostStartDay,
           'cats': unlockedCats.toList(),
           'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
         }));
@@ -214,11 +234,45 @@ class Progress extends ChangeNotifier {
     }
     if (stars > p.stars) p.stars = stars;
     streak++;
+    _bumpDayStreak();
     _lastSolve = _SolveCtx(stars: stars, codeMode: codeMode, boss: boss);
     _save();
     notifyListeners();
     return earned;
   }
+
+  static String _dayKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  static int _epochDay(DateTime d) =>
+      d.millisecondsSinceEpoch ~/ 86400000;
+
+  /// A solve on a new day extends the daily streak if it continues
+  /// yesterday's, otherwise it restarts at 1.
+  void _bumpDayStreak() {
+    final now = DateTime.now();
+    final today = _dayKey(now);
+    if (lastSolveDay == today) return;
+    dayStreak =
+        (lastSolveDay == _dayKey(now.subtract(const Duration(days: 1))))
+            ? dayStreak + 1
+            : 1;
+    lastSolveDay = today;
+    ghostStartDay =
+        ghostStartDay == 0 ? _epochDay(now) : ghostStartDay;
+  }
+
+  /// Ghost rival: a steady ~1 level every 2 days since the first
+  /// solve — a gentle race to keep daily practice going.
+  int get ghostSolved => ghostStartDay == 0
+      ? 0
+      : ((_epochDay(DateTime.now()) - ghostStartDay) * 0.5).floor();
+
+  /// Upsolving queue: attempted but never beaten.
+  List<String> get pendingIds => [
+        for (final e in levels.entries)
+          if (e.value.attempts > 0 && !e.value.solved) e.key,
+      ];
 
   /// Call when a battle is lost: resets the win streak.
   void failBattle() {

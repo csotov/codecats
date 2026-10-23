@@ -25,8 +25,11 @@ import 'widgets.dart';
 
 /// The battle screen: mission briefing + editor + run/judge.
 class LevelScreen extends StatefulWidget {
-  const LevelScreen({super.key, required this.level});
+  const LevelScreen({super.key, required this.level, this.examMode = false});
   final Level level;
+
+  /// Olympiad-style contest: no coach hints, pure pressure.
+  final bool examMode;
 
   @override
   State<LevelScreen> createState() => _LevelScreenState();
@@ -172,7 +175,9 @@ class _LevelScreenState extends State<LevelScreen>
           if (!mounted) return;
         }
       }
-      final tip = Coach.analyze(report, failStreak: _failStreak);
+      final tip = widget.examMode
+          ? null
+          : Coach.analyze(report, failStreak: _failStreak);
       _failStreak++;
       await ResultsSheet.show(context, report, coach: tip);
       return;

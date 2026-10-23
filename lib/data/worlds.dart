@@ -1,4 +1,5 @@
 import '../models.dart';
+import '../services/progress.dart';
 import 'world1.dart';
 import 'world2.dart';
 import 'world3.dart';
@@ -49,4 +50,30 @@ Level? nextLevel(String id) {
   final i = ids.indexOf(id);
   if (i < 0 || i + 1 >= ids.length) return null;
   return levelById(ids[i + 1]);
+}
+
+/// Adaptive next step: a "pending" level (attempted but unbeaten)
+/// comes first — upsolving — otherwise the next unlocked level
+/// still to solve.
+Level? recommendedLevel() {
+  final p = Progress.instance;
+  Level? firstUnsolved;
+  for (final w in kWorlds) {
+    for (final l in w.levels) {
+      final lp = p.of(l.id);
+      if (lp.solved || !p.isUnlocked(l, w)) continue;
+      if (lp.attempts > 0) return l;
+      firstUnsolved ??= l;
+    }
+  }
+  return firstUnsolved;
+}
+
+/// Deterministic daily pick from already-solved levels.
+Level? dailyChallengeLevel() {
+  final p = Progress.instance;
+  final solved = [for (final l in allLevels) if (p.of(l.id).solved) l];
+  if (solved.isEmpty) return null;
+  final d = DateTime.now();
+  return solved[(d.year * 372 + d.month * 31 + d.day) % solved.length];
 }

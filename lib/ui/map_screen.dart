@@ -7,6 +7,7 @@ import '../models.dart';
 import '../services/progress.dart';
 import '../services/sfx.dart';
 import 'collection.dart';
+import 'contest.dart';
 import 'dashboard.dart';
 import 'level_screen.dart';
 import 'profiles.dart';
@@ -46,6 +47,11 @@ class _MapScreenState extends State<MapScreen> {
             ),
             actions: [
               _profileChip(),
+              IconButton(
+                tooltip: l.t('contest'),
+                icon: const Icon(Icons.emoji_events_outlined),
+                onPressed: _openContest,
+              ),
               IconButton(
                 tooltip: l.t('collection'),
                 icon: const Icon(Icons.catching_pokemon),
@@ -93,6 +99,7 @@ class _MapScreenState extends State<MapScreen> {
             children: [
               const RankXpBar(),
               const SizedBox(height: 6),
+              _missionsCard(),
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
@@ -143,6 +150,137 @@ class _MapScreenState extends State<MapScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => LevelScreen(level: pick)),
+    );
+  }
+
+  /// Today's training missions: day streak + ghost rival + daily
+  /// challenge + adaptive recommendation + pending count.
+  Widget _missionsCard() {
+    final l = L.instance;
+    final p = Progress.instance;
+    final daily = dailyChallengeLevel();
+    final rec = recommendedLevel();
+    final pending = p.pendingIds;
+    final ghost = p.ghostSolved;
+    final you = p.solvedCount;
+    final losing = ghost > you;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.cardEdge),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('🔥 ${p.dayStreak} ${l.t('streak_days')}',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, fontSize: 13)),
+              const Spacer(),
+              Text(
+                '🤖 ${l.t('rival_name')} $ghost · ${l.pick('tú', 'you')} $you',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: losing ? AppTheme.bad : AppTheme.good),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            losing ? l.t('rival_ahead') : l.t('rival_behind'),
+            style: const TextStyle(color: AppTheme.textLo, fontSize: 11),
+          ),
+          if (daily != null) ...[
+            const SizedBox(height: 10),
+            _missionRow(
+              '🎯 ${l.t('daily_challenge')}',
+              l.pick(daily.titleEs, daily.titleEn),
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => LevelScreen(level: daily)),
+              ),
+            ),
+          ],
+          if (rec != null) ...[
+            const SizedBox(height: 6),
+            _missionRow(
+              '👉 ${l.t('recommended')}',
+              l.pick(rec.titleEs, rec.titleEn),
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => LevelScreen(level: rec)),
+              ),
+            ),
+          ],
+          if (pending.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+                '⚠️ ${pending.length} ${l.t('pending')} — ${l.t('pending_tip')}',
+                style: const TextStyle(
+                    color: AppTheme.bad, fontSize: 11)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _missionRow(String label, String title, VoidCallback onTap) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  text: '$label  ',
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w700),
+                  children: [
+                    TextSpan(
+                      text: title,
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: AppTheme.accent2),
+                    ),
+                  ],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Icon(Icons.chevron_right,
+                size: 16, color: AppTheme.textLo),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openContest() {
+    final l = L.instance;
+    if (!canStartContest()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l.t('contest_need'))),
+      );
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (_) =>
+              ContestScreen(problems: pickContestLevels())),
     );
   }
 
@@ -320,9 +458,13 @@ class _MapScreenState extends State<MapScreen> {
             color: p.solved
                 ? AppTheme.good.withOpacity(0.6)
                 : unlocked
-                    ? (level.boss ? AppTheme.accent2 : AppTheme.cardEdge)
+                    ? (p.attempts > 0
+                        ? AppTheme.bad.withOpacity(0.8)
+                        : level.boss
+                            ? AppTheme.accent2
+                            : AppTheme.cardEdge)
                     : AppTheme.cardEdge.withOpacity(0.4),
-            width: level.boss ? 1.6 : 1,
+            width: level.boss || (unlocked && p.attempts > 0) ? 1.6 : 1,
           ),
         ),
         child: Column(

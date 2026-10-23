@@ -173,5 +173,43 @@ class L {
     'music': {'es': 'Música', 'en': 'Music'},
     'music_on': {'es': 'Música activada', 'en': 'Music on'},
     'music_off': {'es': 'Música desactivada', 'en': 'Music off'},
+    // ---- Daily training / gamification ---------------------------------
+    'streak_days': {'es': 'días seguidos', 'en': 'day streak'},
+    'daily_challenge': {'es': 'Reto del día', 'en': 'Daily challenge'},
+    'pending': {'es': 'pendientes', 'en': 'pending'},
+    'pending_tip': {
+      'es': 'Niveles que intentaste sin ganar — ¡véncelos!',
+      'en': 'Levels you tried but did not beat — clear them!'
+    },
+    'recommended': {'es': 'Recomendado', 'en': 'Recommended'},
+    'rival_name': {'es': 'GatoBot', 'en': 'CatBot'},
+    'rival_ahead': {
+      'es': '¡te va ganando! Entrena hoy',
+      'en': 'is ahead! Train today'
+    },
+    'rival_behind': {
+      'es': 'le vas ganando, ¡sigue así!',
+      'en': "you're ahead — keep it up!"
+    },
+    // ---- Optional olympiad-style contest -------------------------------
+    'contest': {'es': 'Simulacro', 'en': 'Contest'},
+    'contest_desc': {
+      'es': '3 problemas · 25 minutos · sin pistas, como una olimpiada real',
+      'en': '3 problems · 25 minutes · no hints, like a real olympiad'
+    },
+    'contest_need': {
+      'es': 'Resuelve 3 niveles para desbloquear el simulacro',
+      'en': 'Solve 3 levels to unlock contests'
+    },
+    'contest_over': {'es': '¡Tiempo terminado!', 'en': "Time's up!"},
+    'contest_done': {
+      'es': '¡Simulacro completado!',
+      'en': 'Contest complete!'
+    },
+    'contest_solved': {
+      'es': 'problemas resueltos',
+      'en': 'problems solved'
+    },
+    'contest_go': {'es': 'Resolver', 'en': 'Solve'},
   };
 }
