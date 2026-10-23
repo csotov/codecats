@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../data/worlds.dart';
 import '../engine/blocks.dart';
 import '../engine/blocks_vm.dart';
+import '../engine/coach.dart';
 import '../engine/cpp_runner.dart';
 import '../engine/judge.dart';
 import '../engine/runner.dart';
@@ -170,9 +171,12 @@ class _LevelScreenState extends State<LevelScreen>
           if (!mounted) return;
         }
       }
-      await ResultsSheet.show(context, report);
+      final tip = Coach.analyze(report, failStreak: _failStreak);
+      _failStreak++;
+      await ResultsSheet.show(context, report, coach: tip);
       return;
     }
+    _failStreak = 0;
 
     final p = Progress.instance.of(widget.level.id);
     final clean = !p.hintUsed && _attemptsThisSession <= 1;
@@ -210,6 +214,9 @@ class _LevelScreenState extends State<LevelScreen>
   }
 
   bool _failMemeShown = false;
+
+  /// Consecutive failed battles on this level — feeds Coach escalation.
+  int _failStreak = 0;
 
   /// Pick the victory meme: rare cats when their moment applies,
   /// otherwise rotate the common pool (repetition = memorización).

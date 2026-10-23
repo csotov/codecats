@@ -5,19 +5,23 @@ import '../l10n.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
-/// Bottom sheet with per-test results.
+/// Bottom sheet with per-test results plus an optional coach hint.
 class ResultsSheet extends StatelessWidget {
-  const ResultsSheet({super.key, required this.report});
+  const ResultsSheet({super.key, required this.report, this.coach});
   final JudgeReport report;
 
-  static Future<void> show(BuildContext context, JudgeReport report) {
+  /// Kid-friendly explanation of the likely mistake (bilingual pair).
+  final ({String es, String en})? coach;
+
+  static Future<void> show(BuildContext context, JudgeReport report,
+      {({String es, String en})? coach}) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppTheme.bgAlt,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
-      builder: (_) => ResultsSheet(report: report),
+      builder: (_) => ResultsSheet(report: report, coach: coach),
     );
   }
 
@@ -43,9 +47,46 @@ class ResultsSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
+          if (coach != null) _coachCard(l),
           for (var i = 0; i < report.results.length; i++)
             _tcTile(report.results[i], i, l),
         ],
+      ),
+    );
+  }
+
+  Widget _coachCard(L l) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      color: AppTheme.accent2.withOpacity(0.12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: AppTheme.accent2.withOpacity(0.5)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('💡', style: TextStyle(fontSize: 20)),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l.t('coach'),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                          color: AppTheme.accent2)),
+                  const SizedBox(height: 4),
+                  Text(l.pick(coach!.es, coach!.en),
+                      style: const TextStyle(fontSize: 13, height: 1.4)),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

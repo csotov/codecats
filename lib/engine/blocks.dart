@@ -147,9 +147,15 @@ final List<BlockDef> _defs = [
     labelEn: 'Integer variable',
     params: [
       BlockParam('name', 'nombre', 'name', hint: 'x'),
-      BlockParam('init', 'valor inicial', 'initial value', hint: '0'),
+      BlockParam('init', 'valor inicial (opcional)',
+          'initial value (optional)', hint: '0'),
     ],
-    emit: (p) => 'int ${_p(p, 'name', 'x')} = ${_p(p, 'init', '0')};',
+    emit: (p) {
+      final init = _p(p, 'init');
+      return init.isEmpty
+          ? 'int ${_p(p, 'name', 'x')};'
+          : 'int ${_p(p, 'name', 'x')} = $init;';
+    },
   ),
   BlockDef(
     id: 'decl_ll',
@@ -158,9 +164,15 @@ final List<BlockDef> _defs = [
     labelEn: 'Big integer (long long)',
     params: [
       BlockParam('name', 'nombre', 'name', hint: 'x'),
-      BlockParam('init', 'valor inicial', 'initial value', hint: '0'),
+      BlockParam('init', 'valor inicial (opcional)',
+          'initial value (optional)', hint: '0'),
     ],
-    emit: (p) => 'long long ${_p(p, 'name', 'x')} = ${_p(p, 'init', '0')};',
+    emit: (p) {
+      final init = _p(p, 'init');
+      return init.isEmpty
+          ? 'long long ${_p(p, 'name', 'x')};'
+          : 'long long ${_p(p, 'name', 'x')} = $init;';
+    },
   ),
   BlockDef(
     id: 'decl_double',
@@ -169,9 +181,15 @@ final List<BlockDef> _defs = [
     labelEn: 'Decimal number',
     params: [
       BlockParam('name', 'nombre', 'name', hint: 'x'),
-      BlockParam('init', 'valor inicial', 'initial value', hint: '0'),
+      BlockParam('init', 'valor inicial (opcional)',
+          'initial value (optional)', hint: '0'),
     ],
-    emit: (p) => 'double ${_p(p, 'name', 'x')} = ${_p(p, 'init', '0')};',
+    emit: (p) {
+      final init = _p(p, 'init');
+      return init.isEmpty
+          ? 'double ${_p(p, 'name', 'x')};'
+          : 'double ${_p(p, 'name', 'x')} = $init;';
+    },
   ),
   BlockDef(
     id: 'decl_bool',
@@ -180,9 +198,15 @@ final List<BlockDef> _defs = [
     labelEn: 'Boolean variable',
     params: [
       BlockParam('name', 'nombre', 'name', hint: 'ok'),
-      BlockParam('init', 'valor inicial', 'initial value', hint: 'false'),
+      BlockParam('init', 'valor inicial (opcional)',
+          'initial value (optional)', hint: 'false'),
     ],
-    emit: (p) => 'bool ${_p(p, 'name', 'ok')} = ${_p(p, 'init', 'false')};',
+    emit: (p) {
+      final init = _p(p, 'init');
+      return init.isEmpty
+          ? 'bool ${_p(p, 'name', 'ok')};'
+          : 'bool ${_p(p, 'name', 'ok')} = $init;';
+    },
   ),
   BlockDef(
     id: 'assign',

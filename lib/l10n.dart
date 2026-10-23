@@ -152,6 +152,7 @@ class L {
     },
     'dashboard': {'es': 'Panel de resultados', 'en': 'Progress dashboard'},
     'collection': {'es': 'La Gatoteca', 'en': 'The Cat-dex'},
+    'coach': {'es': '¿Qué pasó?', 'en': 'What went wrong?'},
     'new_cat': {'es': '¡Gato nuevo!', 'en': 'New cat!'},
     'accuracy': {'es': 'Precisión', 'en': 'Accuracy'},
     'total_xp': {'es': 'XP total', 'en': 'Total XP'},
