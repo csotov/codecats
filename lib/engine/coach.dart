@@ -44,17 +44,25 @@ class Coach {
 
   static ({String es, String en}) _tle(bool deep) => (
         es: deep
-            ? 'Tu programa nunca termina: hay un bucle infinito. Fíjate en '
-                'la condición del while/for — ¿puede volverse falsa alguna '
-                'vez? ¿Incrementas el contador?'
+            ? 'Dos sospechosos: (1) un bucle infinito — ¿la condición del '
+                'while/for puede volverse falsa? ¿incrementas el contador? '
+                '(2) Tu algoritmo es CORRECTO pero lento: si el nivel trae '
+                'datos grandes (n = 10 000) y metes un bucle dentro de '
+                'otro, son ~100 000 000 pasos — demasiados. Los campeones '
+                'piensan en O(n) u O(n·log n).'
             : 'Tu programa tardó demasiado — seguramente un bucle no para. '
-                'Revisa la condición de salida.',
+                'Revisa la condición de salida (o si es muy lento, mira la '
+                'pista del nivel).',
         en: deep
-            ? 'Your program never ends: there is an infinite loop. Look at '
-                'the while/for condition — can it ever become false? Are '
-                'you incrementing the counter?'
+            ? 'Two suspects: (1) an infinite loop — can the while/for '
+                'condition ever become false? Are you incrementing the '
+                'counter? (2) Your algorithm is CORRECT but slow: if the '
+                'level has big data (n = 10,000) and you nest a loop '
+                'inside another, that is ~100,000,000 steps — too many. '
+                'Champions think in O(n) or O(n·log n).'
             : 'Your program took too long — a loop probably never stops. '
-                'Check the exit condition.',
+                'Check the exit condition (or if it is too slow, look at '
+                'the level hint).',
       );
 
   static ({String es, String en}) _runtime(TestResult r, bool deep) => (

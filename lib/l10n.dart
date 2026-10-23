@@ -151,6 +151,15 @@ class L {
       'en': 'Start fresh with a new profile'
     },
     'dashboard': {'es': 'Panel de resultados', 'en': 'Progress dashboard'},
+    'practice': {'es': 'Modo repaso', 'en': 'Practice mode'},
+    'practice_tip': {
+      'es': 'Repasa un nivel ya ganado al azar para reforzar',
+      'en': 'Replay a random beaten level to reinforce'
+    },
+    'practice_none': {
+      'es': '¡Resuelve tu primer nivel y vuelve!',
+      'en': 'Solve your first level and come back!'
+    },
     'collection': {'es': 'La Gatoteca', 'en': 'The Cat-dex'},
     'coach': {'es': '¿Qué pasó?', 'en': 'What went wrong?'},
     'new_cat': {'es': '¡Gato nuevo!', 'en': 'New cat!'},

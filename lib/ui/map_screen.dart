@@ -56,6 +56,11 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
               IconButton(
+                tooltip: l.t('practice'),
+                icon: const Icon(Icons.fitness_center),
+                onPressed: _openPractice,
+              ),
+              IconButton(
                 tooltip: l.t('dashboard'),
                 icon: const Icon(Icons.leaderboard_outlined),
                 onPressed: () => Navigator.push(
@@ -110,6 +115,34 @@ class _MapScreenState extends State<MapScreen> {
           ),
         );
       },
+    );
+  }
+
+  /// Spaced repetition: drop the player into a random level they
+  /// already solved so the concept sticks. No XP farming — replays
+  /// award 0 XP by design in [Progress.recordSolve].
+  void _openPractice() {
+    final l = L.instance;
+    final progress = Progress.instance;
+    final solved = [
+      for (final lv in allLevels)
+        if (progress.of(lv.id).solved) lv,
+    ];
+    if (solved.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l.t('practice_none'))),
+      );
+      return;
+    }
+    final pick = solved[DateTime.now().millisecondsSinceEpoch %
+        solved.length];
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('💪 ${l.t('practice')}: '
+          '${l.pick(pick.titleEs, pick.titleEn)}')),
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => LevelScreen(level: pick)),
     );
   }
 
