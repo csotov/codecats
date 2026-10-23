@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/cats.dart';
+import '../data/worlds.dart';
 import '../models.dart';
 
 /// Per-level saved state.
@@ -66,13 +68,19 @@ class Progress extends ChangeNotifier {
   Progress._();
   static final Progress instance = Progress._();
 
-  static const _legacyKey = 'codearena_progress_v1';
-  static const _profilesKey = 'codearena_profiles_v1';
-  static const _activeKey = 'codearena_active_v1';
-  static String _keyFor(String id) => 'codearena_progress_$id';
+  static const _legacyKey = 'codecats_progress_v1';
+  static const _profilesKey = 'codecats_profiles_v1';
+  static const _activeKey = 'codecats_active_v1';
+  static String _keyFor(String id) => 'codecats_progress_$id';
 
   int xp = 0;
   final Map<String, LevelProgress> levels = {};
+
+  /// Cat-meme collection: ids of unlocked cats (see data/cats.dart).
+  final Set<String> unlockedCats = {};
+
+  /// Consecutive victories — resets on a failed battle.
+  int streak = 0;
 
   final List<Profile> profiles = [];
   Profile? active;
@@ -118,7 +126,9 @@ class Progress extends ChangeNotifier {
     active = profiles.firstWhere((p) => p.id == id,
         orElse: () => profiles.first);
     xp = 0;
+    streak = 0;
     levels.clear();
+    unlockedCats.clear();
     final raw = prefs.getString(_keyFor(active!.id));
     if (raw != null) {
       try {
@@ -128,9 +138,16 @@ class Progress extends ChangeNotifier {
           levels['$k'] =
               LevelProgress.fromJson(Map<String, dynamic>.from(v as Map));
         });
+        streak = (j['st'] as num?)?.toInt() ?? 0;
+        unlockedCats
+          ..clear()
+          ..addAll((j['cats'] as List? ?? const [])
+              .map((e) => '$e'));
       } catch (_) {/* corrupted state -> start fresh */}
     }
     if (save) await prefs.setString(_activeKey, active!.id);
+    // 'always' cats and threshold cats unlock on load.
+    checkCatUnlocks();
   }
 
   Future<void> _save() async {
@@ -140,6 +157,8 @@ class Progress extends ChangeNotifier {
         _keyFor(active!.id),
         jsonEncode({
           'xp': xp,
+          'st': streak,
+          'cats': unlockedCats.toList(),
           'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
         }));
   }
@@ -184,7 +203,8 @@ class Progress extends ChangeNotifier {
       levels[levelId] ??= LevelProgress();
 
   /// Returns earned XP for this solve (first solve gives full XP).
-  int recordSolve(String levelId, int levelXp, int stars) {
+  int recordSolve(String levelId, int levelXp, int stars,
+      {bool codeMode = false, bool boss = false}) {
     final p = of(levelId);
     var earned = 0;
     if (!p.solved) {
@@ -193,9 +213,84 @@ class Progress extends ChangeNotifier {
       p.solved = true;
     }
     if (stars > p.stars) p.stars = stars;
+    streak++;
+    _lastSolve = _SolveCtx(stars: stars, codeMode: codeMode, boss: boss);
     _save();
     notifyListeners();
     return earned;
+  }
+
+  /// Call when a battle is lost: resets the win streak.
+  void failBattle() {
+    if (streak != 0) {
+      streak = 0;
+      _save();
+      notifyListeners();
+    }
+  }
+
+  _SolveCtx? _lastSolve;
+
+  /// Cats whose unlock condition is currently met but not yet owned.
+  /// Evaluated after events; returns the freshly unlocked memes.
+  List<CatMeme> checkCatUnlocks() {
+    final fresh = <CatMeme>[];
+    for (final c in kCats) {
+      if (unlockedCats.contains(c.id)) continue;
+      if (_catMet(c.trigger)) {
+        unlockedCats.add(c.id);
+        fresh.add(c);
+      }
+    }
+    if (fresh.isNotEmpty) {
+      _save();
+      notifyListeners();
+    }
+    _lastSolve = null;
+    return fresh;
+  }
+
+  bool _catMet(CatTrigger t) {
+    final s = _lastSolve;
+    switch (t) {
+      case CatTrigger.always:
+        return true;
+      case CatTrigger.firstWin:
+        return solvedCount >= 1;
+      case CatTrigger.perfect:
+        return s?.stars == 3;
+      case CatTrigger.fail:
+        return false; // banana cat is 'always' — kept for future cats
+      case CatTrigger.streak3:
+        return streak >= 3;
+      case CatTrigger.syntaxFix:
+        return s != null &&
+            levels.values.any((p) => p.solved && p.attempts > 1);
+      case CatTrigger.hint:
+        return levels.values.any((p) => p.hintUsed);
+      case CatTrigger.codeMode:
+        return s?.codeMode == true;
+      case CatTrigger.worldBoss:
+        return s?.boss == true;
+      case CatTrigger.worldUnlock:
+        final worldsSolved = kWorlds
+            .where((w) => w.levels.any((lv) => levels[lv.id]?.solved == true))
+            .length;
+        return worldsSolved >= 2;
+      case CatTrigger.solved10:
+        return solvedCount >= 10;
+      case CatTrigger.solved25:
+        return solvedCount >= 25;
+      case CatTrigger.solved50:
+        return solvedCount >= 50;
+      case CatTrigger.rankGold:
+        return xp >= 5000;
+      case CatTrigger.rankIoi:
+        return xp >= 20000;
+      case CatTrigger.allStarsW1:
+        final w1 = kWorlds.first;
+        return w1.levels.every((lv) => (levels[lv.id]?.stars ?? 0) >= 3);
+    }
   }
 
   void recordAttempt(String levelId) {
@@ -237,6 +332,8 @@ class Progress extends ChangeNotifier {
   /// Reset only the ACTIVE profile's progress (start from zero).
   Future<void> reset() async {
     xp = 0;
+    streak = 0;
+    unlockedCats.clear();
     levels.clear();
     final prefs = await SharedPreferences.getInstance();
     if (active != null) {
@@ -247,6 +344,13 @@ class Progress extends ChangeNotifier {
 }
 
 /// Player rank derived from XP.
+class _SolveCtx {
+  _SolveCtx({required this.stars, required this.codeMode, required this.boss});
+  final int stars;
+  final bool codeMode;
+  final bool boss;
+}
+
 class Rank {
   const Rank(this.key, this.minXp, this.color);
   final String key; // l10n key suffix: rank_bronze...

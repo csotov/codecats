@@ -1,4 +1,4 @@
-package com.example.codearena
+package com.example.codecats
 
 import io.flutter.embedding.android.FlutterActivity
 

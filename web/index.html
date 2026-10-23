@@ -4,22 +4,22 @@
   <base href="$FLUTTER_BASE_HREF">
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="CodeArena — aprende C++ peleando batallas de código / learn C++ fighting code battles">
+  <meta name="description" content="CodeCats — aprende C++ peleando batallas de código / learn C++ fighting code battles">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="CodeArena">
-  <meta name="theme-color" content="#0E1420">
+  <meta name="apple-mobile-web-app-title" content="CodeCats">
+  <meta name="theme-color" content="#14091F">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
   <link rel="icon" type="image/png" href="favicon.png"/>
-  <title>CodeArena</title>
+  <title>CodeCats</title>
   <link rel="manifest" href="manifest.json">
   <style>
-    html, body { margin: 0; padding: 0; background: #0E1420; height: 100%; }
+    html, body { margin: 0; padding: 0; background: #14091F; height: 100%; }
     #splash {
       position: fixed; inset: 0; z-index: 9999;
       display: flex; flex-direction: column; align-items: center;
       justify-content: center; gap: 18px;
-      background: radial-gradient(circle at 50% 35%, #1B2740 0%, #0E1420 70%);
+      background: radial-gradient(circle at 50% 35%, #1F0F30 0%, #14091F 70%);
       font-family: system-ui, sans-serif;
       transition: opacity .45s ease;
     }
@@ -29,20 +29,20 @@
       filter: drop-shadow(0 0 24px rgba(76,194,255,.55));
     }
     #splash .title {
-      color: #F1F5FF; font-size: 34px; font-weight: 900;
+      color: #FFF6FF; font-size: 34px; font-weight: 900;
       letter-spacing: 1px;
     }
-    #splash .title em { color: #4CC2FF; font-style: normal; }
+    #splash .title em { color: #FF4DDB; font-style: normal; }
     #splash .tag {
-      color: #9AA7C7; font-size: 14px;
+      color: #B99BD4; font-size: 14px;
     }
     #splash .bar {
       width: 210px; height: 6px; border-radius: 3px;
-      background: #1B2740; overflow: hidden;
+      background: #1F0F30; overflow: hidden;
     }
     #splash .bar i {
       display: block; height: 100%; width: 40%;
-      border-radius: 3px; background: linear-gradient(90deg,#4CC2FF,#FFC94D);
+      border-radius: 3px; background: linear-gradient(90deg,#FF4DDB,#B6FF3D);
       animation: slide 1.2s ease-in-out infinite;
     }
     @keyframes pulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.12) } }
@@ -51,9 +51,9 @@
 </head>
 <body>
   <div id="splash">
-    <div class="sword">⚔️</div>
+    <div class="sword">🐱</div>
     <div class="title">Code<em>Arena</em></div>
-    <div class="tag">Aprende C++ peleando batallas de código</div>
+    <div class="tag">Aprende C++ coleccionando gatos</div>
     <div class="bar"><i></i></div>
   </div>
   <script>

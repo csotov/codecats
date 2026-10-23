@@ -22,7 +22,7 @@ class Sfx {
   static bool _musicReady = false;
   static bool _musicPlaying = false;
 
-  static const _mutedKey = 'codearena_music_muted';
+  static const _mutedKey = 'codecats_music_muted';
 
   static Future<void> init() async {
     try {

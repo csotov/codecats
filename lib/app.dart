@@ -5,8 +5,8 @@ import 'services/sfx.dart';
 import 'ui/splash.dart';
 import 'ui/theme.dart';
 
-class CodeArenaApp extends StatelessWidget {
-  const CodeArenaApp({super.key});
+class CodeCatsApp extends StatelessWidget {
+  const CodeCatsApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,7 @@ class CodeArenaApp extends StatelessWidget {
       builder: (context, lang, _) => Listener(
         onPointerDown: (_) => Sfx.poke(),
         child: MaterialApp(
-          title: 'CodeArena',
+          title: 'CodeCats',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.theme,
           home: const SplashScreen(),

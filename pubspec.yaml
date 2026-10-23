@@ -1,5 +1,5 @@
-name: codearena
-description: "CodeArena - aprende C++ y algoritmos jugando / learn C++ and DSA by playing"
+name: codecats
+description: "CodeCats - aprende C++ con memes de gatos / learn C++ with cat memes"
 publish_to: "none"
 version: 0.1.0
 
@@ -16,6 +16,7 @@ dependencies:
   flutter_js: ^0.8.2
   web: ^1.0.0
   audioplayers: ^6.8.1
+  video_player: ^2.9.2
 
 dev_dependencies:
   flutter_test:
@@ -26,3 +27,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/vendor/
+    - assets/memes/

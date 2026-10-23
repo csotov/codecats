@@ -71,7 +71,7 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                       ],
                     ),
-                    child: const Text('⚔️',
+                    child: const Text('🐱',
                         style: TextStyle(fontSize: 52)),
                   ),
                 ),
@@ -79,7 +79,7 @@ class _SplashScreenState extends State<SplashScreen>
                 Opacity(
                   opacity: _c.value.clamp(0.0, 1.0),
                   child: const Text(
-                    'CodeArena',
+                    'CodeCats',
                     style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
@@ -90,7 +90,7 @@ class _SplashScreenState extends State<SplashScreen>
                 Opacity(
                   opacity: (_c.value * 1.4 - 0.4).clamp(0.0, 1.0),
                   child: const Text(
-                    'Aprende C++ peleando batallas de código',
+                    'Aprende C++ coleccionando gatos',
                     style:
                         TextStyle(fontSize: 13, color: AppTheme.textLo),
                   ),

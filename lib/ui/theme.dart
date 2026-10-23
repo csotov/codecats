@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 
-/// Neon "code arena" dark theme, friendly for kids.
+/// "Brainrot" neon theme: deep purple night + electric magenta/lime.
+/// Louder than CodeArena but still readable for kids.
 class AppTheme {
-  static const bg = Color(0xFF0E1420);
-  static const bgAlt = Color(0xFF151E30);
-  static const card = Color(0xFF1B2740);
-  static const cardEdge = Color(0xFF2A3A5E);
-  static const accent = Color(0xFF4CC2FF);
-  static const accent2 = Color(0xFFFFC94D);
+  static const bg = Color(0xFF14091F);
+  static const bgAlt = Color(0xFF1F0F30);
+  static const card = Color(0xFF2A1545);
+  static const cardEdge = Color(0xFF4A2A6E);
+  static const accent = Color(0xFFFF4DDB);   // electric magenta
+  static const accent2 = Color(0xFFB6FF3D);  // toxic lime
+  static const accent3 = Color(0xFF4DC8FF);  // cyan zap
   static const good = Color(0xFF4ADE80);
   static const bad = Color(0xFFFF6B6B);
-  static const textHi = Color(0xFFF1F5FF);
-  static const textLo = Color(0xFF9AA7C7);
+  static const textHi = Color(0xFFFFF6FF);
+  static const textLo = Color(0xFFB99BD4);
 
   static ThemeData get theme => ThemeData(
         brightness: Brightness.dark,
@@ -19,6 +21,7 @@ class AppTheme {
         colorScheme: const ColorScheme.dark(
           primary: accent,
           secondary: accent2,
+          tertiary: accent3,
           surface: card,
           error: bad,
           onSurface: textHi,

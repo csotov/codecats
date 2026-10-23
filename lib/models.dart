@@ -1,4 +1,4 @@
-/// Data models for CodeArena: worlds, levels, test cases, progress.
+/// Data models for CodeCats: worlds, levels, test cases, progress.
 library;
 
 /// A single input/output pair used as a visible example.

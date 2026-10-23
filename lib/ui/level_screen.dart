@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../data/worlds.dart';
@@ -8,10 +10,12 @@ import '../engine/judge.dart';
 import '../engine/runner.dart';
 import '../l10n.dart';
 import '../models.dart';
+import '../data/cats.dart';
 import '../services/progress.dart';
 import '../services/sfx.dart';
 import 'blocks_editor.dart';
 import 'code_editor.dart';
+import 'meme_player.dart';
 import 'results.dart';
 import 'theme.dart';
 import 'victory.dart';
@@ -32,6 +36,9 @@ class _LevelScreenState extends State<LevelScreen>
   /// last level route closes (pushReplacement counts as a swap), we
   /// fall back to the menu track.
   static int _openLevels = 0;
+
+  /// Vibing-cat welcome meme: once per app session, first level entry.
+  static bool _welcomeShown = false;
 
   late final CppRunner _runner;
   late final List<BlockNode> _roots;
@@ -61,6 +68,13 @@ class _LevelScreenState extends State<LevelScreen>
     _savedCode = saved.code.isNotEmpty ? saved.code : widget.level.starterCode;
     _promotedToCode = widget.level.mode == EditorMode.code;
     _tabController = TabController(length: _hybrid ? 2 : 1, vsync: this);
+    if (!_welcomeShown) {
+      _welcomeShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final v = _cat('vibing');
+        if (v != null && mounted) MemeBurst.show(context, v);
+      });
+    }
   }
 
   @override
@@ -145,6 +159,17 @@ class _LevelScreenState extends State<LevelScreen>
     if (!mounted) return;
     setState(() => _busy = false);
     if (!report.allPassed) {
+      Progress.instance.failBattle();
+      // Banana cat cries with you on the first fail of the session —
+      // funny, not punishing; detailed results still show after.
+      if (!_failMemeShown) {
+        _failMemeShown = true;
+        final b = _cat('banana');
+        if (b != null) {
+          await MemeBurst.show(context, b);
+          if (!mounted) return;
+        }
+      }
       await ResultsSheet.show(context, report);
       return;
     }
@@ -154,8 +179,11 @@ class _LevelScreenState extends State<LevelScreen>
     final stars = p.hintUsed
         ? (_attemptsThisSession <= 1 ? 2 : 1)
         : (clean ? 3 : 2);
-    final earned = Progress.instance
-        .recordSolve(widget.level.id, widget.level.xp, stars);
+    final earned = Progress.instance.recordSolve(
+        widget.level.id, widget.level.xp, stars,
+        codeMode: !_usesBlocks || _promotedToCode,
+        boss: widget.level.boss);
+    final newCats = Progress.instance.checkCatUnlocks();
 
     if (!mounted) return;
     final next = nextLevel(widget.level.id);
@@ -164,6 +192,7 @@ class _LevelScreenState extends State<LevelScreen>
       stars: Progress.instance.of(widget.level.id).stars,
       xpEarned: earned,
       hasNext: next != null,
+      cat: _victoryCat(stars),
       onNext: () {
         Navigator.pushReplacement(
           context,
@@ -171,6 +200,43 @@ class _LevelScreenState extends State<LevelScreen>
         );
       },
     );
+    // Celebrar gatos nuevos DESPUÉS de la victoria — uno por uno.
+    for (final c in newCats) {
+      if (!mounted) return;
+      await MemeBurst.show(context, c,
+          captionEs: '¡Gato nuevo en tu Gatoteca!',
+          captionEn: 'New cat in your Cat-dex!');
+    }
+  }
+
+  bool _failMemeShown = false;
+
+  /// Pick the victory meme: rare cats when their moment applies,
+  /// otherwise rotate the common pool (repetition = memorización).
+  CatMeme? _victoryCat(int stars) {
+    final owned = Progress.instance.unlockedCats;
+    if (widget.level.boss && owned.contains('chipi')) {
+      return _cat('chipi');
+    }
+    if (Progress.instance.streak >= 3 && owned.contains('nyan')) {
+      return _cat('nyan');
+    }
+    if (stars >= 3 && owned.contains('oiia')) return _cat('oiia');
+    final pool = kCommonPool
+        .where(owned.contains)
+        .map(_cat)
+        .whereType<CatMeme>()
+        .toList();
+    if (pool.isEmpty) return null;
+    return pool[math.Random().nextInt(pool.length)];
+  }
+
+  CatMeme? _cat(String id) {
+    if (!Progress.instance.unlockedCats.contains(id)) return null;
+    for (final c in kCats) {
+      if (c.id == id) return c;
+    }
+    return null;
   }
 
   String _describeError(RunOutput r) {
@@ -344,9 +410,15 @@ class _LevelScreenState extends State<LevelScreen>
             ),
           if (_hintsShown < hints.length)
             TextButton.icon(
-              onPressed: () {
+              onPressed: () async {
                 setState(() => _hintsShown++);
                 Progress.instance.recordHint(widget.level.id);
+                for (final c in Progress.instance.checkCatUnlocks()) {
+                  if (!mounted) return;
+                  await MemeBurst.show(context, c,
+                      captionEs: '¡Gato nuevo en tu Gatoteca!',
+                      captionEn: 'New cat in your Cat-dex!');
+                }
               },
               icon: const Icon(Icons.lightbulb, size: 16),
               label: Text(

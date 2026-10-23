@@ -29,7 +29,7 @@ class L {
       isEs ? es : en;
 
   static const Map<String, Map<String, String>> _s = {
-    'app_title': {'es': 'CodeArena', 'en': 'CodeArena'},
+    'app_title': {'es': 'CodeCats', 'en': 'CodeCats'},
     'subtitle': {
       'es': 'Aprende C++ peleando batallas de código',
       'en': 'Learn C++ fighting code battles'
@@ -151,6 +151,8 @@ class L {
       'en': 'Start fresh with a new profile'
     },
     'dashboard': {'es': 'Panel de resultados', 'en': 'Progress dashboard'},
+    'collection': {'es': 'La Gatoteca', 'en': 'The Cat-dex'},
+    'new_cat': {'es': '¡Gato nuevo!', 'en': 'New cat!'},
     'accuracy': {'es': 'Precisión', 'en': 'Accuracy'},
     'total_xp': {'es': 'XP total', 'en': 'Total XP'},
     'levels_solved': {'es': 'Niveles resueltos', 'en': 'Levels solved'},

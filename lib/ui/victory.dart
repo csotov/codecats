@@ -2,13 +2,15 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../data/cats.dart';
 import '../l10n.dart';
 import '../services/sfx.dart';
+import 'meme_player.dart';
 import 'theme.dart';
 
-/// Full-screen victory celebration: confetti burst, stars that pop in
-/// one by one, XP counter, and the "next level" button appears on its
-/// own — no extra taps required. Tap anywhere to fast-forward.
+/// Full-screen victory celebration: confetti burst, cat-meme video,
+/// stars that pop in one by one, XP counter, and the "next level"
+/// button appears on its own — no extra taps required.
 class VictoryOverlay extends StatefulWidget {
   const VictoryOverlay({
     super.key,
@@ -16,6 +18,7 @@ class VictoryOverlay extends StatefulWidget {
     required this.xpEarned,
     required this.hasNext,
     required this.onNext,
+    this.cat,
   });
 
   final int stars; // 1..3
@@ -23,12 +26,16 @@ class VictoryOverlay extends StatefulWidget {
   final bool hasNext;
   final VoidCallback onNext;
 
+  /// Optional cat-meme clip shown in a circular sticker on the card.
+  final CatMeme? cat;
+
   static Future<void> show(
     BuildContext context, {
     required int stars,
     required int xpEarned,
     required bool hasNext,
     required VoidCallback onNext,
+    CatMeme? cat,
   }) {
     return showGeneralDialog(
       context: context,
@@ -41,6 +48,7 @@ class VictoryOverlay extends StatefulWidget {
         xpEarned: xpEarned,
         hasNext: hasNext,
         onNext: onNext,
+        cat: cat,
       ),
     );
   }
@@ -113,6 +121,19 @@ class _VictoryOverlayState extends State<VictoryOverlay>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          if (widget.cat != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: ClipOval(
+                                child: Container(
+                                  width: 120,
+                                  height: 120,
+                                  color: AppTheme.bgAlt,
+                                  child: MemeTile(
+                                      cat: widget.cat!, height: 120),
+                                ),
+                              ),
+                            ),
                           Text(l.t('victory'),
                               style: const TextStyle(
                                   fontSize: 30,

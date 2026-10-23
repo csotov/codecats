@@ -1,6 +1,6 @@
-import 'package:codearena/engine/blocks.dart';
-import 'package:codearena/engine/blocks_vm.dart';
-import 'package:codearena/engine/runner.dart';
+import 'package:codecats/engine/blocks.dart';
+import 'package:codecats/engine/blocks_vm.dart';
+import 'package:codecats/engine/runner.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 BlockNode b(String id,

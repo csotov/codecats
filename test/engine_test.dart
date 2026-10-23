@@ -1,5 +1,5 @@
-import 'package:codearena/engine/blocks.dart';
-import 'package:codearena/engine/judge.dart';
+import 'package:codecats/engine/blocks.dart';
+import 'package:codecats/engine/judge.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

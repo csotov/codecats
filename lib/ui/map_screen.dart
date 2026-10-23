@@ -6,6 +6,7 @@ import '../l10n.dart';
 import '../models.dart';
 import '../services/progress.dart';
 import '../services/sfx.dart';
+import 'collection.dart';
 import 'dashboard.dart';
 import 'level_screen.dart';
 import 'profiles.dart';
@@ -45,6 +46,15 @@ class _MapScreenState extends State<MapScreen> {
             ),
             actions: [
               _profileChip(),
+              IconButton(
+                tooltip: l.t('collection'),
+                icon: const Icon(Icons.catching_pokemon),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const CollectionScreen()),
+                ),
+              ),
               IconButton(
                 tooltip: l.t('dashboard'),
                 icon: const Icon(Icons.leaderboard_outlined),
