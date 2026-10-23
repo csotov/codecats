@@ -160,6 +160,7 @@ class L {
       'es': '¡Resuelve tu primer nivel y vuelve!',
       'en': 'Solve your first level and come back!'
     },
+    'tests_passed': {'es': 'Pruebas superadas', 'en': 'Tests passed'},
     'collection': {'es': 'La Gatoteca', 'en': 'The Cat-dex'},
     'coach': {'es': '¿Qué pasó?', 'en': 'What went wrong?'},
     'new_cat': {'es': '¡Gato nuevo!', 'en': 'New cat!'},
