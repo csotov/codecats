@@ -33,6 +33,32 @@ void main() {
     expect(r.output, '7\n');
   });
 
+  test('multi declaration: "a, b" declares both', () async {
+    final r = await runBlocks([
+      b('decl_int', params: {'name': 'a, b', 'init': '3'}),
+      b('print_expr', params: {'expr': 'a + b'}),
+    ]);
+    expect(r.output, '6\n');
+  });
+
+  test('multi read: "a, b" in one read_var', () async {
+    final r = await runBlocks([
+      b('decl_int', params: {'name': 'a, b'}),
+      b('read_var', params: {'var': 'a, b'}),
+      b('print_expr', params: {'expr': 'a * b'}),
+    ], '6 7');
+    expect(r.output, '42\n');
+  });
+
+  test('raw line: cin >> a, b and int a, b', () async {
+    final r = await runBlocks([
+      b('raw_line', params: {'code': 'int a, b;'}),
+      b('raw_line', params: {'code': 'cin >> a, b;'}),
+      b('raw_line', params: {'code': 'cout << a + b << endl;'}),
+    ], '10 20');
+    expect(r.output, '30\n');
+  });
+
   test('for loop accumulates', () async {
     final r = await runBlocks([
       b('decl_int', params: {'name': 'n', 'init': '5'}),

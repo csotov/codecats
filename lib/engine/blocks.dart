@@ -98,6 +98,25 @@ String _p(Map<String, String> p, String k, [String fallback = '']) {
   return v.isEmpty ? fallback : v;
 }
 
+/// A name param may hold several comma-separated identifiers
+/// ("a, b" → ['a','b']) — kids naturally declare/read in batches.
+List<String> _names(String raw, String fallback) {
+  final parts = raw
+      .split(',')
+      .map((s) => s.trim())
+      .where((s) => s.isNotEmpty)
+      .toList();
+  return parts.isEmpty ? [fallback] : parts;
+}
+
+/// `int a, b;` or `int a = 5, b = 5;` — comma-separated declarations.
+String _decl(String type, String names, String init, String fallback) {
+  final ns = _names(names, fallback);
+  return init.isEmpty
+      ? '$type ${ns.join(', ')};'
+      : '$type ${ns.map((n) => '$n = $init').join(', ')};';
+}
+
 final List<BlockDef> _defs = [
   // ---- I/O ------------------------------------------------------------
   BlockDef(
@@ -137,7 +156,8 @@ final List<BlockDef> _defs = [
     labelEs: 'Leer variable',
     labelEn: 'Read variable',
     params: [BlockParam('var', 'variable', 'variable', hint: 'x')],
-    emit: (p) => 'cin >> ${_p(p, 'var', 'x')};',
+    emit: (p) =>
+        'cin >> ${_names(_p(p, 'var'), 'x').join(' >> ')};',
   ),
   // ---- Variables -------------------------------------------------------
   BlockDef(
@@ -150,12 +170,7 @@ final List<BlockDef> _defs = [
       BlockParam('init', 'valor inicial (opcional)',
           'initial value (optional)', hint: '0'),
     ],
-    emit: (p) {
-      final init = _p(p, 'init');
-      return init.isEmpty
-          ? 'int ${_p(p, 'name', 'x')};'
-          : 'int ${_p(p, 'name', 'x')} = $init;';
-    },
+    emit: (p) => _decl('int', _p(p, 'name'), _p(p, 'init'), 'x'),
   ),
   BlockDef(
     id: 'decl_ll',
@@ -167,12 +182,8 @@ final List<BlockDef> _defs = [
       BlockParam('init', 'valor inicial (opcional)',
           'initial value (optional)', hint: '0'),
     ],
-    emit: (p) {
-      final init = _p(p, 'init');
-      return init.isEmpty
-          ? 'long long ${_p(p, 'name', 'x')};'
-          : 'long long ${_p(p, 'name', 'x')} = $init;';
-    },
+    emit: (p) =>
+        _decl('long long', _p(p, 'name'), _p(p, 'init'), 'x'),
   ),
   BlockDef(
     id: 'decl_double',
@@ -184,12 +195,7 @@ final List<BlockDef> _defs = [
       BlockParam('init', 'valor inicial (opcional)',
           'initial value (optional)', hint: '0'),
     ],
-    emit: (p) {
-      final init = _p(p, 'init');
-      return init.isEmpty
-          ? 'double ${_p(p, 'name', 'x')};'
-          : 'double ${_p(p, 'name', 'x')} = $init;';
-    },
+    emit: (p) => _decl('double', _p(p, 'name'), _p(p, 'init'), 'x'),
   ),
   BlockDef(
     id: 'decl_bool',
@@ -201,12 +207,7 @@ final List<BlockDef> _defs = [
       BlockParam('init', 'valor inicial (opcional)',
           'initial value (optional)', hint: 'false'),
     ],
-    emit: (p) {
-      final init = _p(p, 'init');
-      return init.isEmpty
-          ? 'bool ${_p(p, 'name', 'ok')};'
-          : 'bool ${_p(p, 'name', 'ok')} = $init;';
-    },
+    emit: (p) => _decl('bool', _p(p, 'name'), _p(p, 'init'), 'ok'),
   ),
   BlockDef(
     id: 'assign',

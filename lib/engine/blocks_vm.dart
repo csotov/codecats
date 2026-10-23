@@ -93,6 +93,13 @@ class _Vm {
     return v.isEmpty ? fb : v;
   }
 
+  /// "a, b" → ['a','b'] — comma-separated identifiers in one param.
+  List<String> _names(String raw) => raw
+      .split(',')
+      .map((s) => s.trim())
+      .where((s) => s.isNotEmpty)
+      .toList();
+
   void _exec(BlockNode n) {
     _tick();
     switch (n.defId) {
@@ -106,15 +113,27 @@ class _Vm {
       case 'print_space':
         out.write(' ');
       case 'read_var':
-        _assign(_param(n, 'var', 'x'), null, _readToken());
+        // "a, b" reads a token into each variable (cin >> a >> b)
+        for (final v in _names(_param(n, 'var', 'x'))) {
+          _assign(v, null, _readToken());
+        }
       // ---- vars -----------------------------------------------------------
       case 'decl_int':
       case 'decl_ll':
-        _vars[_param(n, 'name', 'x')] = _eval(_param(n, 'init', '0'));
+        final init = _eval(_param(n, 'init', '0'));
+        for (final v in _names(_param(n, 'name', 'x'))) {
+          _vars[v] = init;
+        }
       case 'decl_double':
-        _vars[_param(n, 'name', 'x')] = _eval(_param(n, 'init', '0'));
+        final init = _eval(_param(n, 'init', '0'));
+        for (final v in _names(_param(n, 'name', 'x'))) {
+          _vars[v] = init;
+        }
       case 'decl_bool':
-        _vars[_param(n, 'name', 'ok')] = _eval(_param(n, 'init', 'false'));
+        final init = _eval(_param(n, 'init', 'false'));
+        for (final v in _names(_param(n, 'name', 'ok'))) {
+          _vars[v] = init;
+        }
       case 'assign':
         _assign(_param(n, 'name', 'x'), null, _eval(_param(n, 'expr', '0')));
       case 'add_assign':
@@ -251,8 +270,11 @@ class _Vm {
     }
     if (c.startsWith('cin')) {
       for (var part in c.substring(3).split('>>')) {
-        part = part.trim();
-        if (part.isNotEmpty) _assign(part, null, _readToken());
+        // "cin >> a, b" is also natural kid syntax
+        for (var v in part.split(',')) {
+          v = v.trim();
+          if (v.isNotEmpty) _assign(v, null, _readToken());
+        }
       }
       return;
     }

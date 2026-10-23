@@ -152,6 +152,10 @@ class _BlockList extends StatelessWidget {
       children: [
         for (var i = 0; i < nodes.length; i++)
           Padding(
+            // Key on the NODE (not the index) so when blocks are moved,
+            // the card and its TextFormField state travel WITH the block —
+            // otherwise fields show the previous occupant's text.
+            key: ObjectKey(nodes[i]),
             padding: EdgeInsets.only(left: depth * 18.0, bottom: 8),
             child: _BlockCard(
               node: nodes[i],

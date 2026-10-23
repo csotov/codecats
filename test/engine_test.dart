@@ -58,6 +58,17 @@ void main() {
       expect(code, contains('"neg"'));
     });
 
+    test('comma names: int a, b and cin >> a >> b', () {
+      final code = blocksToCode([
+        BlockNode('decl_int', params: {'name': 'a, b'}),
+        BlockNode('decl_int', params: {'name': 'c, d', 'init': '3'}),
+        BlockNode('read_var', params: {'var': 'a, b'}),
+      ]);
+      expect(code, contains('int a, b;'));
+      expect(code, contains('int c = 3, d = 3;'));
+      expect(code, contains('cin >> a >> b;'));
+    });
+
     test('blocks survive JSON round-trip', () {
       final root = BlockNode('for_i',
           params: {'var': 'i', 'end': '10'},
