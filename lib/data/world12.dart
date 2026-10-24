@@ -5,16 +5,16 @@ import 'catalog.dart';
 /// and binary search on the answer. The champion's search.
 final world12 = World(
   id: 'w12',
-  titleEs: 'Búsqueda Binaria',
-  titleEn: 'Binary Search',
+  titleEs: 'El Estuche de las Sardinas',
+  titleEn: 'The Sardine Case',
   descEs: 'Divide y vencerás: busca en millones de datos en 30 pasos.',
   descEn: 'Divide and conquer: search millions of items in 30 steps.',
   icon: '⌖',
   levels: [
     lvl(
       id: 'w12l1',
-      tEs: 'Encuentra el número',
-      tEn: 'Find the number',
+      tEs: 'Encuentra la croqueta',
+      tEn: 'Find the kibble',
       sEs: 'Buscar de a uno en un arreglo ordenado es de '
           'principiantes. Los campeones parten por la mitad.',
       sEn: 'Searching one by one in a sorted array is for '
@@ -58,8 +58,8 @@ final world12 = World(
     ),
     lvl(
       id: 'w12l2',
-      tEs: 'El primero que no es menor',
-      tEn: 'The first not-smaller',
+      tEs: 'La primera croqueta grande',
+      tEn: 'The first big kibble',
       sEs: 'En la fila ordenada de guerreros, ¿quién es el '
           'primero con fuerza mayor o igual a X?',
       sEn: 'In the sorted row of warriors, who is the first '
@@ -104,8 +104,8 @@ final world12 = World(
     ),
     lvl(
       id: 'w12l3',
-      tEs: '¿Cuántas veces aparece?',
-      tEn: 'How many times does it appear?',
+      tEs: '¿Cuántos miaus hay?',
+      tEn: 'How many meows?',
       sEs: 'El número x se repite en el arreglo ordenado. Con '
           'dos búsquedas binarias lo descubres todo.',
       sEn: 'The number x repeats in the sorted array. With '
@@ -150,8 +150,8 @@ final world12 = World(
     ),
     lvl(
       id: 'w12l4',
-      tEs: 'La raíz del sabio',
-      tEn: 'The sage root',
+      tEs: 'La raíz del gato sabio',
+      tEn: 'The wise cat root',
       sEs: '¿Cuál es la raíz cuadrada de un número gigante? '
           'Los calculistas de la olimpiada lo hacen sin '
           'calculadora.',
@@ -196,8 +196,8 @@ final world12 = World(
     ),
     lvl(
       id: 'w12l5',
-      tEs: 'Suficientemente grande',
-      tEn: 'Big enough',
+      tEs: 'Suficiente atún',
+      tEn: 'Enough tuna',
       sEs: '1+2+3+4+... crece rápido. ¿Cuál es el primer k '
           'cuya suma ya alcanza n?',
       sEn: '1+2+3+4+... grows fast. What is the first k '
@@ -238,8 +238,8 @@ final world12 = World(
     ),
     lvl(
       id: 'w12l6',
-      tEs: 'JEFE: Los barcos del tesoro',
-      tEn: 'BOSS: The treasure ships',
+      tEs: 'JEFE: Los barcos de sardinas',
+      tEn: 'BOSS: The sardine ships',
       sEs: 'Hay que repartir los cofres entre k barcos, en '
           'orden y sin partir ninguno. ¿Cuál es la menor '
           'carga máxima posible?',

@@ -4,16 +4,16 @@ import 'catalog.dart';
 /// World 6 — Sorting and searching (implemented by hand).
 final world6 = World(
   id: 'w6',
-  titleEs: 'Dojo del Orden',
-  titleEn: 'Dojo of Order',
+  titleEs: 'El Podio del Orden',
+  titleEn: 'The Podium of Order',
   descEs: 'Ordenar y buscar: los algoritmos más famosos del mundo.',
   descEn: 'Sorting and searching: the most famous algorithms ever.',
   icon: '⇅',
   levels: [
     lvl(
       id: 'w6l1',
-      tEs: 'Tres en fila',
-      tEn: 'Three in a row',
+      tEs: 'Tres gatitos en fila',
+      tEn: 'Three kittens in a row',
       sEs: 'Ordenar tres números a mano es el primer paso '
           'para entender el ordenamiento.',
       sEn: 'Sorting three numbers by hand is the first step '
@@ -41,8 +41,8 @@ final world6 = World(
     ),
     lvl(
       id: 'w6l2',
-      tEs: 'La burbuja',
-      tEn: 'The bubble',
+      tEs: 'Ordenando por peso',
+      tEn: 'Sorting by weight',
       sEs: 'Ordenamiento burbuja: recorre el arreglo muchas veces '
           'intercambiando parejas vecinas desordenadas.',
       sEn: 'Bubble sort: walk the array many times swapping '
@@ -74,8 +74,8 @@ final world6 = World(
     ),
     lvl(
       id: 'w6l3',
-      tEs: 'Selección del mejor',
-      tEn: 'Selecting the best',
+      tEs: 'El más esponjoso',
+      tEn: 'The floofiest',
       sEs: 'Ordenamiento por selección: en cada vuelta busca '
           'el mínimo restante y llévalo al frente.',
       sEn: 'Selection sort: each round finds the remaining '
@@ -104,8 +104,8 @@ final world6 = World(
     ),
     lvl(
       id: 'w6l4',
-      tEs: 'La mediana del torneo',
-      tEn: 'The tournament median',
+      tEs: 'La mediana de los michis',
+      tEn: 'The kitty median',
       sEs: 'Con el arreglo ordenado, el del medio es fácil '
           'de encontrar.',
       sEn: 'Once the array is sorted, the middle one is easy '
@@ -134,8 +134,8 @@ final world6 = World(
     ),
     lvl(
       id: 'w6l5',
-      tEs: '¿Está el tesoro?',
-      tEn: 'Is the treasure there?',
+      tEs: '¿Dónde está el ratón?',
+      tEn: 'Where is the mouse?',
       sEs: 'Búsqueda lineal: revisar uno por uno. Simple '
           'pero correcta.',
       sEn: 'Linear search: check one by one. Simple '
@@ -165,8 +165,8 @@ final world6 = World(
     ),
     lvl(
       id: 'w6l6',
-      tEs: 'Búsqueda binaria',
-      tEn: 'Binary search',
+      tEs: 'Adivina la croqueta',
+      tEn: 'Guess the kibble',
       sEs: 'En un arreglo ORDENADO puedes descartar la mitad '
           'en cada paso: como buscar en un diccionario. '
           '¡Así buscan los campeones!',
@@ -200,8 +200,8 @@ final world6 = World(
     ),
     lvl(
       id: 'w6l7',
-      tEs: 'El inspector de orden',
-      tEn: 'The order inspector',
+      tEs: 'El inspector de filas',
+      tEn: 'The line inspector',
       sEs: 'Antes de buscar rápido hay que saber si el arreglo '
           'ya está ordenado.',
       sEn: 'Before searching fast you must know if the array '
@@ -229,8 +229,8 @@ final world6 = World(
     ),
     lvl(
       id: 'w6l8',
-      tEs: 'JEFE: El podio del torneo',
-      tEn: 'BOSS: The tournament podium',
+      tEs: 'JEFE: El podio de los gatos',
+      tEn: 'BOSS: The cat podium',
       sEs: 'El gran torneo termina: hay que dar las medallas '
           'a los 3 puntajes más altos.',
       sEn: 'The grand tournament ends: medals go to the '

@@ -4,16 +4,16 @@ import 'catalog.dart';
 /// World 2 — Decisions: if/else, comparisons, logic operators.
 final world2 = World(
   id: 'w2',
-  titleEs: 'Encrucijada',
-  titleEn: 'The Crossroads',
+  titleEs: 'Encrucijada Gatuna',
+  titleEn: 'The Kitty Crossroads',
   descEs: 'if/else: tu programa aprende a decidir.',
   descEn: 'if/else: your program learns to decide.',
   icon: '⑂',
   levels: [
     lvl(
       id: 'w2l1',
-      tEs: 'Par o impar',
-      tEn: 'Even or odd',
+      tEs: '¿Pata par o impar?',
+      tEn: 'Even paw or odd paw?',
       sEs: 'El guardián solo deja pasar a quien distingue '
           'los números pares de los impares.',
       sEn: 'The guardian only lets through those who can tell '
@@ -43,8 +43,8 @@ final world2 = World(
     ),
     lvl(
       id: 'w2l2',
-      tEs: 'El termómetro mágico',
-      tEn: 'The magic thermometer',
+      tEs: '¿Hace frío para el gato?',
+      tEn: 'Is it cold for the cat?',
       sEs: 'Tres caminos: positivo, negativo o cero. '
           'else if permite encadenar decisiones.',
       sEn: 'Three paths: positive, negative or zero. '
@@ -73,8 +73,8 @@ final world2 = World(
     ),
     lvl(
       id: 'w2l3',
-      tEs: 'Duelo de poder',
-      tEn: 'Power duel',
+      tEs: 'El gato más fuerte',
+      tEn: 'The strongest cat',
       sEs: 'Dos guerreros chocan espadas. Gana el mayor.',
       sEn: 'Two warriors clash swords. The bigger wins.',
       dEs: 'Lee dos enteros a y b. Imprime el mayor de los dos. '
@@ -100,8 +100,8 @@ final world2 = World(
     ),
     lvl(
       id: 'w2l4',
-      tEs: 'El rango del héroe',
-      tEn: 'The hero\'s rank',
+      tEs: 'Rango de michi',
+      tEn: 'Kitty rank',
       sEs: 'Tu nivel de poder decide tu rango: '
           'menos de 20 es C, de 20 a 49 es B, 50 a 99 es A, '
           'y 100 o más es S.',
@@ -131,8 +131,8 @@ final world2 = World(
     ),
     lvl(
       id: 'w2l5',
-      tEs: 'El año bisiesto',
-      tEn: 'The leap year',
+      tEs: 'El año saltarín',
+      tEn: 'The leaping year',
       sEs: 'El calendario de la arena tiene años especiales. '
           'Un año es bisiesto si es múltiplo de 4, '
           'pero no de 100... a menos que también sea de 400.',
@@ -161,8 +161,8 @@ final world2 = World(
     ),
     lvl(
       id: 'w2l6',
-      tEs: 'El mayor de tres',
-      tEn: 'The largest of three',
+      tEs: 'El más chonky de tres',
+      tEn: 'The chonkiest of three',
       sEs: 'Tres cofres, uno tiene más oro.',
       sEn: 'Three chests, one has more gold.',
       dEs: 'Lee tres enteros a, b, c. Imprime el mayor.',
@@ -186,8 +186,8 @@ final world2 = World(
     ),
     lvl(
       id: 'w2l7',
-      tEs: 'La calculadora de la arena',
-      tEn: 'The arena calculator',
+      tEs: 'La calculadora del michi',
+      tEn: 'The kitty calculator',
       sEs: 'Un artefacto calcula +, -, * según el símbolo que le des. '
           'El símbolo se lee en una variable char.',
       sEn: 'An artifact computes +, -, * based on the symbol you give it. '
@@ -215,8 +215,8 @@ final world2 = World(
     ),
     lvl(
       id: 'w2l8',
-      tEs: 'La puerta doble',
-      tEn: 'The double door',
+      tEs: 'La gatera doble',
+      tEn: 'The double cat flap',
       sEs: 'La puerta exige DOS condiciones a la vez: '
           'ataque de al menos 50 Y escudo de al menos 30.',
       sEn: 'The door requires TWO conditions at once: '
@@ -243,8 +243,8 @@ final world2 = World(
     ),
     lvl(
       id: 'w2l9',
-      tEs: 'El triángulo imposible',
-      tEn: 'The impossible triangle',
+      tEs: 'La caja imposible',
+      tEn: 'The impossible box',
       sEs: 'No toda figura de tres lados es un triángulo: '
           'cada lado debe ser menor que la suma de los otros dos.',
       sEn: 'Not every three-sided figure is a triangle: '
@@ -273,8 +273,8 @@ final world2 = World(
     ),
     lvl(
       id: 'w2l10',
-      tEs: 'JEFE: Piedra, papel o tijeras',
-      tEn: 'BOSS: Rock, paper, scissors',
+      tEs: 'JEFE: Gato, pepino o pan',
+      tEn: 'BOSS: Cat, cucumber or bread',
       sEs: 'El jefe te reta al juego clásico. '
           '0=piedra, 1=papel, 2=tijeras. '
           'Piedra gana a tijeras, tijeras a papel, papel a piedra.',

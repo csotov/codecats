@@ -5,16 +5,16 @@ import 'catalog.dart';
 /// grid paths, knapsack, LIS, Kadane, min-cost path. All iterative.
 final world11 = World(
   id: 'w11',
-  titleEs: 'Tesorería Dinámica',
-  titleEn: 'Dynamic Treasury',
+  titleEs: 'La Tesorería de Croquetas',
+  titleEn: 'The Kibble Treasury',
   descEs: 'Programación dinámica de verdad: monedas, mochila, caminos y más.',
   descEn: 'Real dynamic programming: coins, knapsack, paths and more.',
   icon: '◆',
   levels: [
     lvl(
       id: 'w11l1',
-      tEs: 'Las escaleras infinitas',
-      tEn: 'The endless stairs',
+      tEs: 'Las escaleras del gato',
+      tEn: 'The cat stairs',
       sEs: 'Subes una escalera saltando de a 1 o de a 2 peldaños. '
           '¿De cuántas formas distintas puedes llegar arriba?',
       sEn: 'You climb a stairway jumping 1 or 2 steps at a time. '
@@ -55,8 +55,8 @@ final world11 = World(
     ),
     lvl(
       id: 'w11l2',
-      tEs: 'Cambio exacto',
-      tEn: 'Exact change',
+      tEs: 'Cambio exacto para el atún',
+      tEn: 'Exact change for tuna',
       sEs: 'El mercader solo acepta cambio exacto y quiere usar '
           'la menor cantidad de monedas posible.',
       sEn: 'The merchant only accepts exact change and wants '
@@ -99,8 +99,8 @@ final world11 = World(
     ),
     lvl(
       id: 'w11l3',
-      tEs: 'El ladrón silencioso',
-      tEn: 'The silent thief',
+      tEs: 'El gato ladrón',
+      tEn: 'The burglar cat',
       sEs: 'Un ladrón roba casas en una calle, pero si roba dos '
           'casas SEGUIDAS suena la alarma.',
       sEn: 'A thief robs houses on a street, but if he robs '
@@ -144,8 +144,8 @@ final world11 = World(
     ),
     lvl(
       id: 'w11l4',
-      tEs: 'Caminos en la ciudad',
-      tEn: 'Paths through the city',
+      tEs: 'Caminos del gato callejero',
+      tEn: 'Stray cat paths',
       sEs: 'La ciudad es una cuadrícula. El héroe solo puede '
           'avanzar hacia la DERECHA o hacia ABAJO.',
       sEn: 'The city is a grid. The hero can only move '
@@ -187,8 +187,8 @@ final world11 = World(
     ),
     lvl(
       id: 'w11l5',
-      tEs: 'La mochila del guerrero',
-      tEn: 'The warrior knapsack',
+      tEs: 'La mochila de croquetas',
+      tEn: 'The kibble knapsack',
       sEs: 'La mochila solo aguanta un peso máximo. Cada objeto '
           'tiene peso y valor. ¿Cuál es el botín perfecto?',
       sEn: 'The knapsack only holds a maximum weight. Each item '
@@ -234,8 +234,8 @@ final world11 = World(
     ),
     lvl(
       id: 'w11l6',
-      tEs: 'La subsecuencia creciente',
-      tEn: 'The rising subsequence',
+      tEs: 'La fila creciente de michis',
+      tEn: 'The rising kitty row',
       sEs: 'De la fila de guerreros quieres elegir el grupo más '
           'largo cuyas alturas nunca bajen de izquierda a derecha.',
       sEn: 'From the row of warriors you want to pick the '
@@ -279,8 +279,8 @@ final world11 = World(
     ),
     lvl(
       id: 'w11l7',
-      tEs: 'El tesoro continuo',
-      tEn: 'The continuous treasure',
+      tEs: 'La fila de croquetas',
+      tEn: 'The kibble row',
       sEs: 'Un camino tiene tramos con oro y tramos malditos '
           '(valores negativos). Busca el tramo seguido más '
           'valioso.',
@@ -325,8 +325,8 @@ final world11 = World(
     ),
     lvl(
       id: 'w11l8',
-      tEs: 'JEFE: El camino del héroe',
-      tEn: 'BOSS: The hero path',
+      tEs: 'JEFE: El camino del michi',
+      tEn: 'BOSS: The kitty path',
       sEs: 'Cada casilla del camino cobra un peaje. El héroe '
           'solo avanza DERECHA o ABAJO y quiere pagar lo mínimo.',
       sEn: 'Every cell on the road charges a toll. The hero '

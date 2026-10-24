@@ -4,16 +4,16 @@ import 'catalog.dart';
 /// World 3 — Loops: for, while, accumulators, digits, patterns.
 final world3 = World(
   id: 'w3',
-  titleEs: 'Torre de las Repeticiones',
-  titleEn: 'Tower of Repetition',
+  titleEs: 'El Salón de los Zoomies',
+  titleEn: 'The Zoomies Hall',
   descEs: 'for y while: haz mil cosas sin repetir tu código.',
   descEn: 'for and while: do a thousand things without repeating code.',
   icon: '↻',
   levels: [
     lvl(
       id: 'w3l1',
-      tEs: 'La escalera de números',
-      tEn: 'The number staircase',
+      tEs: 'Contando croquetas',
+      tEn: 'Counting kibble',
       sEs: 'El bucle for repite un bloque muchas veces. '
           'for (int i = 1; i <= n; i++) va de 1 hasta n.',
       sEn: 'The for loop repeats a block many times. '
@@ -37,8 +37,8 @@ final world3 = World(
     ),
     lvl(
       id: 'w3l2',
-      tEs: 'Cuenta regresiva',
-      tEn: 'Countdown',
+      tEs: 'Cuenta atrás para el salto',
+      tEn: 'Countdown to the jump',
       sEs: 'El portal se abre con una cuenta regresiva. '
           'Esta vez el bucle va hacia atrás.',
       sEn: 'The portal opens with a countdown. '
@@ -65,8 +65,8 @@ final world3 = World(
     ),
     lvl(
       id: 'w3l3',
-      tEs: 'El cofre acumulador',
-      tEn: 'The accumulator chest',
+      tEs: 'La bolsa de premios',
+      tEn: 'The treat bag',
       sEs: 'Un acumulador es una variable que va sumando. '
           'suma = suma + i dentro del bucle.',
       sEn: 'An accumulator is a variable that keeps adding. '
@@ -93,8 +93,8 @@ final world3 = World(
     ),
     lvl(
       id: 'w3l4',
-      tEs: 'La bolsa de monedas',
-      tEn: 'The coin pouch',
+      tEs: 'La alcancía del gato',
+      tEn: 'The cat piggy bank',
       sEs: 'Primero lees cuántas monedas hay, '
           'luego lees cada una y las sumas.',
       sEn: 'First you read how many coins there are, '
@@ -120,8 +120,8 @@ final world3 = World(
     ),
     lvl(
       id: 'w3l5',
-      tEs: 'Cazando pares',
-      tEn: 'Hunting evens',
+      tEs: 'Cazando pares de ratones',
+      tEn: 'Hunting mouse pairs',
       sEs: 'Entre todas las monedas, ¿cuántas son pares? '
           'Un contador es un acumulador que suma 1.',
       sEn: 'Among all the coins, how many are even? '
@@ -145,8 +145,8 @@ final world3 = World(
     ),
     lvl(
       id: 'w3l6',
-      tEs: 'El factorial explosivo',
-      tEn: 'The explosive factorial',
+      tEs: 'El zoomie factorial',
+      tEn: 'The factorial zoomies',
       sEs: 'n! = 1×2×3×...×n crece rapidísimo. '
           'Por eso usamos long long (enteros grandes).',
       sEn: 'n! = 1×2×3×...×n grows incredibly fast. '
@@ -169,8 +169,8 @@ final world3 = World(
     ),
     lvl(
       id: 'w3l7',
-      tEs: 'La tabla del guerrero',
-      tEn: 'The warrior\'s table',
+      tEs: 'La tabla de rasguños',
+      tEn: 'The scratching table',
       sEs: 'Las tablas de multiplicar son un bucle disfrazado.',
       sEn: 'Multiplication tables are a loop in disguise.',
       dEs: 'Lee n. Imprime n×1, n×2, ..., n×10 en una sola línea '
@@ -195,8 +195,8 @@ final world3 = World(
     ),
     lvl(
       id: 'w3l8',
-      tEs: 'Los dígitos del dragón',
-      tEn: 'The dragon\'s digits',
+      tEs: 'Los dígitos del michi',
+      tEn: 'The kitty digits',
       sEs: 'n % 10 da el último dígito y n / 10 lo borra. '
           'Con while vas sacando dígito por dígito.',
       sEn: 'n % 10 gives the last digit and n / 10 erases it. '
@@ -219,8 +219,8 @@ final world3 = World(
     ),
     lvl(
       id: 'w3l9',
-      tEs: 'La pirámide de estrellas',
-      tEn: 'The star pyramid',
+      tEs: 'La pirámide de gatitos',
+      tEn: 'The kitten pyramid',
       sEs: 'Un bucle dentro de otro bucle: para cada fila, '
           'otro for dibuja sus asteriscos.',
       sEn: 'A loop inside another loop: for each row, '
@@ -246,8 +246,8 @@ final world3 = World(
     ),
     lvl(
       id: 'w3l10',
-      tEs: 'JEFE: FIZZ BUZZ',
-      tEn: 'BOSS: FIZZ BUZZ',
+      tEs: 'JEFE: MIAU WOW',
+      tEn: 'BOSS: MEOW WOW',
       sEs: 'El juego favorito de los jueces de programación. '
           'Múltiplos de 3 dicen FIZZ, de 5 BUZZ, de ambos FIZZBUZZ.',
       sEn: 'The favorite game of programming judges. '

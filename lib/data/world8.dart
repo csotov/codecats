@@ -4,16 +4,16 @@ import 'catalog.dart';
 /// World 8 — Olympiad algorithms: the real competitive-programming tools.
 final world8 = World(
   id: 'w8',
-  titleEs: 'Camino de la Olimpiada',
-  titleEn: 'Road to the Olympiad',
+  titleEs: 'La Universidad Gatuna',
+  titleEn: 'Cat University',
   descEs: 'Las técnicas reales de la IOI: prefix sums, greedy, DP y más.',
   descEn: 'Real IOI techniques: prefix sums, greedy, DP and more.',
   icon: '★',
   levels: [
     lvl(
       id: 'w8l1',
-      tEs: 'Sumas relámpago (prefix sums)',
-      tEn: 'Lightning sums (prefix sums)',
+      tEs: 'Croquetas acumuladas',
+      tEn: 'Cumulative kibble',
       sEs: 'Truco de campeón: precalcula sumas acumuladas '
           'pref[i] = a[0]+...+a[i-1]. Cada consulta [l, r) '
           'se responde en O(1): pref[r] - pref[l].',
@@ -49,8 +49,8 @@ final world8 = World(
     ),
     lvl(
       id: 'w8l2',
-      tEs: 'La ventana mágica',
-      tEn: 'The magic window',
+      tEs: 'La ventana del gato',
+      tEn: 'The cat window',
       sEs: 'Ventana deslizante: la mejor suma de k elementos '
           'seguidos, moviendo la ventana de a un paso.',
       sEn: 'Sliding window: the best sum of k consecutive '
@@ -81,8 +81,8 @@ final world8 = World(
     ),
     lvl(
       id: 'w8l3',
-      tEs: 'El cambio codicioso (greedy)',
-      tEn: 'The greedy change',
+      tEs: 'El gato avaricioso (greedy)',
+      tEn: 'The greedy cat (greedy)',
       sEs: 'Estrategia codiciosa (greedy): toma siempre la '
           'moneda más grande posible. Con monedas 1,5,10,25 '
           'siempre da el mínimo.',
@@ -107,8 +107,8 @@ final world8 = World(
     ),
     lvl(
       id: 'w8l4',
-      tEs: 'El salto del gato',
-      tEn: 'The cat jump',
+      tEs: 'El gran salto',
+      tEn: 'The big jump',
       sEs: 'Otro greedy famoso: lleva la cuenta de lo más '
           'lejos que puedes llegar.',
       sEn: 'Another famous greedy: track the farthest '
@@ -141,8 +141,8 @@ final world8 = World(
     ),
     lvl(
       id: 'w8l5',
-      tEs: 'Programación dinámica: la escalera',
-      tEn: 'Dynamic programming: the stairs',
+      tEs: 'La escalera de los gatos',
+      tEn: 'The cats staircase',
       sEs: 'DP = guardar respuestas parciales para no '
           'recalcular. formas[n] = formas[n-1] + formas[n-2]: '
           '¡fibonacci con arreglo!',
@@ -172,8 +172,8 @@ final world8 = World(
     ),
     lvl(
       id: 'w8l6',
-      tEs: 'La ruta de menor costo',
-      tEn: 'The lowest-cost route',
+      tEs: 'La ruta del vago',
+      tEn: 'The lazy route',
       sEs: 'DP clásico: el costo de cada casilla es su precio '
           'más el mejor costo de llegar a ella.',
       sEn: 'Classic DP: each square\'s cost is its price plus '
@@ -213,8 +213,8 @@ final world8 = World(
     ),
     lvl(
       id: 'w8l7',
-      tEs: 'El mapa del tesoro (DFS)',
-      tEn: 'The treasure map (DFS)',
+      tEs: 'El mapa de la gatera (DFS)',
+      tEn: 'The cattery map (DFS)',
       sEs: 'DFS con recursión: explora en 4 direcciones '
           'marcando lo visitado. ¡Tu primer algoritmo de grafos!',
       sEn: 'DFS with recursion: explore in 4 directions '
@@ -258,8 +258,8 @@ final world8 = World(
     ),
     lvl(
       id: 'w8l8',
-      tEs: 'JEFE FINAL: El poder de Kadane',
-      tEn: 'FINAL BOSS: Kadane\'s power',
+      tEs: 'JEFE FINAL: El siestón de Kadane',
+      tEn: 'FINAL BOSS: Kadane nap',
       sEs: 'El algoritmo legendario: la máxima suma de un '
           'subarreglo continuo. Si la suma acumulada se vuelve '
           'negativa, empieza de nuevo. Este problema sale en '

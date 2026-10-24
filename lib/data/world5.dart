@@ -4,16 +4,16 @@ import 'catalog.dart';
 /// World 5 — Functions and recursion.
 final world5 = World(
   id: 'w5',
-  titleEs: 'Cumbre de Funciones',
-  titleEn: 'Function Peak',
+  titleEs: 'La Torre de los Trucos',
+  titleEn: 'The Trick Tower',
   descEs: 'Funciones: tus propios hechizos reutilizables.',
   descEn: 'Functions: your own reusable spells.',
   icon: 'ƒ',
   levels: [
     lvl(
       id: 'w5l1',
-      tEs: 'Tu primer hechizo',
-      tEn: 'Your first spell',
+      tEs: 'Tu primer truco',
+      tEn: 'Your first trick',
       sEs: 'Una función es un mini-programa: recibe datos '
           'y devuelve un resultado con return.',
       sEn: 'A function is a mini-program: it receives data '
@@ -38,8 +38,8 @@ final world5 = World(
     ),
     lvl(
       id: 'w5l2',
-      tEs: 'El trío supremo',
-      tEn: 'The supreme trio',
+      tEs: 'El trío de bigotes',
+      tEn: 'The whisker trio',
       sEs: 'Las funciones pueden recibir varios parámetros.',
       sEn: 'Functions can take several parameters.',
       dEs: 'Escribe int mayor(int a, int b, int c) que devuelva '
@@ -62,8 +62,8 @@ final world5 = World(
     ),
     lvl(
       id: 'w5l3',
-      tEs: 'El oráculo booleano',
-      tEn: 'The boolean oracle',
+      tEs: 'El oráculo gatuno',
+      tEn: 'The feline oracle',
       sEs: 'bool es un tipo que solo vale true o false. '
           'Las funciones pueden devolver respuestas de sí/no.',
       sEn: 'bool is a type that is only true or false. '
@@ -88,8 +88,8 @@ final world5 = World(
     ),
     lvl(
       id: 'w5l4',
-      tEs: 'La potencia del fénix',
-      tEn: 'The phoenix power',
+      tEs: 'El poder del gato',
+      tEn: 'Cat power',
       sEs: 'Las funciones también pueden tener bucles dentro.',
       sEn: 'Functions can have loops inside too.',
       dEs: 'Escribe long long pot(int base, int e) que calcule '
@@ -115,8 +115,8 @@ final world5 = World(
     ),
     lvl(
       id: 'w5l5',
-      tEs: 'La recursión: factorial',
-      tEn: 'Recursion: factorial',
+      tEs: 'Gato dentro de gato',
+      tEn: 'Cat inside a cat',
       sEs: 'Recursión = una función que se llama a sí misma. '
           'n! = n × (n-1)! y el caso base es 0! = 1.',
       sEn: 'Recursion = a function that calls itself. '
@@ -141,8 +141,8 @@ final world5 = World(
     ),
     lvl(
       id: 'w5l6',
-      tEs: 'La escalera de Fibonacci',
-      tEn: 'The Fibonacci stairs',
+      tEs: 'La escalera de Fibonagato',
+      tEn: 'The Fibonacat stairs',
       sEs: 'fib(n) = fib(n-1) + fib(n-2). Cada número es la suma '
           'de los dos anteriores: 0, 1, 1, 2, 3, 5, 8...',
       sEn: 'fib(n) = fib(n-1) + fib(n-2). Each number is the sum '
@@ -176,8 +176,8 @@ final world5 = World(
     ),
     lvl(
       id: 'w5l7',
-      tEs: 'El máximo común divisor',
-      tEn: 'The greatest common divisor',
+      tEs: 'El reparto justo de atún',
+      tEn: 'The fair tuna split',
       sEs: 'El algoritmo de Euclides tiene 2300 años y sigue '
           'siendo el mejor: mcd(a,b) = mcd(b, a%b).',
       sEn: 'Euclid\'s algorithm is 2300 years old and still '
@@ -207,8 +207,8 @@ final world5 = World(
     ),
     lvl(
       id: 'w5l8',
-      tEs: '¿Es primo?',
-      tEn: 'Is it prime?',
+      tEs: '¿Michi primo?',
+      tEn: 'Prime kitty?',
       sEs: 'Un primo solo se divide entre 1 y él mismo. '
           'Basta revisar divisores hasta la raíz cuadrada.',
       sEn: 'A prime is only divisible by 1 and itself. '
@@ -236,8 +236,8 @@ final world5 = World(
     ),
     lvl(
       id: 'w5l9',
-      tEs: 'El eco recursivo',
-      tEn: 'The recursive echo',
+      tEs: 'El eco de la caja',
+      tEn: 'The box echo',
       sEs: 'Recursión sobre dígitos: sumaDigitos(n) = '
           'último dígito + sumaDigitos(n/10).',
       sEn: 'Recursion on digits: sumaDigitos(n) = '
@@ -260,8 +260,8 @@ final world5 = World(
     ),
     lvl(
       id: 'w5l10',
-      tEs: 'JEFE: La cuenta de primos',
-      tEn: 'BOSS: The prime count',
+      tEs: 'JEFE: Censo de gatos primos',
+      tEn: 'BOSS: Prime cat census',
       sEs: 'El jefe quiere saber cuántos primos hay entre '
           '1 y n. Combina tu función esPrimo con un bucle.',
       sEn: 'The boss wants to know how many primes there are '

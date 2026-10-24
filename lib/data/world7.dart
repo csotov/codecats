@@ -4,16 +4,16 @@ import 'catalog.dart';
 /// World 7 — Data structures built with plain arrays.
 final world7 = World(
   id: 'w7',
-  titleEs: 'Fortaleza de Datos',
-  titleEn: 'Data Fortress',
+  titleEs: 'La Torre de Cajas',
+  titleEn: 'The Box Tower',
   descEs: 'Pilas, colas y frecuencias: estructuras hechas a mano.',
   descEn: 'Stacks, queues and frequencies: hand-made structures.',
   icon: '⛁',
   levels: [
     lvl(
       id: 'w7l1',
-      tEs: 'La torre de platos (pila)',
-      tEn: 'The plate tower (stack)',
+      tEs: 'La torre de cajas (pila)',
+      tEn: 'The box tower (stack)',
       sEs: 'Una pila (stack) es como una torre de platos: '
           'el último en llegar es el primero en salir (LIFO). '
           'Un arreglo + un contador "tope" la implementan.',
@@ -53,8 +53,8 @@ final world7 = World(
     ),
     lvl(
       id: 'w7l2',
-      tEs: 'La fila del mercado (cola)',
-      tEn: 'The market line (queue)',
+      tEs: 'La fila por el atún (cola)',
+      tEn: 'The tuna line (queue)',
       sEs: 'Una cola (queue) es como la fila del mercado: '
           'el primero en llegar es el primero en salir (FIFO).',
       sEn: 'A queue is like a market line: '
@@ -89,8 +89,8 @@ final world7 = World(
     ),
     lvl(
       id: 'w7l3',
-      tEs: 'El censo de gemas',
-      tEn: 'The gem census',
+      tEs: 'El censo de gatos',
+      tEn: 'The cat census',
       sEs: 'Un arreglo de contadores: frec[v] cuenta cuántas '
           'veces aparece v. ¡La base del counting sort!',
       sEn: 'An array of counters: frec[v] counts how many '
@@ -123,8 +123,8 @@ final world7 = World(
     ),
     lvl(
       id: 'w7l4',
-      tEs: 'Sin repetidos',
-      tEn: 'No duplicates',
+      tEs: 'Sin gatos repetidos',
+      tEn: 'No duplicate cats',
       sEs: 'En un arreglo ORDENADO los repetidos están juntos: '
           'imprime cada valor solo la primera vez que aparece.',
       sEn: 'In a SORTED array duplicates sit together: '
@@ -151,8 +151,8 @@ final world7 = World(
     ),
     lvl(
       id: 'w7l5',
-      tEs: 'La gema favorita',
-      tEn: 'The favorite gem',
+      tEs: 'El juguete favorito',
+      tEn: 'The favorite toy',
       sEs: 'Con el arreglo de frecuencias, hallar el más '
           'popular es buscar el máximo contador.',
       sEn: 'With the frequency array, finding the most '
@@ -182,8 +182,8 @@ final world7 = World(
     ),
     lvl(
       id: 'w7l6',
-      tEs: 'Los paréntesis sagrados',
-      tEn: 'The sacred parentheses',
+      tEs: 'Los bigotes balanceados',
+      tEn: 'Balanced whiskers',
       sEs: 'Un contador que sube con "(" y baja con ")" '
           'es una pila invisible. Si baja de 0, ¡desbalance!',
       sEn: 'A counter that goes up on "(" and down on ")" '
@@ -213,8 +213,8 @@ final world7 = World(
     ),
     lvl(
       id: 'w7l7',
-      tEs: 'Fusión de ejércitos',
-      tEn: 'Army merge',
+      tEs: 'Fusión de manadas',
+      tEn: 'Clowder merge',
       sEs: 'Dos arreglos ordenados se fusionan como un cierre: '
           'compara frentes y saca el menor (técnica "merge").',
       sEn: 'Two sorted arrays merge like a zipper: '
@@ -250,8 +250,8 @@ final world7 = World(
     ),
     lvl(
       id: 'w7l8',
-      tEs: 'JEFE: El archivo del tesoro',
-      tEn: 'BOSS: The treasure archive',
+      tEs: 'JEFE: El archivo de la gatera',
+      tEn: 'BOSS: The cattery archive',
       sEs: 'El tesoro es una bóveda de pilas: cada entrada '
           'apila una gema, y las consultas piden la gema '
           'del tope de una bóveda concreta.',

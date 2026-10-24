@@ -5,16 +5,16 @@ import 'catalog.dart';
 /// modular arithmetic, factorization. The math core of every contest.
 final world10 = World(
   id: 'w10',
-  titleEs: 'Templo de los Números',
-  titleEn: 'Temple of Numbers',
+  titleEs: 'El Templo del Atún',
+  titleEn: 'The Tuna Temple',
   descEs: 'Los secretos de los números: primos, mcd, criba y potencias modulares.',
   descEn: 'The secrets of numbers: primes, gcd, sieve and modular powers.',
   icon: 'π',
   levels: [
     lvl(
       id: 'w10l1',
-      tEs: 'Contando divisores',
-      tEn: 'Counting divisors',
+      tEs: 'Dividiendo las croquetas',
+      tEn: 'Splitting the kibble',
       sEs: 'Cada número tiene un ejército de divisores que lo '
           'acompañan. ¿Cuántos tiene este?',
       sEn: 'Every number has an army of divisors that follow it. '
@@ -55,8 +55,8 @@ final world10 = World(
     ),
     lvl(
       id: 'w10l2',
-      tEs: '¿Es primo?',
-      tEn: 'Is it prime?',
+      tEs: '¿Michi primo?',
+      tEn: 'Prime kitty?',
       sEs: 'Los números primos son los átomos de las matemáticas: '
           'nadie los puede dividir.',
       sEn: 'Prime numbers are the atoms of mathematics: '
@@ -95,8 +95,8 @@ final world10 = World(
     ),
     lvl(
       id: 'w10l3',
-      tEs: 'El secreto de Euclides',
-      tEn: 'The secret of Euclid',
+      tEs: 'El secreto de Eucligato',
+      tEn: 'The Euclicat secret',
       sEs: 'Hace 2300 años, Euclides descubrió un truco que aún '
           'usan todas las computadoras: el máximo común divisor.',
       sEn: '2300 years ago, Euclid discovered a trick every '
@@ -138,8 +138,8 @@ final world10 = World(
     ),
     lvl(
       id: 'w10l4',
-      tEs: 'El mínimo común',
-      tEn: 'The least common',
+      tEs: 'El comedero común',
+      tEn: 'The shared bowl',
       sEs: 'Dos guerreros entrenan cada a y cada b días. ¿En '
           'cuántos días coincidirán? Eso es el mínimo común '
           'múltiplo.',
@@ -179,8 +179,8 @@ final world10 = World(
     ),
     lvl(
       id: 'w10l5',
-      tEs: 'La criba mágica',
-      tEn: 'The magic sieve',
+      tEs: 'La criba de la gatera',
+      tEn: 'The cattery sieve',
       sEs: 'Eratóstenes inventó un tamiz que separa los primos '
           'de los compuestos a velocidad de rayo.',
       sEn: 'Eratosthenes invented a sieve that separates primes '
@@ -221,8 +221,8 @@ final world10 = World(
     ),
     lvl(
       id: 'w10l6',
-      tEs: 'El k-ésimo primo',
-      tEn: 'The k-th prime',
+      tEs: 'El primo gatuno número k',
+      tEn: 'The k-th prime cat',
       sEs: 'El oráculo pregunta: ¿cuál es el primo número k en '
           'la lista? (El primero es 2).',
       sEn: 'The oracle asks: what is the k-th prime in '
@@ -261,8 +261,8 @@ final world10 = World(
     ),
     lvl(
       id: 'w10l7',
-      tEs: 'Poder modular',
-      tEn: 'Modular power',
+      tEs: 'Poder modular del michi',
+      tEn: 'Modular kitty power',
       sEs: 'Las potencias crecen tan rápido que ni la memoria '
           'de la computadora las aguanta. La solución: trabajar '
           'siempre con el residuo.',
@@ -307,8 +307,8 @@ final world10 = World(
     ),
     lvl(
       id: 'w10l8',
-      tEs: 'JEFE: Factoriza todo',
-      tEn: 'BOSS: Factorize everything',
+      tEs: 'JEFE: Factoriza el atún',
+      tEn: 'BOSS: Factorize the tuna',
       sEs: 'El guardián del templo solo abre la puerta si '
           'descompones el número en sus factores primos.',
       sEn: 'The temple guardian only opens the door if you '

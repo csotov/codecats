@@ -4,16 +4,16 @@ import 'catalog.dart';
 /// World 1 — Beginnings: cout, cin, variables, arithmetic.
 final world1 = World(
   id: 'w1',
-  titleEs: 'Arena de los Inicios',
-  titleEn: 'Arena of Beginnings',
+  titleEs: 'La Guardería Gatuna',
+  titleEn: 'The Kitten Nursery',
   descEs: 'Tu primer programa: imprimir, leer y calcular.',
   descEn: 'Your first programs: print, read and calculate.',
   icon: '⚔',
   levels: [
     lvl(
       id: 'w1l1',
-      tEs: 'El saludo del guerrero',
-      tEn: 'The warrior\'s greeting',
+      tEs: 'El primer miau',
+      tEn: 'The first meow',
       sEs: 'Todo héroe empieza saludando a la arena. '
           'Los programas hablan usando cout.',
       sEn: 'Every hero starts by greeting the arena. '
@@ -40,8 +40,8 @@ final world1 = World(
     ),
     lvl(
       id: 'w1l2',
-      tEs: 'Grito de batalla',
-      tEn: 'Battle cry',
+      tEs: 'Miau miau doble',
+      tEn: 'Double meow',
       sEs: 'La arena responde en dos líneas. Cada << endl; salta de línea.',
       sEn: 'The arena answers in two lines. Each << endl; jumps a line.',
       dEs: 'Imprime dos líneas: la primera dice Code y la segunda dice Arena',
@@ -65,8 +65,8 @@ final world1 = World(
     ),
     lvl(
       id: 'w1l3',
-      tEs: 'El eco',
-      tEn: 'The echo',
+      tEs: 'El eco del gato',
+      tEn: 'The cat echo',
       sEs: 'Un loro de la arena repite números. '
           'cin >> variable lee un número de la entrada.',
       sEn: 'An arena parrot repeats numbers. '
@@ -93,8 +93,8 @@ final world1 = World(
     ),
     lvl(
       id: 'w1l4',
-      tEs: 'Suma de fuerzas',
-      tEn: 'Sum of forces',
+      tEs: 'Croquetas para dos',
+      tEn: 'Kibble for two',
       sEs: 'Dos guerreros unen su poder. '
           'Lee dos números y devuelve su suma.',
       sEn: 'Two warriors join their power. '
@@ -121,8 +121,8 @@ final world1 = World(
     ),
     lvl(
       id: 'w1l5',
-      tEs: 'La poción multiplicadora',
-      tEn: 'The multiplying potion',
+      tEs: 'Patas multiplicadoras',
+      tEn: 'Multiplying paws',
       sEs: 'La poción combina dos ingredientes multiplicándolos.',
       sEn: 'The potion mixes two ingredients by multiplying them.',
       dEs: 'Lee dos enteros e imprime su producto (a * b).',
@@ -145,8 +145,8 @@ final world1 = World(
     ),
     lvl(
       id: 'w1l6',
-      tEs: 'El siguiente nivel',
-      tEn: 'The next level',
+      tEs: 'Una siesta más',
+      tEn: 'One more nap',
       sEs: 'Subir de nivel es sumar 1. ¡Así de simple!',
       sEn: 'Leveling up is just adding 1. That simple!',
       dEs: 'Lee un entero n e imprime n + 1.',
@@ -170,8 +170,8 @@ final world1 = World(
     ),
     lvl(
       id: 'w1l7',
-      tEs: 'División y botín',
-      tEn: 'Division and loot',
+      tEs: 'Repartiendo el atún',
+      tEn: 'Sharing the tuna',
       sEs: 'a / b es la división entera y a % b es lo que sobra '
           '(el residuo). ¡El residuo es oro para un programador!',
       sEn: 'a / b is integer division and a % b is the leftover '
@@ -204,8 +204,8 @@ final world1 = World(
     ),
     lvl(
       id: 'w1l8',
-      tEs: 'El reloj de la arena',
-      tEn: 'The arena clock',
+      tEs: 'La hora de la siesta',
+      tEn: 'Nap o clock',
       sEs: 'Los minutos de entrenamiento hay que convertirlos '
           'a horas y minutos.',
       sEn: 'Training minutes must be converted '
@@ -227,8 +227,8 @@ final world1 = World(
     ),
     lvl(
       id: 'w1l9',
-      tEs: 'El intercambio',
-      tEn: 'The swap',
+      tEs: 'Cambio de cajas',
+      tEn: 'Box swap',
       sEs: 'Dos guerreros intercambian posiciones. '
           'Para intercambiar valores se usa una variable temporal.',
       sEn: 'Two warriors swap positions. '
@@ -258,8 +258,8 @@ final world1 = World(
     ),
     lvl(
       id: 'w1l10',
-      tEs: 'JEFE: El escudo rectangular',
-      tEn: 'BOSS: The rectangular shield',
+      tEs: 'JEFE: El gato del teclado',
+      tEn: 'BOSS: Keyboard cat',
       sEs: 'El primer jefe forja un escudo. '
           'Necesita el perímetro y el área de un rectángulo.',
       sEn: 'The first boss forges a shield. '

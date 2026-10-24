@@ -5,16 +5,16 @@ import 'catalog.dart';
 /// Everything iterative (explicit stack/queue) — the competitive pattern.
 final world9 = World(
   id: 'w9',
-  titleEs: 'Laberinto de Grafos',
-  titleEn: 'Graph Labyrinth',
+  titleEs: 'El Laberinto del Arenero',
+  titleEn: 'The Litterbox Maze',
   descEs: 'Recorre mapas como un explorador: BFS, flood fill y componentes.',
   descEn: 'Explore maps like an adventurer: BFS, flood fill and components.',
   icon: '⬡',
   levels: [
     lvl(
       id: 'w9l1',
-      tEs: 'El mapa del tesoro',
-      tEn: 'The treasure map',
+      tEs: 'El mapa del arenero',
+      tEn: 'The litterbox map',
       sEs: 'Antes de entrar al laberinto debes saber cuántos muros '
           'tiene. Cada # es una pared.',
       sEn: 'Before entering the labyrinth you must know how many '
@@ -53,8 +53,8 @@ final world9 = World(
     ),
     lvl(
       id: 'w9l2',
-      tEs: 'Vecinos libres',
-      tEn: 'Free neighbors',
+      tEs: 'Vecinos sin perros',
+      tEn: 'Dog-free neighbors',
       sEs: 'Un explorador quiere saber hacia dónde puede moverse. '
           'Desde una casilla puede ir arriba, abajo, izquierda o derecha.',
       sEn: 'An explorer wants to know where he can move. '
@@ -96,7 +96,7 @@ final world9 = World(
     lvl(
       id: 'w9l3',
       tEs: 'Marcando territorio',
-      tEn: 'Claiming territory',
+      tEn: 'Marking territory',
       sEs: 'El gato explorador empieza en S y marca todo lo que '
           'puede alcanzar. ¿Cuántas casillas conquista?',
       sEn: 'The explorer cat starts at S and marks everything it '
@@ -141,8 +141,8 @@ final world9 = World(
     ),
     lvl(
       id: 'w9l4',
-      tEs: '¿Llegas a la meta?',
-      tEn: 'Can you reach the goal?',
+      tEs: '¿Llegas al atún?',
+      tEn: 'Can you reach the tuna?',
       sEs: 'La salida E brilla al otro lado del laberinto. '
           'Pero no todos los mapas tienen camino…',
       sEn: 'The exit E glows across the labyrinth. '
@@ -183,8 +183,8 @@ final world9 = World(
     ),
     lvl(
       id: 'w9l5',
-      tEs: 'El camino más corto',
-      tEn: 'The shortest path',
+      tEs: 'El camino al sillón',
+      tEn: 'The path to the couch',
       sEs: 'El héroe no solo quiere llegar: quiere llegar con el '
           'menor número de pasos. Eso lo hace el poderoso BFS.',
       sEn: 'The hero does not just want to arrive: he wants the '
@@ -229,8 +229,8 @@ final world9 = World(
     ),
     lvl(
       id: 'w9l6',
-      tEs: '¿Cuántas habitaciones?',
-      tEn: 'How many rooms?',
+      tEs: '¿Cuántas gateras?',
+      tEn: 'How many cat rooms?',
       sEs: 'El castillo tiene varias habitaciones separadas por '
           'muros. Cada grupo de casillas juntas es una habitación.',
       sEn: 'The castle has several rooms separated by walls. '
@@ -274,8 +274,8 @@ final world9 = World(
     ),
     lvl(
       id: 'w9l7',
-      tEs: 'La habitación más grande',
-      tEn: 'The biggest room',
+      tEs: 'La gatera más grande',
+      tEn: 'The biggest cat room',
       sEs: 'El gato quiere la habitación más grande del castillo '
           'para dormir la siesta.',
       sEn: 'The cat wants the biggest room in the castle '
@@ -314,8 +314,8 @@ final world9 = World(
     ),
     lvl(
       id: 'w9l8',
-      tEs: 'Tesoros al alcance',
-      tEn: 'Treasures within reach',
+      tEs: 'Croquetas al alcance',
+      tEn: 'Kibble within reach',
       sEs: 'Hay tesoros (T) escondidos por el laberinto, pero el '
           'héroe solo tiene energía para dar K pasos.',
       sEn: 'Treasures (T) are hidden around the labyrinth, but '
@@ -358,8 +358,8 @@ final world9 = World(
     ),
     lvl(
       id: 'w9l9',
-      tEs: '¿A qué distancia queda?',
-      tEn: 'How far is it?',
+      tEs: '¿A qué distancia el sillón?',
+      tEn: 'How far is the couch?',
       sEs: 'El explorador señala una casilla del mapa y pregunta: '
           '¿cuántos pasos me toma llegar ahí?',
       sEn: 'The explorer points to a cell on the map and asks: '
@@ -400,8 +400,8 @@ final world9 = World(
     ),
     lvl(
       id: 'w9l10',
-      tEs: 'JEFE: La gran huida',
-      tEn: 'BOSS: The great escape',
+      tEs: 'JEFE: La gran fuga gatuna',
+      tEn: 'BOSS: The great cat escape',
       sEs: '¡El dragón despertó! El laberinto tiene varias salidas '
           'E. Corre a la MÁS cercana.',
       sEn: 'The dragon woke up! The labyrinth has several '

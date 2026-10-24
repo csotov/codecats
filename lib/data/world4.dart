@@ -4,16 +4,16 @@ import 'catalog.dart';
 /// World 4 — Arrays and C-strings.
 final world4 = World(
   id: 'w4',
-  titleEs: 'Valle de los Arreglos',
-  titleEn: 'Array Valley',
+  titleEs: 'La Caja de Juguetes',
+  titleEn: 'The Toy Box',
   descEs: 'Arreglos: muchas variables con un solo nombre.',
   descEn: 'Arrays: many variables with one name.',
   icon: '▦',
   levels: [
     lvl(
       id: 'w4l1',
-      tEs: 'El espejo del valle',
-      tEn: 'The valley mirror',
+      tEs: 'El gato frente al espejo',
+      tEn: 'Cat in the mirror',
       sEs: 'int a[100] guarda 100 números. a[0] es el primero. '
           'El espejo mágico imprime todo al revés.',
       sEn: 'int a[100] stores 100 numbers. a[0] is the first. '
@@ -47,8 +47,8 @@ final world4 = World(
     ),
     lvl(
       id: 'w4l2',
-      tEs: 'Suma del tesoro',
-      tEn: 'Treasure sum',
+      tEs: 'Suma de croquetas',
+      tEn: 'Kibble sum',
       sEs: 'Recorrer un arreglo sumando es el superpoder '
           'más usado en programación.',
       sEn: 'Walking an array while adding up is the most used '
@@ -77,8 +77,8 @@ final world4 = World(
     ),
     lvl(
       id: 'w4l3',
-      tEs: 'El pico más alto',
-      tEn: 'The tallest peak',
+      tEs: 'El más chonky',
+      tEn: 'The chonkiest',
       sEs: 'Para hallar el máximo: empieza suponiendo que el '
           'primero es el mayor, y compara con todos.',
       sEn: 'To find the maximum: start assuming the first is '
@@ -105,8 +105,8 @@ final world4 = World(
     ),
     lvl(
       id: 'w4l4',
-      tEs: '¿Cuántas espadas?',
-      tEn: 'How many swords?',
+      tEs: '¿Cuántos ratones?',
+      tEn: 'How many mice?',
       sEs: 'Contar cuántas veces aparece un valor: '
           'un if dentro del for que recorre el arreglo.',
       sEn: 'Counting how many times a value appears: '
@@ -133,8 +133,8 @@ final world4 = World(
     ),
     lvl(
       id: 'w4l5',
-      tEs: 'Solo los elegidos',
-      tEn: 'Only the chosen ones',
+      tEs: 'Solo gatos buenos',
+      tEn: 'Only good cats',
       sEs: 'Filtra el arreglo: imprime solo los elementos '
           'que cumplen la condición.',
       sEn: 'Filter the array: print only elements '
@@ -166,8 +166,8 @@ final world4 = World(
     ),
     lvl(
       id: 'w4l6',
-      tEs: 'La palabra misteriosa',
-      tEn: 'The mystery word',
+      tEs: 'El maullido misterioso',
+      tEn: 'The mystery meow',
       sEs: 'char s[105] guarda texto. strlen(s) te dice su largo.',
       sEn: 'char s[105] stores text. strlen(s) tells its length.',
       dEs: 'Lee una palabra s (sin espacios). '
@@ -194,8 +194,8 @@ final world4 = World(
     ),
     lvl(
       id: 'w4l7',
-      tEs: 'El hechizo invertido',
-      tEn: 'The reversed spell',
+      tEs: 'El miau al revés',
+      tEn: 'The backwards meow',
       sEs: 'Invertir un texto: lee la palabra y recórrela '
           'del final al principio.',
       sEn: 'Reversing text: read the word and walk it '
@@ -219,8 +219,8 @@ final world4 = World(
     ),
     lvl(
       id: 'w4l8',
-      tEs: 'Contando vocales',
-      tEn: 'Counting vowels',
+      tEs: 'Contando miaus',
+      tEn: 'Counting meows',
       sEs: 's[i] es la letra en la posición i. '
           'Compara con \'a\', \'e\', \'i\', \'o\', \'u\'.',
       sEn: 's[i] is the letter at position i. '
@@ -248,8 +248,8 @@ final world4 = World(
     ),
     lvl(
       id: 'w4l9',
-      tEs: 'El palíndromo sagrado',
-      tEn: 'The sacred palindrome',
+      tEs: '¿Miau o auim?',
+      tEn: 'Meow or woem?',
       sEs: 'Un palíndromo se lee igual al revés: '
           '"ana", "reconocer". Compara extremos hacia el centro.',
       sEn: 'A palindrome reads the same backwards: '
@@ -276,8 +276,8 @@ final world4 = World(
     ),
     lvl(
       id: 'w4l10',
-      tEs: 'JEFE: Rotación del escudo',
-      tEn: 'BOSS: Shield rotation',
+      tEs: 'JEFE: El gato giratorio',
+      tEn: 'BOSS: The spinning cat',
       sEs: 'El escudo del jefe rota: cada elemento se mueve '
           'k posiciones a la derecha y el último vuelve al inicio.',
       sEn: 'The boss\'s shield rotates: each element moves '
