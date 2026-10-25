@@ -23,6 +23,7 @@ import 'keyboard_scroll.dart';
 import 'level_intro.dart';
 import 'meme_player.dart';
 import '../data/complexity.dart';
+import '../data/halloween.dart';
 import 'professor.dart';
 import 'results.dart';
 import 'theme.dart';
@@ -88,7 +89,9 @@ class _LevelScreenState extends State<LevelScreen>
     super.initState();
     _runner = createRunner();
     _openLevels++;
-    if (widget.level.boss) {
+    if (Halloween.isEventLevel(widget.level.id)) {
+      Sfx.spooky();
+    } else if (widget.level.boss) {
       Sfx.boss();
     } else {
       Sfx.battle();
@@ -177,7 +180,8 @@ class _LevelScreenState extends State<LevelScreen>
     _openLevels--;
     if (_openLevels <= 0) {
       _openLevels = 0;
-      Sfx.menu();
+      // Back to the event screen keeps the spooky music.
+      Halloween.isEventLevel(widget.level.id) ? Sfx.spooky() : Sfx.menu();
     }
     super.dispose();
   }
@@ -309,14 +313,19 @@ class _LevelScreenState extends State<LevelScreen>
 
     // Hints are paid in Miaudólares now, so they no longer cost stars.
     final stars = _attemptsThisSession <= 1 ? 3 : 2;
+    // Replaying a won level gives no cat, only rarely (1 in 8) one.
+    final replay = Progress.instance.of(widget.level.id).solved;
+    final rewardCat = !replay || math.Random().nextInt(8) == 0;
     final earned = Progress.instance.recordSolve(
         widget.level.id, widget.level.xp, stars,
         codeMode: !_usesBlocks || _promotedToCode, boss: widget.level.boss);
-    final newCats = Progress.instance.checkCatUnlocks();
+    final newCats =
+        rewardCat ? Progress.instance.checkCatUnlocks() : const <CatMeme>[];
 
     if (!mounted) return;
     final next = nextLevel(widget.level.id);
-    final winCat = _victoryCat(stars);
+    // One cat per win at most: a new Gatoteca cat replaces the sticker.
+    final winCat = rewardCat && newCats.isEmpty ? _victoryCat(stars) : null;
     if (winCat != null) Progress.instance.markSeen(winCat.id);
     await VictoryOverlay.show(
       context,

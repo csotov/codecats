@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/catalog.dart';
+import '../data/halloween.dart';
 import '../data/worlds.dart';
 import '../l10n.dart';
 import '../models.dart';
@@ -10,6 +11,7 @@ import 'coin.dart';
 import 'collection.dart';
 import 'contest.dart';
 import 'dashboard.dart';
+import 'halloween_screen.dart';
 import 'keyboard_scroll.dart';
 import 'level_screen.dart';
 import 'profiles.dart';
@@ -58,6 +60,12 @@ class _MapScreenState extends State<MapScreen> {
             actions: [
               const CoinBadge(),
               _profileChip(),
+              if (Halloween.active)
+                IconButton(
+                  tooltip: l.t('tip_halloween'),
+                  icon: const Text('🎃', style: TextStyle(fontSize: 22)),
+                  onPressed: _openHalloween,
+                ),
               IconButton(
                 tooltip: l.t('tip_contest'),
                 icon: const Icon(Icons.emoji_events_outlined),
@@ -89,10 +97,7 @@ class _MapScreenState extends State<MapScreen> {
                 icon: Icon(Sfx.muted
                     ? Icons.music_off_outlined
                     : Icons.music_note_outlined),
-                onPressed: () async {
-                  await Sfx.toggleMute();
-                  if (mounted) setState(() {});
-                },
+                onPressed: _soundPanel,
               ),
               _langButton(),
               IconButton(
@@ -108,6 +113,7 @@ class _MapScreenState extends State<MapScreen> {
               controller: _scroll,
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 30),
               children: [
+                if (Halloween.active) _halloweenBanner(),
                 const RankXpBar(),
                 const SizedBox(height: 6),
                 _missionsCard(),
@@ -289,6 +295,124 @@ class _MapScreenState extends State<MapScreen> {
       MaterialPageRoute(
           builder: (_) => ContestScreen(problems: pickContestLevels())),
     );
+  }
+
+  void _openHalloween() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const HalloweenScreen()),
+    );
+  }
+
+  Widget _halloweenBanner() {
+    final l = L.instance;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Tooltip(
+        message: l.t('tip_halloween'),
+        child: Material(
+          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFF2A0E05),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: _openHalloween,
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFFF8A1F), width: 1.5),
+              ),
+              child: Row(
+                children: [
+                  const Text('🎃', style: TextStyle(fontSize: 34)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                            l.pick('¡Evento de Halloween!', 'Halloween event!'),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                                color: Color(0xFFFF8A1F))),
+                        Text(
+                            l.pick(
+                                'Niveles y gatos espeluznantes · quedan '
+                                    '${Halloween.daysLeft} días',
+                                'Spooky levels and cats · '
+                                    '${Halloween.daysLeft} days left'),
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.white70)),
+                      ],
+                    ),
+                  ),
+                  const Text('🦇👻', style: TextStyle(fontSize: 22)),
+                  const Icon(Icons.chevron_right, color: Color(0xFFFF8A1F)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _soundPanel() async {
+    final l = L.instance;
+    await showDialog<void>(
+      context: context,
+      builder: (c) => StatefulBuilder(
+        builder: (c, set) => AlertDialog(
+          title: Text(l.t('sound_title')),
+          content: SizedBox(
+            width: 380,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SwitchListTile(
+                  title: Text(l.t('sound_music_on')),
+                  value: !Sfx.muted,
+                  onChanged: (_) async {
+                    await Sfx.toggleMute();
+                    set(() {});
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.music_note),
+                  title: Text(l.t('sound_music')),
+                  subtitle: Slider(
+                    value: Sfx.musicVolume,
+                    onChanged: Sfx.muted
+                        ? null
+                        : (v) {
+                            Sfx.setMusicVolume(v);
+                            set(() {});
+                          },
+                  ),
+                ),
+                ListTile(
+                  leading: const Text('🐱', style: TextStyle(fontSize: 22)),
+                  title: Text(l.t('sound_cats')),
+                  subtitle: Slider(
+                    value: Sfx.memeVolume,
+                    onChanged: (v) {
+                      Sfx.setMemeVolume(v);
+                      set(() {});
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(c), child: Text(l.t('close'))),
+          ],
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
   }
 
   Widget _langButton() {

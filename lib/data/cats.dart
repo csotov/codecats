@@ -70,6 +70,7 @@ enum CatTrigger {
   starsN, // [CatMeme.need] stars in total
   triesN, // [CatMeme.need] battles fought in total
   coinsN, // hold [CatMeme.need] Miaudólares at once
+  halloweenN, // [CatMeme.need] Halloween event levels solved
 }
 
 /// The full cat-dex. Core memes repeat constantly (retention by

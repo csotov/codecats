@@ -308,8 +308,20 @@ class L {
       'en': 'See your stats and progress'
     },
     'tip_music': {
-      'es': 'Prender o apagar la música',
-      'en': 'Turn the music on or off'
+      'es': 'Sonido: volumen de la música y de los gatos',
+      'en': 'Sound: music and cat volume'
+    },
+    'tip_halloween': {
+      'es': 'Evento de Halloween por tiempo limitado',
+      'en': 'Limited-time Halloween event'
+    },
+    'sound_title': {'es': 'Sonido', 'en': 'Sound'},
+    'close': {'es': 'Cerrar', 'en': 'Close'},
+    'sound_music_on': {'es': 'Música encendida', 'en': 'Music on'},
+    'sound_music': {'es': 'Volumen de la música', 'en': 'Music volume'},
+    'sound_cats': {
+      'es': 'Volumen de los videos de gatos',
+      'en': 'Cat video volume'
     },
     'tip_language': {
       'es': 'Cambiar idioma (Español / English)',

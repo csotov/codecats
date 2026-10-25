@@ -446,6 +446,11 @@ class Progress extends ChangeNotifier {
         return levels.values.fold(0, (n, p) => n + p.attempts) >= need;
       case CatTrigger.coinsN:
         return coins >= need;
+      case CatTrigger.halloweenN:
+        return levels.entries
+                .where((e) => e.key.startsWith('hw') && e.value.solved)
+                .length >=
+            need;
     }
   }
 

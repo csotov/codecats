@@ -240,6 +240,9 @@ const _byLevel = <String, String>{
   'w11l6': 'n2',
   'w11l7': 'n',
   'w12l6': 'nlogn',
+  'hw3': 'n',
+  'hw4': 'n',
+  'hw5': 'n',
 };
 
 /// Expected complexity of the intended solution for [level].

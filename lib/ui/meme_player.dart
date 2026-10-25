@@ -6,6 +6,7 @@ import 'package:video_player/video_player.dart';
 import '../data/cats.dart';
 import '../l10n.dart';
 import '../services/progress.dart';
+import '../services/sfx.dart';
 import 'theme.dart';
 
 /// Full-screen "brainrot burst": a cat-meme clip plays once with its
@@ -69,6 +70,8 @@ class _BurstDialogState extends State<_BurstDialog>
       final c = VideoPlayerController.asset(widget.cat.file);
       _vc = c;
       await c.initialize();
+      await c.setVolume(Sfx.memeVolume);
+      _hold();
       var looping = false;
       c.addListener(() {
         if (looping ||
@@ -102,12 +105,28 @@ class _BurstDialogState extends State<_BurstDialog>
     _closed = true;
     _autoClose?.cancel();
     _vc?.pause();
+    _release();
     Navigator.of(context, rootNavigator: true).pop();
+  }
+
+  bool _holding = false;
+
+  void _hold() {
+    if (_holding || _closed) return;
+    _holding = true;
+    Sfx.holdMusic();
+  }
+
+  void _release() {
+    if (!_holding) return;
+    _holding = false;
+    Sfx.releaseMusic();
   }
 
   @override
   void dispose() {
     _autoClose?.cancel();
+    _release();
     _vc?.dispose();
     _pop.dispose();
     super.dispose();
@@ -212,13 +231,20 @@ class _MemeTileState extends State<MemeTile> {
       _vc = c;
       await c.initialize();
       await c.setLooping(true);
+      await c.setVolume(Sfx.memeVolume);
+      if (!mounted) return;
+      _holding = true;
+      Sfx.holdMusic();
       await c.play();
       if (mounted) setState(() => _ready = true);
     } catch (_) {}
   }
 
+  bool _holding = false;
+
   @override
   void dispose() {
+    if (_holding) Sfx.releaseMusic();
     _vc?.dispose();
     super.dispose();
   }

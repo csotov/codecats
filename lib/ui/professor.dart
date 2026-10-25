@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n.dart';
 import '../services/progress.dart';
 import '../data/complexity.dart';
+import '../data/halloween.dart';
 import 'theme.dart';
 
 /// Profe Miaurício Bigotes: the cat teacher who gives hints, explains
@@ -170,11 +171,28 @@ class _ProfessorAvatarState extends State<ProfessorAvatar>
 
   @override
   Widget build(BuildContext context) {
-    final img = Image.asset(widget.speaker.asset,
-        width: widget.size,
-        height: widget.size,
+    final s = widget.size;
+    final photo = Image.asset(widget.speaker.asset,
+        width: s,
+        height: s,
         fit: BoxFit.contain,
         filterQuality: FilterQuality.medium);
+    // During the Halloween event the professor wears a witch hat.
+    final img = widget.speaker == Speaker.profe && Halloween.active
+        ? SizedBox.square(
+            dimension: s,
+            child: Stack(clipBehavior: Clip.none, children: [
+              photo,
+              Positioned(
+                left: s * 0.24,
+                top: -s * 0.30,
+                width: s * 0.52,
+                height: s * 0.44,
+                child: const CustomPaint(painter: _WitchHatPainter()),
+              ),
+            ]),
+          )
+        : photo;
     return AnimatedBuilder(
       animation: _t,
       child: img,
@@ -196,6 +214,31 @@ class _ProfessorAvatarState extends State<ProfessorAvatar>
       },
     );
   }
+}
+
+class _WitchHatPainter extends CustomPainter {
+  const _WitchHatPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final hat = Paint()..color = const Color(0xFF2B1640);
+    final cone = Path()
+      ..moveTo(w * 0.18, h * 0.80)
+      ..quadraticBezierTo(w * 0.40, h * 0.30, w * 0.52, h * 0.02)
+      ..quadraticBezierTo(w * 0.62, h * 0.10, w * 0.86, h * 0.14)
+      ..quadraticBezierTo(w * 0.66, h * 0.30, w * 0.80, h * 0.80)
+      ..close();
+    canvas.drawPath(cone, hat);
+    canvas.drawRect(Rect.fromLTRB(w * 0.24, h * 0.62, w * 0.78, h * 0.74),
+        Paint()..color = const Color(0xFFFF8A1F));
+    canvas.drawOval(Rect.fromLTRB(0, h * 0.74, w, h * 0.98), hat);
+    canvas.drawCircle(Offset(w * 0.86, h * 0.14), w * 0.045,
+        Paint()..color = const Color(0xFFFFD84D));
+  }
+
+  @override
+  bool shouldRepaint(_WitchHatPainter old) => false;
 }
 
 /// A comic speech bubble whose tail points left (at the speaker).

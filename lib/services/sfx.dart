@@ -9,7 +9,7 @@ import 'music_out_io.dart' if (dart.library.js_interop) 'music_out_web.dart';
 /// Tiny synthesized sound effects & music — no audio assets needed.
 /// Everything is rendered to WAV in memory: a victory arpeggio plus
 /// two loopable chiptune tracks (menu: calm; battle: driving).
-enum _Track { menu, battle, boss }
+enum _Track { menu, battle, boss, spooky }
 
 class Sfx {
   Sfx._();
@@ -18,20 +18,63 @@ class Sfx {
   static Uint8List? _victoryWav;
   static Uint8List? _menuWav;
   static Uint8List? _battleWav;
+  static Uint8List? _spookyWav;
 
   static bool muted = false;
   static String _track = '';
   static bool _musicReady = false;
 
   static const _mutedKey = 'codecats_music_muted';
+  static const _musicVolKey = 'codecats_music_volume';
+  static const _memeVolKey = 'codecats_meme_volume';
+
+  /// Music loudness (0–1), set in the sound panel.
+  static double musicVolume = 0.4;
+
+  /// Loudness of the cat meme videos (0–1).
+  static double memeVolume = 1.0;
 
   static Future<void> init() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       muted = prefs.getBool(_mutedKey) ?? false;
-      await _music.init(0.4);
+      musicVolume = prefs.getDouble(_musicVolKey) ?? 0.4;
+      memeVolume = prefs.getDouble(_memeVolKey) ?? 1.0;
+      await _music.init(musicVolume);
       _musicReady = true;
     } catch (_) {}
+  }
+
+  static Future<void> setMusicVolume(double v) async {
+    musicVolume = v.clamp(0.0, 1.0);
+    _music.volume = musicVolume;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble(_musicVolKey, musicVolume);
+    } catch (_) {}
+  }
+
+  static Future<void> setMemeVolume(double v) async {
+    memeVolume = v.clamp(0.0, 1.0);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble(_memeVolKey, memeVolume);
+    } catch (_) {}
+  }
+
+  static int _holds = 0;
+
+  /// Pause the music while a cat video with sound is on screen.
+  /// Calls nest: music resumes when every [holdMusic] is released.
+  static void holdMusic() {
+    _holds++;
+    if (_holds == 1) _music.pause();
+  }
+
+  static void releaseMusic() {
+    if (_holds == 0) return;
+    _holds--;
+    if (_holds == 0 && !muted && _track.isNotEmpty) _music.resume();
   }
 
   static bool _unlocked = false;
@@ -61,6 +104,9 @@ class Sfx {
   /// Boss fight: "Aura Farming" clip (assets/music/boss.mp3).
   static Future<void> boss() => _play(_Track.boss);
 
+  /// Halloween event loop: Dm–Bb–Gm–A at 80 bpm, eerie square arps.
+  static Future<void> spooky() => _play(_Track.spooky);
+
   static Future<void> _play(_Track t) async {
     if (_track == t.name) return;
     _track = t.name;
@@ -72,9 +118,12 @@ class Sfx {
       }
       await _music.playWav(
           t.name,
-          () => t == _Track.menu
-              ? (_menuWav ??= _synthMenu())
-              : (_battleWav ??= _synthBattle()));
+          () => switch (t) {
+                _Track.menu => _menuWav ??= _synthMenu(),
+                _Track.spooky => _spookyWav ??= _synthSpooky(),
+                _ => _battleWav ??= _synthBattle(),
+              });
+      if (_holds > 0) _music.pause();
     } catch (_) {}
   }
 
@@ -139,6 +188,23 @@ class Sfx {
         arpGain: 0.14,
         bassGain: 0.26,
         hats: true,
+      );
+
+  static Uint8List _synthSpooky() => _synthLoop(
+        bpm: 80,
+        chords: const [
+          [50, 53, 57], // Dm
+          [49, 52, 55], // C#dim
+          [46, 50, 53], // Bb
+          [45, 49, 52], // A
+          [50, 53, 57], // Dm
+          [55, 58, 62], // Gm
+          [44, 47, 50], // G#dim (tritone)
+          [45, 49, 52], // A
+        ],
+        arpGain: 0.18,
+        bassGain: 0.22,
+        hats: false,
       );
 
   /// One loopable chiptune bar sequence. Each chord lasts one bar.

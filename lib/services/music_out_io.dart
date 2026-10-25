@@ -27,5 +27,11 @@ class MusicOut {
 
   Future<void> stop() => _p.stop();
 
+  set volume(double v) => _p.setVolume(v.clamp(0.0, 1.0));
+
+  void pause() => _p.pause();
+
+  Future<void> resume() => _p.resume();
+
   Future<void> dispose() => _p.dispose();
 }
