@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 
 import '../data/cats.dart';
 import '../l10n.dart';
+import '../services/progress.dart';
 import 'theme.dart';
 
 /// Full-screen "brainrot burst": a cat-meme clip plays once with its
@@ -17,6 +18,7 @@ class MemeBurst {
       {String? captionEs,
       String? captionEn,
       Duration minDuration = const Duration(seconds: 2)}) {
+    Progress.instance.markSeen(cat.id);
     return showDialog(
       context: context,
       barrierDismissible: false,

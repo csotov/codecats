@@ -316,13 +316,15 @@ class _LevelScreenState extends State<LevelScreen>
 
     if (!mounted) return;
     final next = nextLevel(widget.level.id);
+    final winCat = _victoryCat(stars);
+    if (winCat != null) Progress.instance.markSeen(winCat.id);
     await VictoryOverlay.show(
       context,
       stars: Progress.instance.of(widget.level.id).stars,
       xpEarned: earned,
       coinsEarned: Progress.instance.lastCoinsEarned,
       hasNext: next != null,
-      cat: _victoryCat(stars),
+      cat: winCat,
       report: report,
       complexity: Complexity.analyze(_currentCode),
       onNext: () {
@@ -364,19 +366,18 @@ class _LevelScreenState extends State<LevelScreen>
       return _cat('nyan');
     }
     if (stars >= 3 && owned.contains('oiia')) return _cat('oiia');
-    final pool = kCommonPool
-        .where(owned.contains)
-        .map(_cat)
-        .whereType<CatMeme>()
-        .toList();
+    final pool = kCommonPool.map(_cat).whereType<CatMeme>().toList();
     if (pool.isEmpty) return null;
     return pool[math.Random().nextInt(pool.length)];
   }
 
+  /// Owned cats, plus starter ('always') cats that are free to show.
   CatMeme? _cat(String id) {
-    if (!Progress.instance.unlockedCats.contains(id)) return null;
     for (final c in kCats) {
-      if (c.id == id) return c;
+      if (c.id != id) continue;
+      final ok = Progress.instance.unlockedCats.contains(id) ||
+          c.trigger == CatTrigger.always;
+      return ok ? c : null;
     }
     return null;
   }

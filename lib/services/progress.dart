@@ -191,8 +191,6 @@ class Progress extends ChangeNotifier {
       } catch (_) {/* corrupted state -> start fresh */}
     }
     if (save) await prefs.setString(_activeKey, active!.id);
-    // Starter ('always') cats unlock on load; the rest drip in during play.
-    checkCatUnlocks(onLoad: true);
   }
 
   Future<void> _save() async {
@@ -353,6 +351,13 @@ class Progress extends ChangeNotifier {
 
   _SolveCtx? _lastSolve;
 
+  /// The Gatoteca lists exactly the cats the player has seen on screen.
+  void markSeen(String id) {
+    if (!unlockedCats.add(id)) return;
+    _save();
+    notifyListeners();
+  }
+
   static final _rng = math.Random();
   int _dryChecks = 0;
 
@@ -361,17 +366,18 @@ class Progress extends ChangeNotifier {
   /// Drip-feeds the collection: at most one cat per event, and only
   /// sometimes (variable reward). Pending cats come out on later events;
   /// after two empty events in a row the next one always gives a cat.
-  /// [onLoad] silently grants only the starter ('always') cats.
-  List<CatMeme> checkCatUnlocks({bool onLoad = false}) {
+  /// Starter ('always') cats are never granted here: they join the
+  /// Gatoteca only when actually shown (see [markSeen]).
+  List<CatMeme> checkCatUnlocks() {
     final fresh = <CatMeme>[];
     for (final c in kCats) {
       if (unlockedCats.contains(c.id)) continue;
-      if (onLoad && c.trigger != CatTrigger.always) continue;
+      if (c.trigger == CatTrigger.always) continue;
       if (!_catMet(c.trigger, c.need)) continue;
-      if (!onLoad && fresh.isNotEmpty) break;
+      if (fresh.isNotEmpty) break;
       fresh.add(c);
     }
-    if (!onLoad && fresh.isNotEmpty) {
+    if (fresh.isNotEmpty) {
       final give =
           unlockedCats.isEmpty || _dryChecks >= 2 || _rng.nextDouble() < 0.5;
       if (give) {
