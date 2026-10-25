@@ -66,10 +66,9 @@ class _BurstDialogState extends State<_BurstDialog>
         vsync: this, duration: const Duration(milliseconds: 500))
       ..forward();
     _init();
-    final cap = widget.minDuration + const Duration(milliseconds: 1500);
-    _autoClose = Timer(
-        cap > const Duration(seconds: 5) ? cap : const Duration(seconds: 5),
-        _close);
+    // Safety net only; the real cap starts once the clip is playing,
+    // so prefetch/initialize time never cuts the video short.
+    _autoClose = Timer(const Duration(seconds: 12), _close);
   }
 
   Future<void> _init() async {
@@ -102,6 +101,10 @@ class _BurstDialogState extends State<_BurstDialog>
         }
       });
       await c.play();
+      _autoClose?.cancel();
+      final clip = c.value.duration + const Duration(milliseconds: 600);
+      final min = widget.minDuration + const Duration(milliseconds: 1500);
+      _autoClose = Timer(clip > min ? clip : min, _close);
       if (mounted) setState(() => _ready = true);
     } catch (_) {
       _close(); // never let a meme break the game
