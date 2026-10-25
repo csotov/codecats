@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -17,6 +18,9 @@ import '../services/progress.dart';
 import '../services/sfx.dart';
 import 'blocks_editor.dart';
 import 'code_editor.dart';
+import 'coin.dart';
+import 'keyboard_scroll.dart';
+import 'level_intro.dart';
 import 'meme_player.dart';
 import 'results.dart';
 import 'theme.dart';
@@ -47,8 +51,23 @@ class _LevelScreenState extends State<LevelScreen>
 
   late final CppRunner _runner;
   late final List<BlockNode> _roots;
-  final GlobalKey<CodeEditorState> _editorKey = GlobalKey();
+  GlobalKey<CodeEditorState> _editorKey = GlobalKey();
   late TabController _tabController;
+  final _scroll = ScrollController();
+
+  /// Bumped by "start over" so the editors rebuild from scratch.
+  int _editorGen = 0;
+
+  /// Title card covering the screen while the level opens.
+  bool _showIntro = true;
+
+  /// "You can do it" cat when the player has been stuck a while.
+  Timer? _encourage;
+  static const _firstNudge = Duration(seconds: 90);
+  static const _nextNudge = Duration(minutes: 2);
+  bool _won = false;
+  int _nudges = 0;
+  static const _nudgeCats = ['happy', 'oiia', 'chipi'];
 
   String _savedCode = '';
   bool _promotedToCode = false;
@@ -68,23 +87,72 @@ class _LevelScreenState extends State<LevelScreen>
     _runner = createRunner();
     _openLevels++;
     Sfx.battle();
-    final saved = Progress.instance.of(widget.level.id);
-    _roots = blocksFromJson(saved.blocksJson);
-    _savedCode = saved.code.isNotEmpty ? saved.code : widget.level.starterCode;
+    // Every visit (or retry) starts clean: no leftover code from
+    // the previous attempt. Paid hints stay unlocked.
+    _roots = blocksFromJson(null);
+    _savedCode = widget.level.starterCode;
     _promotedToCode = widget.level.mode == EditorMode.code;
+    _hintsShown = Progress.instance.of(widget.level.id).hintsBought;
     _tabController = TabController(length: _hybrid ? 2 : 1, vsync: this);
+  }
+
+  void _introDone() {
+    if (!mounted) return;
+    setState(() => _showIntro = false);
     if (!_welcomeShown) {
       _welcomeShown = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final v = _cat('vibing');
-        if (v != null && mounted) MemeBurst.show(context, v);
-      });
+      final v = _cat('vibing');
+      if (v != null) MemeBurst.show(context, v);
     }
+    _scheduleNudge(_firstNudge);
+  }
+
+  void _scheduleNudge(Duration after) {
+    _encourage?.cancel();
+    if (widget.examMode || _won) return;
+    _encourage = Timer(after, _nudge);
+  }
+
+  Future<void> _nudge() async {
+    if (!mounted || _won) return;
+    // Never interrupt a run, a dialog or another screen: try again soon.
+    if (_busy || ModalRoute.of(context)?.isCurrent != true) {
+      _scheduleNudge(const Duration(seconds: 10));
+      return;
+    }
+    final id = _nudgeCats[_nudges++ % _nudgeCats.length];
+    final cat = kCats.firstWhere((c) => c.id == id, orElse: () => kCats.first);
+    await MemeBurst.show(context, cat,
+        captionEs: L.instance.t('you_can_do_it'),
+        captionEn: L.instance.t('you_can_do_it'),
+        minDuration: const Duration(milliseconds: 3500));
+    _scheduleNudge(_nextNudge);
+  }
+
+  /// Wipe the editors back to the level's starting point.
+  void _restart() {
+    setState(() {
+      _roots.clear();
+      _promotedToCode = widget.level.mode == EditorMode.code;
+      _savedCode = widget.level.starterCode;
+      _editorKey = GlobalKey();
+      _editorGen++;
+      _console = '';
+      if (_hybrid) _tabController.index = 0;
+    });
+    _persist();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text(L.instance.t('restart_done')),
+          duration: const Duration(seconds: 2)),
+    );
   }
 
   @override
   void dispose() {
+    _encourage?.cancel();
     _tabController.dispose();
+    _scroll.dispose();
     _runner.dispose();
     _openLevels--;
     if (_openLevels <= 0) {
@@ -165,6 +233,14 @@ class _LevelScreenState extends State<LevelScreen>
     setState(() => _busy = false);
     if (!report.allPassed) {
       Progress.instance.failBattle();
+      // Third try on the same level unlocks the Dramatic Cat.
+      for (final c in Progress.instance.checkCatUnlocks()) {
+        if (!mounted) return;
+        await MemeBurst.show(context, c,
+            captionEs: '¡Gato nuevo en tu Gatoteca!',
+            captionEn: 'New cat in your Cat-dex!');
+      }
+      if (!mounted) return;
       // Banana cat cries with you on the first fail of the session —
       // funny, not punishing; detailed results still show after.
       if (!_failMemeShown) {
@@ -183,16 +259,14 @@ class _LevelScreenState extends State<LevelScreen>
       return;
     }
     _failStreak = 0;
+    _won = true;
+    _encourage?.cancel();
 
-    final p = Progress.instance.of(widget.level.id);
-    final clean = !p.hintUsed && _attemptsThisSession <= 1;
-    final stars = p.hintUsed
-        ? (_attemptsThisSession <= 1 ? 2 : 1)
-        : (clean ? 3 : 2);
+    // Hints are paid in Miaudólares now, so they no longer cost stars.
+    final stars = _attemptsThisSession <= 1 ? 3 : 2;
     final earned = Progress.instance.recordSolve(
         widget.level.id, widget.level.xp, stars,
-        codeMode: !_usesBlocks || _promotedToCode,
-        boss: widget.level.boss);
+        codeMode: !_usesBlocks || _promotedToCode, boss: widget.level.boss);
     final newCats = Progress.instance.checkCatUnlocks();
 
     if (!mounted) return;
@@ -201,15 +275,13 @@ class _LevelScreenState extends State<LevelScreen>
       context,
       stars: Progress.instance.of(widget.level.id).stars,
       xpEarned: earned,
+      coinsEarned: Progress.instance.lastCoinsEarned,
       hasNext: next != null,
       cat: _victoryCat(stars),
       report: report,
       complexity: Complexity.analyze(_currentCode),
       onNext: () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => LevelScreen(level: next!)),
-        );
+        Navigator.pushReplacement(context, levelRoute(next!));
       },
     );
     // Celebrar gatos nuevos DESPUÉS de la victoria — uno por uno.
@@ -270,8 +342,14 @@ class _LevelScreenState extends State<LevelScreen>
   Widget build(BuildContext context) {
     final l = L.instance;
     final lv = widget.level;
+    final w = worldOf(lv);
+    final color = worldColor(lv);
     return Scaffold(
       appBar: AppBar(
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(3),
+          child: Container(height: 3, color: color),
+        ),
         title: Row(
           children: [
             if (lv.boss)
@@ -281,26 +359,60 @@ class _LevelScreenState extends State<LevelScreen>
                     color: AppTheme.bad, size: 20),
               ),
             Expanded(
-              child: Text(l.pick(lv.titleEs, lv.titleEn),
-                  style: const TextStyle(fontSize: 16)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${l.t('world')} ${w == null ? '' : kWorlds.indexOf(w) + 1}'
+                    ' · ${lv.boss ? l.t('boss') : '${l.t('level')} ${levelIndexInWorld(lv) + 1}'}',
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: color),
+                  ),
+                  Text(l.pick(lv.titleEs, lv.titleEn),
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 16)),
+                ],
+              ),
             ),
           ],
         ),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-              children: [
-                _missionCard(),
-                _hintsCard(),
-                _editorSection(),
-                if (_console.isNotEmpty) _consoleCard(),
-              ],
-            ),
+        actions: [
+          const CoinBadge(),
+          IconButton(
+            tooltip: l.t('tip_restart'),
+            icon: const Icon(Icons.restart_alt),
+            onPressed: _busy ? null : _restart,
           ),
-          _actionBar(),
+        ],
+      ),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              Expanded(
+                child: KeyboardScroll(
+                  controller: _scroll,
+                  child: ListView(
+                    controller: _scroll,
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+                    children: [
+                      _missionCard(),
+                      _hintsCard(),
+                      _editorSection(),
+                      if (_console.isNotEmpty) _consoleCard(),
+                    ],
+                  ),
+                ),
+              ),
+              _actionBar(),
+            ],
+          ),
+          if (_showIntro)
+            Positioned.fill(
+              child: LevelIntro(level: lv, onDone: _introDone),
+            ),
         ],
       ),
     );
@@ -350,8 +462,7 @@ class _LevelScreenState extends State<LevelScreen>
           SizedBox(
             width: 70,
             child: Text(label,
-                style:
-                    const TextStyle(color: AppTheme.accent2, fontSize: 12)),
+                style: const TextStyle(color: AppTheme.accent2, fontSize: 12)),
           ),
           Expanded(
             child: Text(value, style: const TextStyle(fontSize: 12.5)),
@@ -373,8 +484,8 @@ class _LevelScreenState extends State<LevelScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('${L.instance.t('stdin_label')} ${i + 1}',
-                    style: const TextStyle(
-                        color: AppTheme.textLo, fontSize: 10)),
+                    style:
+                        const TextStyle(color: AppTheme.textLo, fontSize: 10)),
                 const SizedBox(height: 2),
                 MonoBox(text: s.input.isEmpty ? '(vacío)' : s.input),
               ],
@@ -386,8 +497,8 @@ class _LevelScreenState extends State<LevelScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('${L.instance.t('stdout_label')} ${i + 1}',
-                    style: const TextStyle(
-                        color: AppTheme.textLo, fontSize: 10)),
+                    style:
+                        const TextStyle(color: AppTheme.textLo, fontSize: 10)),
                 const SizedBox(height: 2),
                 MonoBox(text: s.output, color: AppTheme.good),
               ],
@@ -417,27 +528,40 @@ class _LevelScreenState extends State<LevelScreen>
                       size: 16, color: AppTheme.accent2),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(hints[i],
-                        style: const TextStyle(fontSize: 13)),
+                    child: Text(hints[i], style: const TextStyle(fontSize: 13)),
                   ),
                 ],
               ),
             ),
           if (_hintsShown < hints.length)
-            TextButton.icon(
-              onPressed: () async {
-                setState(() => _hintsShown++);
-                Progress.instance.recordHint(widget.level.id);
-                for (final c in Progress.instance.checkCatUnlocks()) {
-                  if (!mounted) return;
-                  await MemeBurst.show(context, c,
-                      captionEs: '¡Gato nuevo en tu Gatoteca!',
-                      captionEn: 'New cat in your Cat-dex!');
-                }
-              },
-              icon: const Icon(Icons.lightbulb, size: 16),
-              label: Text(
-                  '${l.t('show_hint')} (${_hintsShown + 1}/${hints.length})'),
+            Tooltip(
+              message: l.t('buy_hint_tip'),
+              child: TextButton.icon(
+                onPressed: () async {
+                  if (!Progress.instance.buyHint(widget.level.id)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l.t('no_coins'))),
+                    );
+                    return;
+                  }
+                  setState(() => _hintsShown++);
+                  for (final c in Progress.instance.checkCatUnlocks()) {
+                    if (!mounted) return;
+                    await MemeBurst.show(context, c,
+                        captionEs: '¡Gato nuevo en tu Gatoteca!',
+                        captionEn: 'New cat in your Cat-dex!');
+                  }
+                },
+                icon: const Icon(Icons.lightbulb, size: 16),
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                        '${l.t('buy_hint')} (${_hintsShown + 1}/${hints.length})  '),
+                    const CoinPrice(Progress.kHintCost, size: 13),
+                  ],
+                ),
+              ),
             )
         ],
       ),
@@ -460,6 +584,7 @@ class _LevelScreenState extends State<LevelScreen>
       return SectionCard(
         title: l.t('your_program'),
         child: BlocksEditor(
+          key: ValueKey(_editorGen),
           allowed: widget.level.allowedBlocks,
           roots: _roots,
           onChanged: () => _persist(),
@@ -474,52 +599,73 @@ class _LevelScreenState extends State<LevelScreen>
           TabBar(
             controller: _tabController,
             tabs: [
-              Tab(text: l.t('editor_blocks')),
-              Tab(text: l.t('editor_code')),
+              Tab(
+                  child: Tooltip(
+                      message: l.t('tip_tab_blocks'),
+                      child: Text(l.t('editor_blocks')))),
+              Tab(
+                  child: Tooltip(
+                      message: l.t('tip_tab_code'),
+                      child: Text(l.t('editor_code')))),
             ],
             labelColor: AppTheme.accent,
             unselectedLabelColor: AppTheme.textLo,
             indicatorColor: AppTheme.accent,
           ),
-          SizedBox(
-            height: _promotedToCode ? 300 : 380,
-            child: TabBarView(
-              controller: _tabController,
+          // No fixed-height inner scroll box: the whole page scrolls as
+          // one, so touchpads and arrow keys never get trapped inside.
+          AnimatedBuilder(
+            animation: _tabController,
+            builder: (context, _) => IndexedStack(
+              index: _tabController.index,
+              sizing: StackFit.loose,
               children: [
-                SingleChildScrollView(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: BlocksEditor(
-                    allowed: widget.level.allowedBlocks,
-                    roots: _roots,
-                    preview: !_promotedToCode,
-                    onChanged: () {
-                      _persist();
-                      if (_promotedToCode) {
-                        // blocks no longer feed the code once promoted
-                      }
-                    },
+                Visibility(
+                  visible: _tabController.index == 0,
+                  maintainState: true,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: BlocksEditor(
+                      key: ValueKey(_editorGen),
+                      allowed: widget.level.allowedBlocks,
+                      roots: _roots,
+                      preview: !_promotedToCode,
+                      onChanged: () {
+                        _persist();
+                        if (_promotedToCode) {
+                          // blocks no longer feed the code once promoted
+                        }
+                      },
+                    ),
                   ),
                 ),
-                SingleChildScrollView(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: _promotedToCode
-                      ? CodeEditor(
-                          key: _editorKey,
-                          initial: _savedCode,
-                          onChanged: (_) => _persist(),
-                        )
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            MonoBox(text: blocksToCode(_roots)),
-                            const SizedBox(height: 10),
-                            FilledButton.tonalIcon(
-                              onPressed: _promoteToCode,
-                              icon: const Icon(Icons.edit, size: 16),
-                              label: Text(l.t('edit_code')),
-                            ),
-                          ],
-                        ),
+                Visibility(
+                  visible: _tabController.index == 1,
+                  maintainState: true,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: _promotedToCode
+                        ? CodeEditor(
+                            key: _editorKey,
+                            initial: _savedCode,
+                            onChanged: (_) => _persist(),
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              MonoBox(text: blocksToCode(_roots)),
+                              const SizedBox(height: 10),
+                              Tooltip(
+                                message: l.t('tip_edit_code'),
+                                child: FilledButton.tonalIcon(
+                                  onPressed: _promoteToCode,
+                                  icon: const Icon(Icons.edit, size: 16),
+                                  label: Text(l.t('edit_code')),
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
                 ),
               ],
             ),
@@ -537,8 +683,7 @@ class _LevelScreenState extends State<LevelScreen>
         content: Text(l.t('code_from_blocks_warning')),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(c),
-              child: Text(l.t('cancel'))),
+              onPressed: () => Navigator.pop(c), child: Text(l.t('cancel'))),
           FilledButton(
             onPressed: () {
               setState(() {
@@ -577,37 +722,42 @@ class _LevelScreenState extends State<LevelScreen>
         child: Row(
           children: [
             Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _busy ? null : _runSample,
-                icon: const Icon(Icons.play_arrow, size: 20),
-                label: Text(l.t('run')),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.accent,
-                  side: const BorderSide(color: AppTheme.accent),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Tooltip(
+                message: l.t('tip_run'),
+                child: OutlinedButton.icon(
+                  onPressed: _busy ? null : _runSample,
+                  icon: const Icon(Icons.play_arrow, size: 20),
+                  label: Text(l.t('run')),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.accent,
+                    side: const BorderSide(color: AppTheme.accent),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
                 ),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               flex: 2,
-              child: FilledButton.icon(
-                onPressed: _busy ? null : _fight,
-                icon: _busy
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.flash_on, size: 20),
-                label: Text(_busy
-                    ? '${l.t('running')} $_busyLabel'
-                    : l.t('submit')),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppTheme.accent2,
-                  foregroundColor: AppTheme.bg,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  textStyle: const TextStyle(fontWeight: FontWeight.w800),
+              child: Tooltip(
+                message: l.t('tip_submit'),
+                child: FilledButton.icon(
+                  onPressed: _busy ? null : _fight,
+                  icon: _busy
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.flash_on, size: 20),
+                  label: Text(
+                      _busy ? '${l.t('running')} $_busyLabel' : l.t('submit')),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.accent2,
+                    foregroundColor: AppTheme.bg,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
                 ),
               ),
             ),

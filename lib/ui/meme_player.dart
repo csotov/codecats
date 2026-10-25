@@ -11,21 +11,31 @@ import 'theme.dart';
 /// audio, framed like a sticker drop, then dismisses itself.
 /// Tap anywhere to skip.
 class MemeBurst {
+  /// [minDuration]: short clips loop until at least this long has
+  /// passed, so no meme flashes by too fast to enjoy.
   static Future<void> show(BuildContext context, CatMeme cat,
-      {String? captionEs, String? captionEn}) {
+      {String? captionEs,
+      String? captionEn,
+      Duration minDuration = const Duration(seconds: 2)}) {
     return showDialog(
       context: context,
       barrierDismissible: false,
       barrierColor: Colors.black.withOpacity(0.55),
-      builder: (_) => _BurstDialog(cat: cat, capEs: captionEs, capEn: captionEn),
+      builder: (_) => _BurstDialog(
+          cat: cat,
+          capEs: captionEs,
+          capEn: captionEn,
+          minDuration: minDuration),
     );
   }
 }
 
 class _BurstDialog extends StatefulWidget {
-  const _BurstDialog({required this.cat, this.capEs, this.capEn});
+  const _BurstDialog(
+      {required this.cat, this.capEs, this.capEn, required this.minDuration});
   final CatMeme cat;
   final String? capEs, capEn;
+  final Duration minDuration;
 
   @override
   State<_BurstDialog> createState() => _BurstDialogState();
@@ -37,6 +47,7 @@ class _BurstDialogState extends State<_BurstDialog>
   late final AnimationController _pop;
   Timer? _autoClose;
   bool _ready = false;
+  final _shown = Stopwatch()..start();
 
   @override
   void initState() {
@@ -45,7 +56,10 @@ class _BurstDialogState extends State<_BurstDialog>
         vsync: this, duration: const Duration(milliseconds: 500))
       ..forward();
     _init();
-    _autoClose = Timer(const Duration(seconds: 5), _close);
+    final cap = widget.minDuration + const Duration(milliseconds: 1500);
+    _autoClose = Timer(
+        cap > const Duration(seconds: 5) ? cap : const Duration(seconds: 5),
+        _close);
   }
 
   Future<void> _init() async {
@@ -53,10 +67,21 @@ class _BurstDialogState extends State<_BurstDialog>
       final c = VideoPlayerController.asset(widget.cat.file);
       _vc = c;
       await c.initialize();
+      var looping = false;
       c.addListener(() {
-        if (c.value.isInitialized &&
-            c.value.position >= c.value.duration) {
+        if (looping ||
+            !c.value.isInitialized ||
+            c.value.position < c.value.duration) {
+          return;
+        }
+        if (_shown.elapsed >= widget.minDuration) {
           _close();
+        } else {
+          looping = true;
+          c
+              .seekTo(Duration.zero)
+              .then((_) => c.play())
+              .whenComplete(() => looping = false);
         }
       });
       await c.play();
@@ -88,7 +113,10 @@ class _BurstDialogState extends State<_BurstDialog>
         ? null
         : l.pick(widget.capEs!, widget.capEn ?? widget.capEs!);
     return GestureDetector(
-      onTap: _close,
+      // Taps can't skip the meme before its minimum on-screen time.
+      onTap: () {
+        if (_shown.elapsed >= widget.minDuration) _close();
+      },
       child: Material(
         type: MaterialType.transparency,
         child: Center(
@@ -103,7 +131,8 @@ class _BurstDialogState extends State<_BurstDialog>
                   decoration: BoxDecoration(
                     color: AppTheme.bgAlt,
                     borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: widget.cat.rarity.color, width: 3),
+                    border:
+                        Border.all(color: widget.cat.rarity.color, width: 3),
                     boxShadow: [
                       BoxShadow(
                           color: widget.cat.rarity.color.withOpacity(0.5),
@@ -192,8 +221,8 @@ class _MemeTileState extends State<MemeTile> {
       return Container(
           height: widget.height,
           color: AppTheme.bgAlt,
-          child: const Center(
-              child: CircularProgressIndicator(strokeWidth: 2)));
+          child:
+              const Center(child: CircularProgressIndicator(strokeWidth: 2)));
     }
     return SizedBox(
       height: widget.height,

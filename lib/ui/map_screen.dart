@@ -6,9 +6,11 @@ import '../l10n.dart';
 import '../models.dart';
 import '../services/progress.dart';
 import '../services/sfx.dart';
+import 'coin.dart';
 import 'collection.dart';
 import 'contest.dart';
 import 'dashboard.dart';
+import 'keyboard_scroll.dart';
 import 'level_screen.dart';
 import 'profiles.dart';
 import 'theme.dart';
@@ -24,6 +26,14 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = L.instance;
@@ -41,43 +51,41 @@ class _MapScreenState extends State<MapScreen> {
                 Text(l.t('app_title'),
                     style: const TextStyle(fontWeight: FontWeight.w800)),
                 Text(l.t('subtitle'),
-                    style: const TextStyle(
-                        fontSize: 11, color: AppTheme.textLo)),
+                    style:
+                        const TextStyle(fontSize: 11, color: AppTheme.textLo)),
               ],
             ),
             actions: [
+              const CoinBadge(),
               _profileChip(),
               IconButton(
-                tooltip: l.t('contest'),
+                tooltip: l.t('tip_contest'),
                 icon: const Icon(Icons.emoji_events_outlined),
                 onPressed: _openContest,
               ),
               IconButton(
-                tooltip: l.t('collection'),
+                tooltip: l.t('tip_collection'),
                 icon: const Icon(Icons.catching_pokemon),
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const CollectionScreen()),
+                  MaterialPageRoute(builder: (_) => const CollectionScreen()),
                 ),
               ),
               IconButton(
-                tooltip: l.t('practice'),
+                tooltip: l.t('tip_practice'),
                 icon: const Icon(Icons.fitness_center),
                 onPressed: _openPractice,
               ),
               IconButton(
-                tooltip: l.t('dashboard'),
+                tooltip: l.t('tip_dashboard'),
                 icon: const Icon(Icons.leaderboard_outlined),
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const DashboardScreen()),
+                  MaterialPageRoute(builder: (_) => const DashboardScreen()),
                 ),
               ),
               IconButton(
-                tooltip:
-                    l.t(Sfx.muted ? 'music_off' : 'music_on'),
+                tooltip: l.t('tip_music'),
                 icon: Icon(Sfx.muted
                     ? Icons.music_off_outlined
                     : Icons.music_note_outlined),
@@ -88,37 +96,41 @@ class _MapScreenState extends State<MapScreen> {
               ),
               _langButton(),
               IconButton(
-                tooltip: l.t('reset_progress'),
+                tooltip: l.t('tip_reset'),
                 icon: const Icon(Icons.restart_alt),
                 onPressed: _confirmReset,
               ),
             ],
           ),
-          body: ListView(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 30),
-            children: [
-              const RankXpBar(),
-              const SizedBox(height: 6),
-              _missionsCard(),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Text(
-                  '${l.t('solved')}: ${progress.solvedCount} ${l.t('progress_of')} ${ids.length}   •   '
-                  '${l.t('stars')}: ${progress.totalStars}',
-                  style:
-                      const TextStyle(color: AppTheme.textLo, fontSize: 12),
+          body: KeyboardScroll(
+            controller: _scroll,
+            child: ListView(
+              controller: _scroll,
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 30),
+              children: [
+                const RankXpBar(),
+                const SizedBox(height: 6),
+                _missionsCard(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    '${l.t('solved')}: ${progress.solvedCount} ${l.t('progress_of')} ${ids.length}   •   '
+                    '${l.t('stars')}: ${progress.totalStars}',
+                    style:
+                        const TextStyle(color: AppTheme.textLo, fontSize: 12),
+                  ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Text(l.t('onboarding_tip'),
-                    style: const TextStyle(
-                        color: AppTheme.textLo,
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic)),
-              ),
-              for (final w in kWorlds) _worldSection(w),
-            ],
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(l.t('onboarding_tip'),
+                      style: const TextStyle(
+                          color: AppTheme.textLo,
+                          fontSize: 12,
+                          fontStyle: FontStyle.italic)),
+                ),
+                for (final w in kWorlds) _worldSection(w),
+              ],
+            ),
           ),
         );
       },
@@ -141,11 +153,11 @@ class _MapScreenState extends State<MapScreen> {
       );
       return;
     }
-    final pick = solved[DateTime.now().millisecondsSinceEpoch %
-        solved.length];
+    final pick = solved[DateTime.now().millisecondsSinceEpoch % solved.length];
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('💪 ${l.t('practice')}: '
-          '${l.pick(pick.titleEs, pick.titleEn)}')),
+      SnackBar(
+          content: Text('💪 ${l.t('practice')}: '
+              '${l.pick(pick.titleEs, pick.titleEn)}')),
     );
     Navigator.push(
       context,
@@ -203,8 +215,7 @@ class _MapScreenState extends State<MapScreen> {
               l.pick(daily.titleEs, daily.titleEn),
               () => Navigator.push(
                 context,
-                MaterialPageRoute(
-                    builder: (_) => LevelScreen(level: daily)),
+                MaterialPageRoute(builder: (_) => LevelScreen(level: daily)),
               ),
             ),
           ],
@@ -215,8 +226,7 @@ class _MapScreenState extends State<MapScreen> {
               l.pick(rec.titleEs, rec.titleEn),
               () => Navigator.push(
                 context,
-                MaterialPageRoute(
-                    builder: (_) => LevelScreen(level: rec)),
+                MaterialPageRoute(builder: (_) => LevelScreen(level: rec)),
               ),
             ),
           ],
@@ -224,8 +234,7 @@ class _MapScreenState extends State<MapScreen> {
             const SizedBox(height: 6),
             Text(
                 '⚠️ ${pending.length} ${l.t('pending')} — ${l.t('pending_tip')}',
-                style: const TextStyle(
-                    color: AppTheme.bad, fontSize: 11)),
+                style: const TextStyle(color: AppTheme.bad, fontSize: 11)),
           ],
         ],
       ),
@@ -260,8 +269,7 @@ class _MapScreenState extends State<MapScreen> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const Icon(Icons.chevron_right,
-                size: 16, color: AppTheme.textLo),
+            const Icon(Icons.chevron_right, size: 16, color: AppTheme.textLo),
           ],
         ),
       ),
@@ -279,8 +287,7 @@ class _MapScreenState extends State<MapScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-          builder: (_) =>
-              ContestScreen(problems: pickContestLevels())),
+          builder: (_) => ContestScreen(problems: pickContestLevels())),
     );
   }
 
@@ -288,7 +295,7 @@ class _MapScreenState extends State<MapScreen> {
     final l = L.instance;
     return PopupMenuButton<String>(
       icon: const Icon(Icons.translate),
-      tooltip: l.t('language'),
+      tooltip: l.t('tip_language'),
       onSelected: (v) => l.setLang(v),
       itemBuilder: (c) => const [
         PopupMenuItem(value: 'es', child: Text('Español')),
@@ -321,34 +328,36 @@ class _MapScreenState extends State<MapScreen> {
     final p = Progress.instance.active;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => ProfilePicker.show(context),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppTheme.card,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppTheme.cardEdge),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(p?.emoji ?? '🐯', style: const TextStyle(fontSize: 16)),
-              const SizedBox(width: 6),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 90),
-                child: Text(
-                  p?.name ?? 'Jugador',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w700),
+      child: Tooltip(
+        message: L.instance.t('tip_profile'),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => ProfilePicker.show(context),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppTheme.card,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppTheme.cardEdge),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(p?.emoji ?? '🐯', style: const TextStyle(fontSize: 16)),
+                const SizedBox(width: 6),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 90),
+                  child: Text(
+                    p?.name ?? 'Jugador',
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w700),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              const Icon(Icons.swap_horiz,
-                  size: 14, color: AppTheme.textLo),
-            ],
+                const SizedBox(width: 4),
+                const Icon(Icons.swap_horiz, size: 14, color: AppTheme.textLo),
+              ],
+            ),
           ),
         ),
       ),
@@ -360,8 +369,7 @@ class _MapScreenState extends State<MapScreen> {
     final progress = Progress.instance;
     final solvedInWorld =
         w.levels.where((lv) => progress.of(lv.id).solved).length;
-    final worldUnlocked =
-        w.levels.any((lv) => progress.isUnlocked(lv, w));
+    final worldUnlocked = w.levels.any((lv) => progress.isUnlocked(lv, w));
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
@@ -380,8 +388,8 @@ class _MapScreenState extends State<MapScreen> {
                   border: Border.all(color: AppTheme.cardEdge),
                 ),
                 child: Text(w.icon,
-                    style: const TextStyle(
-                        fontSize: 17, color: AppTheme.accent2)),
+                    style:
+                        const TextStyle(fontSize: 17, color: AppTheme.accent2)),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -398,8 +406,7 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
               Text('$solvedInWorld/${w.levels.length}',
-                  style: const TextStyle(
-                      color: AppTheme.textLo, fontSize: 12)),
+                  style: const TextStyle(color: AppTheme.textLo, fontSize: 12)),
             ],
           ),
           const SizedBox(height: 10),
@@ -422,8 +429,7 @@ class _MapScreenState extends State<MapScreen> {
             spacing: 10,
             runSpacing: 10,
             children: [
-              for (var i = 0; i < w.levels.length; i++)
-                _levelNode(w, i),
+              for (var i = 0; i < w.levels.length; i++) _levelNode(w, i),
             ],
           ),
         ],
@@ -437,74 +443,78 @@ class _MapScreenState extends State<MapScreen> {
     final p = progress.of(level.id);
     final unlocked = progress.isUnlocked(level, world);
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: unlocked
-          ? () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => LevelScreen(level: level)),
-              );
-            }
-          : null,
-      child: Container(
-        width: 108,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-        decoration: BoxDecoration(
-          color: unlocked ? AppTheme.card : AppTheme.bgAlt,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: p.solved
-                ? AppTheme.good.withOpacity(0.6)
-                : unlocked
-                    ? (p.attempts > 0
-                        ? AppTheme.bad.withOpacity(0.8)
-                        : level.boss
-                            ? AppTheme.accent2
-                            : AppTheme.cardEdge)
-                    : AppTheme.cardEdge.withOpacity(0.4),
-            width: level.boss || (unlocked && p.attempts > 0) ? 1.6 : 1,
+    return Tooltip(
+      message: unlocked
+          ? '${L.instance.t('tip_play_level')}: ${L.instance.pick(level.titleEs, level.titleEn)}'
+          : L.instance.t('tip_locked_level'),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: unlocked
+            ? () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => LevelScreen(level: level)),
+                );
+              }
+            : null,
+        child: Container(
+          width: 108,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          decoration: BoxDecoration(
+            color: unlocked ? AppTheme.card : AppTheme.bgAlt,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: p.solved
+                  ? AppTheme.good.withOpacity(0.6)
+                  : unlocked
+                      ? (p.attempts > 0
+                          ? AppTheme.bad.withOpacity(0.8)
+                          : level.boss
+                              ? AppTheme.accent2
+                              : AppTheme.cardEdge)
+                      : AppTheme.cardEdge.withOpacity(0.4),
+              width: level.boss || (unlocked && p.attempts > 0) ? 1.6 : 1,
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (level.boss)
-                  const Icon(Icons.local_fire_department,
-                      size: 14, color: AppTheme.bad),
-                Text(
-                  level.boss
-                      ? L.instance.t('boss')
-                      : '${L.instance.t('level')} ${index + 1}',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: unlocked ? AppTheme.textHi : AppTheme.textLo,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (level.boss)
+                    const Icon(Icons.local_fire_department,
+                        size: 14, color: AppTheme.bad),
+                  Text(
+                    level.boss
+                        ? L.instance.t('boss')
+                        : '${L.instance.t('level')} ${index + 1}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: unlocked ? AppTheme.textHi : AppTheme.textLo,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Icon(
-              !unlocked
-                  ? Icons.lock_outline
-                  : p.solved
-                      ? Icons.check_circle_outline
-                      : Icons.sports_esports_outlined,
-              size: 22,
-              color: !unlocked
-                  ? AppTheme.textLo.withOpacity(0.4)
-                  : p.solved
-                      ? AppTheme.good
-                      : AppTheme.accent,
-            ),
-            const SizedBox(height: 6),
-            StarsRow(stars: p.stars, size: 13),
-          ],
+                ],
+              ),
+              const SizedBox(height: 6),
+              Icon(
+                !unlocked
+                    ? Icons.lock_outline
+                    : p.solved
+                        ? Icons.check_circle_outline
+                        : Icons.sports_esports_outlined,
+                size: 22,
+                color: !unlocked
+                    ? AppTheme.textLo.withOpacity(0.4)
+                    : p.solved
+                        ? AppTheme.good
+                        : AppTheme.accent,
+              ),
+              const SizedBox(height: 6),
+              StarsRow(stars: p.stars, size: 13),
+            ],
+          ),
         ),
       ),
     );

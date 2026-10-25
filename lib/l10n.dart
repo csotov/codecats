@@ -25,8 +25,7 @@ class L {
   String pick(String es, String en) => isEs ? es : en;
 
   /// Pick between two lists of strings.
-  List<String> pickList(List<String> es, List<String> en) =>
-      isEs ? es : en;
+  List<String> pickList(List<String> es, List<String> en) => isEs ? es : en;
 
   static const Map<String, Map<String, String>> _s = {
     'app_title': {'es': 'CodeCats', 'en': 'CodeCats'},
@@ -98,7 +97,8 @@ class L {
     'edit_code': {'es': 'Editar como código', 'en': 'Edit as code'},
     'back_to_blocks': {'es': 'Volver a bloques', 'en': 'Back to blocks'},
     'code_from_blocks_warning': {
-      'es': 'Al editar el código directamente perderás los cambios si vuelves a bloques.',
+      'es':
+          'Al editar el código directamente perderás los cambios si vuelves a bloques.',
       'en': 'Editing code directly will lose changes if you go back to blocks.'
     },
     'attempts': {'es': 'Intentos', 'en': 'Attempts'},
@@ -136,8 +136,10 @@ class L {
       'en': 'Solved on first try: bonus star'
     },
     'onboarding_tip': {
-      'es': 'Consejo: lee la misión, mira los ejemplos y prueba tu código antes de combatir.',
-      'en': 'Tip: read the mission, check the examples, and test your code before fighting.'
+      'es':
+          'Consejo: lee la misión, mira los ejemplos y prueba tu código antes de combatir.',
+      'en':
+          'Tip: read the mission, check the examples, and test your code before fighting.'
     },
     // --- profiles & dashboard -------------------------------------------
     'who_plays': {'es': '¿Quién juega?', 'en': "Who's playing?"},
@@ -202,14 +204,128 @@ class L {
       'en': 'Solve 3 levels to unlock contests'
     },
     'contest_over': {'es': '¡Tiempo terminado!', 'en': "Time's up!"},
-    'contest_done': {
-      'es': '¡Simulacro completado!',
-      'en': 'Contest complete!'
-    },
-    'contest_solved': {
-      'es': 'problemas resueltos',
-      'en': 'problems solved'
-    },
+    'contest_done': {'es': '¡Simulacro completado!', 'en': 'Contest complete!'},
+    'contest_solved': {'es': 'problemas resueltos', 'en': 'problems solved'},
     'contest_go': {'es': 'Resolver', 'en': 'Solve'},
+    // ---- Miaudólares (in-game money) ------------------------------------
+    'coins': {'es': 'Miaudólares', 'en': 'Meowdollars'},
+    'coins_tip': {
+      'es': 'Tus Miaudólares: gánalos venciendo niveles, gástalos en pistas',
+      'en': 'Your Meowdollars: win levels to earn them, spend them on hints'
+    },
+    'buy_hint': {'es': 'Comprar pista', 'en': 'Buy hint'},
+    'buy_hint_tip': {
+      'es': 'Gasta Miaudólares para ver una ayuda',
+      'en': 'Spend Meowdollars to see a clue'
+    },
+    'no_coins': {
+      'es': '¡Te faltan Miaudólares! Gana o repasa niveles para conseguir más.',
+      'en': 'Not enough Meowdollars! Win or replay levels to earn more.'
+    },
+    // ---- Tooltips ---------------------------------------------------------
+    'tip_run': {
+      'es': 'Prueba tu código con el primer ejemplo',
+      'en': 'Try your code on the first example'
+    },
+    'tip_submit': {
+      'es': 'Envía tu solución al juez: pasa todas las pruebas',
+      'en': 'Send your solution to the judge: pass every test'
+    },
+    'tip_restart': {
+      'es': 'Borra tu código y empieza este nivel de cero',
+      'en': 'Clear your code and start this level from scratch'
+    },
+    'restart_done': {
+      'es': 'Código borrado: ¡a empezar de nuevo!',
+      'en': 'Code cleared: fresh start!'
+    },
+    'tip_edit_code': {
+      'es': 'Pasa de bloques a escribir C++ de verdad',
+      'en': 'Switch from blocks to writing real C++'
+    },
+    'tip_tab_blocks': {
+      'es': 'Arma el programa con bloques',
+      'en': 'Build the program with blocks'
+    },
+    'tip_tab_code': {
+      'es': 'Mira el C++ que generan tus bloques',
+      'en': 'See the C++ your blocks generate'
+    },
+    'tip_next_level': {
+      'es': 'Ir al siguiente desafío',
+      'en': 'Go to the next challenge'
+    },
+    'tip_back_map': {
+      'es': 'Volver al mapa de mundos',
+      'en': 'Back to the world map'
+    },
+    'tip_keep_fighting': {
+      'es': 'Quedarte aquí para mejorar tu código',
+      'en': 'Stay here and polish your code'
+    },
+    'tip_contest': {
+      'es': 'Simulacro: 3 problemas contrarreloj, sin pistas',
+      'en': 'Contest: 3 timed problems, no hints'
+    },
+    'tip_collection': {
+      'es': 'La Gatoteca: mira los gatos que coleccionaste',
+      'en': 'The Cat-dex: see the cats you collected'
+    },
+    'tip_practice': {
+      'es': 'Repasa al azar un nivel que ya ganaste',
+      'en': 'Replay a random level you already beat'
+    },
+    'tip_dashboard': {
+      'es': 'Mira tus estadísticas y progreso',
+      'en': 'See your stats and progress'
+    },
+    'tip_music': {
+      'es': 'Prender o apagar la música',
+      'en': 'Turn the music on or off'
+    },
+    'tip_language': {
+      'es': 'Cambiar idioma (Español / English)',
+      'en': 'Change language (Español / English)'
+    },
+    'tip_reset': {
+      'es': 'Borrar todo el progreso de este jugador',
+      'en': "Erase this player's progress"
+    },
+    'tip_profile': {
+      'es': 'Cambiar de jugador o crear uno nuevo',
+      'en': 'Switch player or create a new one'
+    },
+    'tip_play_level': {'es': 'Jugar este nivel', 'en': 'Play this level'},
+    'tip_locked_level': {
+      'es': 'Bloqueado: gana el nivel anterior',
+      'en': 'Locked: beat the previous level'
+    },
+    'tip_watch_cat': {
+      'es': 'Ver el video del gato',
+      'en': 'Watch the cat clip'
+    },
+    'tip_add_block': {
+      'es': 'Agregar este bloque al final del programa',
+      'en': 'Add this block at the end of the program'
+    },
+    'tip_add_inside': {
+      'es': 'Agregar un bloque dentro de este',
+      'en': 'Add a block inside this one'
+    },
+    'tip_move_up': {'es': 'Subir este bloque', 'en': 'Move this block up'},
+    'tip_move_down': {'es': 'Bajar este bloque', 'en': 'Move this block down'},
+    'tip_delete_block': {
+      'es': 'Eliminar este bloque',
+      'en': 'Delete this block'
+    },
+    'tip_back': {'es': 'Volver atrás', 'en': 'Go back'},
+    'tip_close': {'es': 'Cerrar', 'en': 'Close'},
+    // ---- Level transition & encouragement ------------------------------
+    'get_ready': {'es': '¡Prepárate!', 'en': 'Get ready!'},
+    'tap_to_start': {'es': 'Toca para empezar', 'en': 'Tap to start'},
+    'you_can_do_it': {
+      'es': '¡Tú puedes! ¡No te rindas!',
+      'en': "You've got this! Don't give up!"
+    },
   };
 }

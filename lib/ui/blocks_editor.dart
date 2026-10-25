@@ -120,6 +120,7 @@ class _BlocksEditorState extends State<BlocksEditor> {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ActionChip(
+        tooltip: l.t('tip_add_block'),
         label: Text('+ ${l.pick(def.labelEs, def.labelEn)}',
             style: const TextStyle(fontSize: 12)),
         backgroundColor: color.withOpacity(0.12),
@@ -190,8 +191,8 @@ class _BlockCard extends StatelessWidget {
     final l = L.instance;
     final def = kBlockDefs[node.defId];
     if (def == null) return const SizedBox.shrink();
-    final color = _BlocksEditorState._catColors[def.category] ??
-        AppTheme.textLo;
+    final color =
+        _BlocksEditorState._catColors[def.category] ?? AppTheme.textLo;
 
     return Container(
       decoration: BoxDecoration(
@@ -212,7 +213,9 @@ class _BlockCard extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         fontSize: 13)),
               ),
-              _iconBtn(Icons.arrow_upward, l.t('move_up'),
+              _iconBtn(
+                  Icons.arrow_upward,
+                  l.t('tip_move_up'),
                   index > 0
                       ? () {
                           siblings.removeAt(index);
@@ -220,7 +223,9 @@ class _BlockCard extends StatelessWidget {
                           onChanged();
                         }
                       : null),
-              _iconBtn(Icons.arrow_downward, l.t('move_down'),
+              _iconBtn(
+                  Icons.arrow_downward,
+                  l.t('tip_move_down'),
                   index < siblings.length - 1
                       ? () {
                           siblings.removeAt(index);
@@ -228,7 +233,7 @@ class _BlockCard extends StatelessWidget {
                           onChanged();
                         }
                       : null),
-              _iconBtn(Icons.delete_outline, l.t('delete_block'), () {
+              _iconBtn(Icons.delete_outline, l.t('tip_delete_block'), () {
                 siblings.removeAt(index);
                 onChanged();
               }),
@@ -245,8 +250,7 @@ class _BlockCard extends StatelessWidget {
                     SizedBox(
                       width: 150,
                       child: TextFormField(
-                        initialValue: node.params[p.key] ??
-                            p.defaultValue,
+                        initialValue: node.params[p.key] ?? p.defaultValue,
                         style: const TextStyle(
                             fontFamily: 'monospace', fontSize: 12),
                         decoration: InputDecoration(
@@ -269,9 +273,7 @@ class _BlockCard extends StatelessWidget {
           if (def.hasBody) ...[
             const SizedBox(height: 6),
             _BlockList(
-                nodes: node.children,
-                depth: depth + 1,
-                onChanged: onChanged),
+                nodes: node.children, depth: depth + 1, onChanged: onChanged),
             _addInside(node.children, l),
           ],
           if (def.hasElse) ...[
@@ -325,6 +327,7 @@ class _InnerAddMenu extends StatelessWidget {
     final l = L.instance;
     // All defs are allowed inside; palette scoping applies at top level.
     return PopupMenuButton<String>(
+      tooltip: l.t('tip_add_inside'),
       onSelected: (id) {
         final def = kBlockDefs[id]!;
         final node = BlockNode(id);

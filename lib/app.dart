@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'l10n.dart';
 import 'services/sfx.dart';
+import 'ui/keyboard_scroll.dart';
 import 'ui/splash.dart';
 import 'ui/theme.dart';
 
@@ -19,6 +20,7 @@ class CodeCatsApp extends StatelessWidget {
           title: 'CodeCats',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.theme,
+          scrollBehavior: const CodeCatsScrollBehavior(),
           home: const SplashScreen(),
         ),
       ),
