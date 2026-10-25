@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 
 import '../data/cats.dart';
 import '../l10n.dart';
+import '../services/cloud.dart';
 import '../services/progress.dart';
 import '../services/prefetch_io.dart'
     if (dart.library.js_interop) '../services/prefetch_web.dart';
@@ -27,6 +28,7 @@ class MemeBurst {
       String? captionEn,
       Duration minDuration = const Duration(seconds: 2)}) {
     Progress.instance.markSeen(cat.id);
+    Cloud.instance.log('meme_shown', data: {'cat': cat.id});
     return showDialog(
       context: context,
       barrierDismissible: false,

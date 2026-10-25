@@ -37,6 +37,7 @@ class Cloud extends ChangeNotifier {
       _c = Supabase.instance.client;
       _c!.auth.onAuthStateChange.listen((_) => _refreshProfile());
       await _refreshProfile();
+      log('session_start', data: {'platform': kIsWeb ? 'web' : 'app'});
       Timer.periodic(const Duration(seconds: 10), (_) => flush());
     } catch (e) {
       debugPrint('Cloud init failed: $e');
