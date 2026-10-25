@@ -49,6 +49,17 @@ class MusicOut {
     _el.pause();
   }
 
+  set volume(double v) => _el.volume = v.clamp(0.0, 1.0);
+
+  void pause() => _el.pause();
+
+  Future<void> resume() async {
+    if (_el.src.isEmpty) return;
+    try {
+      await _el.play().toDart;
+    } catch (_) {}
+  }
+
   Future<void> dispose() async {
     _el.pause();
     for (final u in _urls.values) {

@@ -5,6 +5,10 @@ import 'package:video_player/video_player.dart';
 
 import '../data/cats.dart';
 import '../l10n.dart';
+import '../services/progress.dart';
+import '../services/prefetch_io.dart'
+    if (dart.library.js_interop) '../services/prefetch_web.dart';
+import '../services/sfx.dart';
 import 'theme.dart';
 
 /// Full-screen "brainrot burst": a cat-meme clip plays once with its
@@ -13,10 +17,16 @@ import 'theme.dart';
 class MemeBurst {
   /// [minDuration]: short clips loop until at least this long has
   /// passed, so no meme flashes by too fast to enjoy.
+  /// Download clips in the background before they are needed.
+  static void warm(Iterable<CatMeme> cats) {
+    prefetchAssets([for (final c in cats) c.file]);
+  }
+
   static Future<void> show(BuildContext context, CatMeme cat,
       {String? captionEs,
       String? captionEn,
       Duration minDuration = const Duration(seconds: 2)}) {
+    Progress.instance.markSeen(cat.id);
     return showDialog(
       context: context,
       barrierDismissible: false,
@@ -56,17 +66,23 @@ class _BurstDialogState extends State<_BurstDialog>
         vsync: this, duration: const Duration(milliseconds: 500))
       ..forward();
     _init();
-    final cap = widget.minDuration + const Duration(milliseconds: 1500);
-    _autoClose = Timer(
-        cap > const Duration(seconds: 5) ? cap : const Duration(seconds: 5),
-        _close);
+    // Safety net only; the real cap starts once the clip is playing,
+    // so prefetch/initialize time never cuts the video short.
+    _autoClose = Timer(const Duration(seconds: 12), _close);
   }
 
   Future<void> _init() async {
     try {
+      // Make sure the whole clip is local before it starts, so it never
+      // freezes halfway (fast when MemeBurst.warm already fetched it).
+      await prefetchAssets([widget.cat.file])
+          .timeout(const Duration(seconds: 3), onTimeout: () {});
+      if (!mounted) return;
       final c = VideoPlayerController.asset(widget.cat.file);
       _vc = c;
       await c.initialize();
+      await c.setVolume(Sfx.memeVolume);
+      _hold();
       var looping = false;
       c.addListener(() {
         if (looping ||
@@ -85,6 +101,10 @@ class _BurstDialogState extends State<_BurstDialog>
         }
       });
       await c.play();
+      _autoClose?.cancel();
+      final clip = c.value.duration + const Duration(milliseconds: 600);
+      final min = widget.minDuration + const Duration(milliseconds: 1500);
+      _autoClose = Timer(clip > min ? clip : min, _close);
       if (mounted) setState(() => _ready = true);
     } catch (_) {
       _close(); // never let a meme break the game
@@ -100,12 +120,28 @@ class _BurstDialogState extends State<_BurstDialog>
     _closed = true;
     _autoClose?.cancel();
     _vc?.pause();
+    _release();
     Navigator.of(context, rootNavigator: true).pop();
+  }
+
+  bool _holding = false;
+
+  void _hold() {
+    if (_holding || _closed) return;
+    _holding = true;
+    Sfx.holdMusic();
+  }
+
+  void _release() {
+    if (!_holding) return;
+    _holding = false;
+    Sfx.releaseMusic();
   }
 
   @override
   void dispose() {
     _autoClose?.cancel();
+    _release();
     _vc?.dispose();
     _pop.dispose();
     super.dispose();
@@ -210,13 +246,20 @@ class _MemeTileState extends State<MemeTile> {
       _vc = c;
       await c.initialize();
       await c.setLooping(true);
+      await c.setVolume(Sfx.memeVolume);
+      if (!mounted) return;
+      _holding = true;
+      Sfx.holdMusic();
       await c.play();
       if (mounted) setState(() => _ready = true);
     } catch (_) {}
   }
 
+  bool _holding = false;
+
   @override
   void dispose() {
+    if (_holding) Sfx.releaseMusic();
     _vc?.dispose();
     super.dispose();
   }

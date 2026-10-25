@@ -23,6 +23,7 @@ import 'keyboard_scroll.dart';
 import 'level_intro.dart';
 import 'meme_player.dart';
 import '../data/complexity.dart';
+import '../data/halloween.dart';
 import 'professor.dart';
 import 'results.dart';
 import 'theme.dart';
@@ -88,7 +89,18 @@ class _LevelScreenState extends State<LevelScreen>
     super.initState();
     _runner = createRunner();
     _openLevels++;
-    if (widget.level.boss) {
+    // Clips this level may show: welcome, fail, victory, encouragement,
+    // plus the next unseen cats. Fetched now so they play without lag.
+    MemeBurst.warm(kCats
+        .where((c) =>
+            kCommonPool.contains(c.id) ||
+            const ['vibing', 'banana', 'chipi', 'nyan', 'oiia']
+                .contains(c.id) ||
+            !Progress.instance.unlockedCats.contains(c.id))
+        .take(14));
+    if (Halloween.isEventLevel(widget.level.id)) {
+      Sfx.spooky();
+    } else if (widget.level.boss) {
       Sfx.boss();
     } else {
       Sfx.battle();
@@ -141,7 +153,8 @@ class _LevelScreenState extends State<LevelScreen>
       return;
     }
     final id = _nudgeCats[_nudges++ % _nudgeCats.length];
-    final cat = kCats.firstWhere((c) => c.id == id, orElse: () => kCats.first);
+    // Only owned or starter cats: watching a nudge must not award a cat.
+    final cat = _cat(id) ?? _cat('happy')!;
     await MemeBurst.show(context, cat,
         captionEs: L.instance.t('you_can_do_it'),
         captionEn: L.instance.t('you_can_do_it'),
@@ -177,7 +190,8 @@ class _LevelScreenState extends State<LevelScreen>
     _openLevels--;
     if (_openLevels <= 0) {
       _openLevels = 0;
-      Sfx.menu();
+      // Back to the event screen keeps the spooky music.
+      Halloween.isEventLevel(widget.level.id) ? Sfx.spooky() : Sfx.menu();
     }
     super.dispose();
   }
@@ -309,20 +323,27 @@ class _LevelScreenState extends State<LevelScreen>
 
     // Hints are paid in Miaudólares now, so they no longer cost stars.
     final stars = _attemptsThisSession <= 1 ? 3 : 2;
+    // Replaying a won level gives no cat, only rarely (1 in 8) one.
+    final replay = Progress.instance.of(widget.level.id).solved;
+    final rewardCat = !replay || math.Random().nextInt(8) == 0;
     final earned = Progress.instance.recordSolve(
         widget.level.id, widget.level.xp, stars,
         codeMode: !_usesBlocks || _promotedToCode, boss: widget.level.boss);
-    final newCats = Progress.instance.checkCatUnlocks();
+    final newCats =
+        rewardCat ? Progress.instance.checkCatUnlocks() : const <CatMeme>[];
 
     if (!mounted) return;
     final next = nextLevel(widget.level.id);
+    // One cat per win at most: a new Gatoteca cat replaces the sticker.
+    final winCat = rewardCat && newCats.isEmpty ? _victoryCat(stars) : null;
+    if (winCat != null) Progress.instance.markSeen(winCat.id);
     await VictoryOverlay.show(
       context,
       stars: Progress.instance.of(widget.level.id).stars,
       xpEarned: earned,
       coinsEarned: Progress.instance.lastCoinsEarned,
       hasNext: next != null,
-      cat: _victoryCat(stars),
+      cat: winCat,
       report: report,
       complexity: Complexity.analyze(_currentCode),
       onNext: () {
@@ -364,19 +385,18 @@ class _LevelScreenState extends State<LevelScreen>
       return _cat('nyan');
     }
     if (stars >= 3 && owned.contains('oiia')) return _cat('oiia');
-    final pool = kCommonPool
-        .where(owned.contains)
-        .map(_cat)
-        .whereType<CatMeme>()
-        .toList();
+    final pool = kCommonPool.map(_cat).whereType<CatMeme>().toList();
     if (pool.isEmpty) return null;
     return pool[math.Random().nextInt(pool.length)];
   }
 
+  /// Owned cats, plus starter ('always') cats that are free to show.
   CatMeme? _cat(String id) {
-    if (!Progress.instance.unlockedCats.contains(id)) return null;
     for (final c in kCats) {
-      if (c.id == id) return c;
+      if (c.id != id) continue;
+      final ok = Progress.instance.unlockedCats.contains(id) ||
+          c.trigger == CatTrigger.always;
+      return ok ? c : null;
     }
     return null;
   }
@@ -418,8 +438,10 @@ class _LevelScreenState extends State<LevelScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${l.t('world')} ${w == null ? '' : kWorlds.indexOf(w) + 1}'
-                    ' · ${lv.boss ? l.t('boss') : '${l.t('level')} ${levelIndexInWorld(lv) + 1}'}',
+                    Halloween.isEventLevel(lv.id)
+                        ? '🎃 Halloween · ${lv.boss ? l.t('boss') : '${l.t('level')} ${kHalloweenLevels.indexWhere((e) => e.id == lv.id) + 1}'}'
+                        : '${l.t('world')} ${w == null ? '' : kWorlds.indexOf(w) + 1}'
+                            ' · ${lv.boss ? l.t('boss') : '${l.t('level')} ${levelIndexInWorld(lv) + 1}'}',
                     style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,

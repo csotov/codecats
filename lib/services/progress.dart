@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -190,8 +191,6 @@ class Progress extends ChangeNotifier {
       } catch (_) {/* corrupted state -> start fresh */}
     }
     if (save) await prefs.setString(_activeKey, active!.id);
-    // 'always' cats and threshold cats unlock on load.
-    checkCatUnlocks();
   }
 
   Future<void> _save() async {
@@ -352,17 +351,58 @@ class Progress extends ChangeNotifier {
 
   _SolveCtx? _lastSolve;
 
+  /// The Gatoteca lists exactly the cats the player has seen on screen.
+  void markSeen(String id) {
+    if (!unlockedCats.add(id)) return;
+    _save();
+    notifyListeners();
+  }
+
+  static final _rng = math.Random();
+  int _dryChecks = 0;
+
   /// Cats whose unlock condition is currently met but not yet owned.
   /// Evaluated after events; returns the freshly unlocked memes.
+  /// Drip-feeds the collection: at most one cat per event, and only
+  /// sometimes (variable reward). Pending cats come out on later events;
+  /// after two empty events in a row the next one always gives a cat.
+  /// Starter ('always') cats are never granted here: they join the
+  /// Gatoteca only when actually shown (see [markSeen]).
   List<CatMeme> checkCatUnlocks() {
     final fresh = <CatMeme>[];
-    for (final c in kCats) {
-      if (unlockedCats.contains(c.id)) continue;
-      if (_catMet(c.trigger, c.need)) {
-        unlockedCats.add(c.id);
-        fresh.add(c);
+    int rank(CatMeme c) => c.trigger == CatTrigger.halloweenN
+        ? 0
+        : _momentTriggers.contains(c.trigger)
+            ? 1
+            : 2;
+    final eligible = [
+      for (final c in kCats)
+        if (!unlockedCats.contains(c.id) &&
+            c.trigger != CatTrigger.always &&
+            _catMet(c.trigger, c.need))
+          c
+    ];
+    // Event and "this win" cats first: they can't wait for a later draw
+    // (the event ends; the win context is cleared below).
+    final order = {for (var i = 0; i < kCats.length; i++) kCats[i].id: i};
+    eligible.sort((a, b) {
+      final r = rank(a) - rank(b);
+      return r != 0 ? r : order[a.id]! - order[b.id]!;
+    });
+    if (eligible.isNotEmpty) fresh.add(eligible.first);
+    if (fresh.isNotEmpty) {
+      final give = rank(fresh.first) < 2 ||
+          unlockedCats.isEmpty ||
+          _dryChecks >= 2 ||
+          _rng.nextDouble() < 0.5;
+      if (give) {
+        _dryChecks = 0;
+      } else {
+        _dryChecks++;
+        fresh.clear();
       }
     }
+    unlockedCats.addAll(fresh.map((c) => c.id));
     if (fresh.isNotEmpty) {
       _save();
       notifyListeners();
@@ -370,6 +410,13 @@ class Progress extends ChangeNotifier {
     _lastSolve = null;
     return fresh;
   }
+
+  static const _momentTriggers = {
+    CatTrigger.perfect,
+    CatTrigger.codeMode,
+    CatTrigger.worldBoss,
+    CatTrigger.syntaxFix,
+  };
 
   bool _catMet(CatTrigger t, int need) {
     final s = _lastSolve;
@@ -421,6 +468,11 @@ class Progress extends ChangeNotifier {
         return levels.values.fold(0, (n, p) => n + p.attempts) >= need;
       case CatTrigger.coinsN:
         return coins >= need;
+      case CatTrigger.halloweenN:
+        return levels.entries
+                .where((e) => e.key.startsWith('hw') && e.value.solved)
+                .length >=
+            need;
     }
   }
 
@@ -446,9 +498,13 @@ class Progress extends ChangeNotifier {
     return levels[world.levels[idx - 1].id]?.solved ?? false;
   }
 
-  int get totalStars => levels.values.fold(0, (s, p) => s + p.stars);
+  /// Campaign-only totals; Halloween event levels (hw*) count separately.
+  Iterable<LevelProgress> get _campaign =>
+      levels.entries.where((e) => !e.key.startsWith('hw')).map((e) => e.value);
 
-  int get solvedCount => levels.values.where((p) => p.solved).length;
+  int get totalStars => _campaign.fold(0, (s, p) => s + p.stars);
+
+  int get solvedCount => _campaign.where((p) => p.solved).length;
 
   /// Reset only the ACTIVE profile's progress (start from zero).
   Future<void> reset() async {
