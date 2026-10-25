@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -190,8 +191,8 @@ class Progress extends ChangeNotifier {
       } catch (_) {/* corrupted state -> start fresh */}
     }
     if (save) await prefs.setString(_activeKey, active!.id);
-    // 'always' cats and threshold cats unlock on load.
-    checkCatUnlocks();
+    // Starter ('always') cats unlock on load; the rest drip in during play.
+    checkCatUnlocks(onLoad: true);
   }
 
   Future<void> _save() async {
@@ -352,17 +353,35 @@ class Progress extends ChangeNotifier {
 
   _SolveCtx? _lastSolve;
 
+  static final _rng = math.Random();
+  int _dryChecks = 0;
+
   /// Cats whose unlock condition is currently met but not yet owned.
   /// Evaluated after events; returns the freshly unlocked memes.
-  List<CatMeme> checkCatUnlocks() {
+  /// Drip-feeds the collection: at most one cat per event, and only
+  /// sometimes (variable reward). Pending cats come out on later events;
+  /// after two empty events in a row the next one always gives a cat.
+  /// [onLoad] silently grants only the starter ('always') cats.
+  List<CatMeme> checkCatUnlocks({bool onLoad = false}) {
     final fresh = <CatMeme>[];
     for (final c in kCats) {
       if (unlockedCats.contains(c.id)) continue;
-      if (_catMet(c.trigger, c.need)) {
-        unlockedCats.add(c.id);
-        fresh.add(c);
+      if (onLoad && c.trigger != CatTrigger.always) continue;
+      if (!_catMet(c.trigger, c.need)) continue;
+      if (!onLoad && fresh.isNotEmpty) break;
+      fresh.add(c);
+    }
+    if (!onLoad && fresh.isNotEmpty) {
+      final give =
+          unlockedCats.isEmpty || _dryChecks >= 2 || _rng.nextDouble() < 0.5;
+      if (give) {
+        _dryChecks = 0;
+      } else {
+        _dryChecks++;
+        fresh.clear();
       }
     }
+    unlockedCats.addAll(fresh.map((c) => c.id));
     if (fresh.isNotEmpty) {
       _save();
       notifyListeners();
