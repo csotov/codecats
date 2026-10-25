@@ -6,6 +6,7 @@ import '../data/worlds.dart';
 import '../l10n.dart';
 import '../models.dart';
 import '../services/progress.dart';
+import 'keyboard_scroll.dart';
 import 'level_screen.dart';
 import 'theme.dart';
 
@@ -49,10 +50,10 @@ class _ContestScreenState extends State<ContestScreen> {
   late Duration _left = ContestScreen.kDuration;
   late final Timer _timer;
   bool _ended = false;
+  final _scroll = ScrollController();
 
-  int get _solvedCount => widget.problems
-      .where((l) => Progress.instance.of(l.id).solved)
-      .length;
+  int get _solvedCount =>
+      widget.problems.where((l) => Progress.instance.of(l.id).solved).length;
 
   @override
   void initState() {
@@ -70,6 +71,7 @@ class _ContestScreenState extends State<ContestScreen> {
   @override
   void dispose() {
     _timer.cancel();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -113,8 +115,8 @@ class _ContestScreenState extends State<ContestScreen> {
       animation: Progress.instance,
       builder: (context, _) {
         if (!_ended && _solvedCount == widget.problems.length) {
-          WidgetsBinding.instance.addPostFrameCallback(
-              (_) => _finish(timedOut: false));
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _finish(timedOut: false));
         }
         return Scaffold(
           appBar: AppBar(
@@ -135,16 +137,20 @@ class _ContestScreenState extends State<ContestScreen> {
               ),
             ],
           ),
-          body: ListView(
-            padding: const EdgeInsets.all(14),
-            children: [
-              Text(l.t('contest_desc'),
-                  style: const TextStyle(
-                      color: AppTheme.textLo, fontSize: 13)),
-              const SizedBox(height: 14),
-              for (var i = 0; i < widget.problems.length; i++)
-                _problemTile(widget.problems[i], i),
-            ],
+          body: KeyboardScroll(
+            controller: _scroll,
+            child: ListView(
+              controller: _scroll,
+              padding: const EdgeInsets.all(14),
+              children: [
+                Text(l.t('contest_desc'),
+                    style:
+                        const TextStyle(color: AppTheme.textLo, fontSize: 13)),
+                const SizedBox(height: 14),
+                for (var i = 0; i < widget.problems.length; i++)
+                  _problemTile(widget.problems[i], i),
+              ],
+            ),
           ),
         );
       },
@@ -174,16 +180,14 @@ class _ContestScreenState extends State<ContestScreen> {
         title: Text(l.pick(level.titleEs, level.titleEn),
             style: const TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Text('${level.xp} XP',
-            style:
-                const TextStyle(color: AppTheme.textLo, fontSize: 12)),
+            style: const TextStyle(color: AppTheme.textLo, fontSize: 12)),
         trailing: solved
             ? null
             : FilledButton(
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        LevelScreen(level: level, examMode: true),
+                    builder: (_) => LevelScreen(level: level, examMode: true),
                   ),
                 ),
                 child: Text(l.t('contest_go')),
@@ -193,8 +197,7 @@ class _ContestScreenState extends State<ContestScreen> {
             : () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        LevelScreen(level: level, examMode: true),
+                    builder: (_) => LevelScreen(level: level, examMode: true),
                   ),
                 ),
       ),

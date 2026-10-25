@@ -77,3 +77,11 @@ Level? dailyChallengeLevel() {
   final d = DateTime.now();
   return solved[(d.year * 372 + d.month * 31 + d.day) % solved.length];
 }
+
+/// The world that contains [level], or null for practice/contest levels.
+World? worldOf(Level level) {
+  for (final w in kWorlds) {
+    if (w.levels.contains(level)) return w;
+  }
+  return null;
+}

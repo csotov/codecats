@@ -14,6 +14,7 @@ class LevelProgress {
     this.stars = 0,
     this.attempts = 0,
     this.hintUsed = false,
+    this.hintsBought = 0,
     this.code = '',
     this.blocksJson,
   });
@@ -22,6 +23,9 @@ class LevelProgress {
   int stars;
   int attempts;
   bool hintUsed;
+
+  /// Hints already paid for with Miaudólares (stay unlocked forever).
+  int hintsBought;
   String code;
   List<dynamic>? blocksJson;
 
@@ -30,6 +34,7 @@ class LevelProgress {
         'st': stars,
         'a': attempts,
         'h': hintUsed,
+        if (hintsBought > 0) 'hb': hintsBought,
         'c': code,
         if (blocksJson != null) 'b': blocksJson,
       };
@@ -39,6 +44,7 @@ class LevelProgress {
         stars: (j['st'] as num?)?.toInt() ?? 0,
         attempts: (j['a'] as num?)?.toInt() ?? 0,
         hintUsed: j['h'] == true,
+        hintsBought: (j['hb'] as num?)?.toInt() ?? 0,
         code: j['c'] as String? ?? '',
         blocksJson: j['b'] as List<dynamic>?,
       );
@@ -74,6 +80,17 @@ class Progress extends ChangeNotifier {
   static String _keyFor(String id) => 'codecats_progress_$id';
 
   int xp = 0;
+
+  /// Miaudólares: in-game cat money. Earned by winning battles,
+  /// spent on hints.
+  int coins = kStartCoins;
+
+  /// Coins earned by the most recent [recordSolve] (for the victory card).
+  int lastCoinsEarned = 0;
+
+  static const kStartCoins = 30;
+  static const kHintCost = 10;
+
   final Map<String, LevelProgress> levels = {};
 
   /// Cat-meme collection: ids of unlocked cats (see data/cats.dart).
@@ -123,8 +140,8 @@ class Progress extends ChangeNotifier {
         await prefs.setString(_keyFor(p.id), legacy);
         await prefs.remove(_legacyKey);
       }
-      await prefs.setString(_profilesKey,
-          jsonEncode(profiles.map((e) => e.toJson()).toList()));
+      await prefs.setString(
+          _profilesKey, jsonEncode(profiles.map((e) => e.toJson()).toList()));
       await prefs.setString(_activeKey, p.id);
     }
     final activeId = prefs.getString(_activeKey) ?? profiles.first.id;
@@ -134,9 +151,10 @@ class Progress extends ChangeNotifier {
 
   Future<void> _loadProfile(String id, {bool save = true}) async {
     final prefs = await SharedPreferences.getInstance();
-    active = profiles.firstWhere((p) => p.id == id,
-        orElse: () => profiles.first);
+    active =
+        profiles.firstWhere((p) => p.id == id, orElse: () => profiles.first);
     xp = 0;
+    coins = kStartCoins;
     streak = 0;
     dayStreak = 0;
     lastSolveDay = '';
@@ -153,13 +171,16 @@ class Progress extends ChangeNotifier {
               LevelProgress.fromJson(Map<String, dynamic>.from(v as Map));
         });
         streak = (j['st'] as num?)?.toInt() ?? 0;
+        // Profiles from before Miaudólares get a starting purse plus
+        // a reward for the levels they already beat.
+        coins = (j['mc'] as num?)?.toInt() ??
+            kStartCoins + 15 * levels.values.where((p) => p.solved).length;
         dayStreak = (j['dsk'] as num?)?.toInt() ?? 0;
         lastSolveDay = j['rd'] as String? ?? '';
         ghostStartDay = (j['gh'] as num?)?.toInt() ?? 0;
         unlockedCats
           ..clear()
-          ..addAll((j['cats'] as List? ?? const [])
-              .map((e) => '$e'));
+          ..addAll((j['cats'] as List? ?? const []).map((e) => '$e'));
       } catch (_) {/* corrupted state -> start fresh */}
     }
     if (save) await prefs.setString(_activeKey, active!.id);
@@ -174,6 +195,7 @@ class Progress extends ChangeNotifier {
         _keyFor(active!.id),
         jsonEncode({
           'xp': xp,
+          'mc': coins,
           'st': streak,
           'dsk': dayStreak,
           'rd': lastSolveDay,
@@ -185,8 +207,8 @@ class Progress extends ChangeNotifier {
 
   Future<void> _saveProfiles() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_profilesKey,
-        jsonEncode(profiles.map((e) => e.toJson()).toList()));
+    await prefs.setString(
+        _profilesKey, jsonEncode(profiles.map((e) => e.toJson()).toList()));
   }
 
   /// Create a fresh slot and make it active (starts from zero).
@@ -219,14 +241,17 @@ class Progress extends ChangeNotifier {
     notifyListeners();
   }
 
-  LevelProgress of(String levelId) =>
-      levels[levelId] ??= LevelProgress();
+  LevelProgress of(String levelId) => levels[levelId] ??= LevelProgress();
 
   /// Returns earned XP for this solve (first solve gives full XP).
+  /// Also pays Miaudólares (see [coinsForSolve]) into [lastCoinsEarned].
   int recordSolve(String levelId, int levelXp, int stars,
       {bool codeMode = false, bool boss = false}) {
     final p = of(levelId);
     var earned = 0;
+    lastCoinsEarned =
+        coinsForSolve(firstSolve: !p.solved, stars: stars, boss: boss);
+    coins += lastCoinsEarned;
     if (!p.solved) {
       earned = levelXp;
       xp += levelXp;
@@ -241,11 +266,29 @@ class Progress extends ChangeNotifier {
     return earned;
   }
 
+  /// First wins pay well (more stars, more coins; bosses pay a bonus);
+  /// replays pay a little so a stuck player can earn hint money.
+  static int coinsForSolve(
+          {required bool firstSolve, required int stars, bool boss = false}) =>
+      firstSolve ? 10 + 5 * stars + (boss ? 20 : 0) : 3;
+
+  /// Pay [kHintCost] for the next hint of [levelId]. Returns false
+  /// (and charges nothing) when the purse is too light.
+  bool buyHint(String levelId) {
+    if (coins < kHintCost) return false;
+    final p = of(levelId);
+    coins -= kHintCost;
+    p.hintsBought++;
+    p.hintUsed = true;
+    _save();
+    notifyListeners();
+    return true;
+  }
+
   static String _dayKey(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
-  static int _epochDay(DateTime d) =>
-      d.millisecondsSinceEpoch ~/ 86400000;
+  static int _epochDay(DateTime d) => d.millisecondsSinceEpoch ~/ 86400000;
 
   /// A solve on a new day extends the daily streak if it continues
   /// yesterday's, otherwise it restarts at 1.
@@ -253,13 +296,11 @@ class Progress extends ChangeNotifier {
     final now = DateTime.now();
     final today = _dayKey(now);
     if (lastSolveDay == today) return;
-    dayStreak =
-        (lastSolveDay == _dayKey(now.subtract(const Duration(days: 1))))
-            ? dayStreak + 1
-            : 1;
+    dayStreak = (lastSolveDay == _dayKey(now.subtract(const Duration(days: 1))))
+        ? dayStreak + 1
+        : 1;
     lastSolveDay = today;
-    ghostStartDay =
-        ghostStartDay == 0 ? _epochDay(now) : ghostStartDay;
+    ghostStartDay = ghostStartDay == 0 ? _epochDay(now) : ghostStartDay;
   }
 
   /// Ghost rival: a steady ~1 level every 2 days since the first
@@ -322,6 +363,8 @@ class Progress extends ChangeNotifier {
             levels.values.any((p) => p.solved && p.attempts > 1);
       case CatTrigger.hint:
         return levels.values.any((p) => p.hintUsed);
+      case CatTrigger.tryHard:
+        return levels.values.any((p) => p.attempts >= 3);
       case CatTrigger.codeMode:
         return s?.codeMode == true;
       case CatTrigger.worldBoss:
@@ -353,15 +396,6 @@ class Progress extends ChangeNotifier {
     notifyListeners();
   }
 
-  void recordHint(String levelId) {
-    final p = of(levelId);
-    if (!p.hintUsed) {
-      p.hintUsed = true;
-      _save();
-      notifyListeners();
-    }
-  }
-
   void saveCode(String levelId, String code, {List<dynamic>? blocksJson}) {
     final p = of(levelId);
     p.code = code;
@@ -378,14 +412,14 @@ class Progress extends ChangeNotifier {
     return levels[world.levels[idx - 1].id]?.solved ?? false;
   }
 
-  int get totalStars =>
-      levels.values.fold(0, (s, p) => s + p.stars);
+  int get totalStars => levels.values.fold(0, (s, p) => s + p.stars);
 
   int get solvedCount => levels.values.where((p) => p.solved).length;
 
   /// Reset only the ACTIVE profile's progress (start from zero).
   Future<void> reset() async {
     xp = 0;
+    coins = kStartCoins;
     streak = 0;
     unlockedCats.clear();
     levels.clear();
