@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'cloud.dart';
 
 import '../data/cats.dart';
 import '../data/worlds.dart';
@@ -193,8 +196,63 @@ class Progress extends ChangeNotifier {
     if (save) await prefs.setString(_activeKey, active!.id);
   }
 
+  Map<String, dynamic> toSnapshot() => {
+        'xp': xp,
+        'mc': coins,
+        'st': streak,
+        'dsk': dayStreak,
+        'rd': lastSolveDay,
+        'gh': ghostStartDay,
+        'cats': unlockedCats.toList(),
+        'bo': taughtBigO.toList(),
+        'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
+      };
+
+  Timer? _cloudTimer;
+
+  /// Cloud copy, at most once every few seconds (saves are frequent).
+  void _scheduleCloudPush() {
+    if (!Cloud.instance.signedIn) return;
+    _cloudTimer?.cancel();
+    _cloudTimer = Timer(const Duration(seconds: 4),
+        () => Cloud.instance.pushSnapshot(toSnapshot()));
+  }
+
+  /// Merge the cloud snapshot into the active profile (keeps the best of
+  /// both: solved stays solved, higher stars/xp/coins win) and save.
+  Future<void> adoptCloudSnapshot() async {
+    final d = await Cloud.instance.pullSnapshot();
+    if (d == null) {
+      await Cloud.instance.pushSnapshot(toSnapshot());
+      return;
+    }
+    xp = math.max(xp, (d['xp'] as num?)?.toInt() ?? 0);
+    coins = math.max(coins, (d['mc'] as num?)?.toInt() ?? 0);
+    dayStreak = math.max(dayStreak, (d['dsk'] as num?)?.toInt() ?? 0);
+    if ((d['rd'] as String? ?? '').compareTo(lastSolveDay) > 0) {
+      lastSolveDay = d['rd'] as String;
+    }
+    unlockedCats.addAll(List<String>.from(d['cats'] ?? const []));
+    taughtBigO.addAll(List<String>.from(d['bo'] ?? const []));
+    final lv = d['lv'];
+    if (lv is Map) {
+      lv.forEach((k, v) {
+        final r = LevelProgress.fromJson(Map<String, dynamic>.from(v as Map));
+        final p = of(k as String);
+        p.solved = p.solved || r.solved;
+        p.stars = math.max(p.stars, r.stars);
+        p.attempts = math.max(p.attempts, r.attempts);
+        p.hintsBought = math.max(p.hintsBought, r.hintsBought);
+        p.hintUsed = p.hintUsed || r.hintUsed;
+      });
+    }
+    await _save();
+    notifyListeners();
+  }
+
   Future<void> _save() async {
     if (active == null) return;
+    _scheduleCloudPush();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
         _keyFor(active!.id),
