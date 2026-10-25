@@ -239,6 +239,13 @@ class L {
       'es': 'El profe te muestra paso a paso qué hacer',
       'en': 'The teacher shows you step by step what to do'
     },
+    'tip_bigo': {
+      'es': 'Cuánto crece el tiempo del programa cuando crecen los datos. '
+          'Toca para que el profe lo explique',
+      'en': 'How much the program\'s time grows as the data grows. '
+          'Tap so the teacher explains it'
+    },
+    'bigo_lesson': {'es': 'Lección del profe', 'en': "Teacher's lesson"},
     'no_coins': {
       'es': '¡Te faltan Miaudólares! Gana o repasa niveles para conseguir más.',
       'en': 'Not enough Meowdollars! Win or replay levels to earn more.'

@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n.dart';
 import '../services/progress.dart';
+import '../data/complexity.dart';
 import 'theme.dart';
 
 /// Profe Miaurício Bigotes: the cat teacher who gives hints, explains
@@ -52,12 +53,104 @@ class Professor {
   }
 }
 
+/// Someone who talks through a [SpeechBubble].
+class Speaker {
+  const Speaker({
+    required this.name,
+    required this.label,
+    required this.asset,
+    required this.color,
+    required this.border,
+  });
+  final String name;
+  final String label;
+  final String asset;
+  final Color color;
+  final Color border;
+
+  static const profe = Speaker(
+    name: 'Profe Miaurício Bigotes',
+    label: 'Profe Miaurício',
+    asset: 'assets/profe.png',
+    color: AppTheme.accent2,
+    border: AppTheme.accent,
+  );
+
+  static const boss = Speaker(
+    name: 'Lord Zarpazo',
+    label: 'Lord Zarpazo',
+    asset: 'assets/boss.png',
+    color: Color(0xFFFF4D4D),
+    border: Color(0xFFFF4D4D),
+  );
+}
+
+/// What the professor says when a Big O class first becomes relevant.
+List<String> bigOLesson(BigO bo) => [
+      L.instance.pick(
+          '¡Momento de ciencia! Este nivel es ${bo.notation}, complejidad '
+              '${bo.name}. Te explico qué significa.',
+          'Science time! This level is ${bo.notation}, ${bo.name} '
+              'complexity. Let me explain.'),
+      ...bo.lines,
+      L.instance.pick(
+          'Vas a ver la nota "Big O" arriba de cada misión. Tocala cuando '
+              'quieras que te lo repita.',
+          'You will see the "Big O" note above every mission. Tap it any '
+              'time you want me to repeat this.'),
+    ];
+
+/// The world boss: an angry cat who taunts you.
+class Boss {
+  Boss._();
+
+  static List<String> introLines() => L.instance.isEs
+      ? [
+          '¡Jajaja! Así que vos sos el "héroe"... Soy Lord Zarpazo, el '
+              'jefe de este mundo.',
+          'No podrás vencerme. Este reto es muy difícil para vos, jajaja.',
+          'Andá a jugar con tu profe de bigotes. Acá se viene la paliza.',
+        ]
+      : [
+          'Hahaha! So you are the "hero"... I am Lord Zarpazo, the boss '
+              'of this world.',
+          'You cannot beat me. This challenge is way too hard for you, hahaha.',
+          'Go play with your moustached teacher. A beating is coming.',
+        ];
+
+  static String failTaunt(int fails) {
+    final es = [
+      '¡Jajaja! ¿Eso es todo? Te lo dije: muy difícil para vos.',
+      '¿Otra vez? Me estoy aburriendo de ganarte, jajaja.',
+      'Mirá que insistís... pero este nivel es MÍO. ¡Jajaja!',
+    ];
+    final en = [
+      'Hahaha! Is that all? I told you: way too hard for you.',
+      'Again? I am getting bored of beating you, hahaha.',
+      'You do keep trying... but this level is MINE. Hahaha!',
+    ];
+    final i = fails % es.length;
+    return L.instance.pick(es[i], en[i]);
+  }
+
+  static String defeatLine() => L.instance.pick(
+      '¡¿QUÉ?! ¡Imposible! ¡Me venciste! ...Esto no termina acá, miau.',
+      'WHAT?! Impossible! You beat me! ...This is not over, meow.');
+
+  static String replyLabel() => L.instance.pick('¡Vas a ver!', 'We\'ll see!');
+}
+
 /// The professor: Chemistry Cat with glasses and bow tie. Idle he
 /// floats gently; while [talking] he hops and wiggles.
 class ProfessorAvatar extends StatefulWidget {
-  const ProfessorAvatar({super.key, this.size = 72, this.talking = false});
+  const ProfessorAvatar(
+      {super.key,
+      this.size = 72,
+      this.talking = false,
+      this.speaker = Speaker.profe});
   final double size;
   final bool talking;
+  final Speaker speaker;
 
   @override
   State<ProfessorAvatar> createState() => _ProfessorAvatarState();
@@ -77,7 +170,7 @@ class _ProfessorAvatarState extends State<ProfessorAvatar>
 
   @override
   Widget build(BuildContext context) {
-    final img = Image.asset('assets/profe.png',
+    final img = Image.asset(widget.speaker.asset,
         width: widget.size,
         height: widget.size,
         fit: BoxFit.contain,
@@ -114,11 +207,13 @@ class SpeechBubble extends StatefulWidget {
     this.typewriter = true,
     this.footer,
     this.onTyped,
+    this.color = AppTheme.accent,
   });
   final String text;
   final bool typewriter;
   final Widget? footer;
   final VoidCallback? onTyped;
+  final Color color;
 
   @override
   State<SpeechBubble> createState() => _SpeechBubbleState();
@@ -175,7 +270,7 @@ class _SpeechBubbleState extends State<SpeechBubble> {
     return GestureDetector(
       onTap: _finish,
       child: CustomPaint(
-        painter: _BubblePainter(),
+        painter: _BubblePainter(widget.color),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(26, 12, 14, 12),
           child: Column(
@@ -208,6 +303,9 @@ class _SpeechBubbleState extends State<SpeechBubble> {
 }
 
 class _BubblePainter extends CustomPainter {
+  _BubblePainter(this.color);
+  final Color color;
+
   @override
   void paint(Canvas canvas, Size size) {
     const tail = 12.0;
@@ -228,11 +326,11 @@ class _BubblePainter extends CustomPainter {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2
-          ..color = AppTheme.accent);
+          ..color = color);
   }
 
   @override
-  bool shouldRepaint(_BubblePainter old) => false;
+  bool shouldRepaint(_BubblePainter old) => old.color != color;
 }
 
 /// Avatar + name + speech bubble, side by side.
@@ -243,11 +341,13 @@ class ProfessorSays extends StatefulWidget {
     this.footer,
     this.avatarSize = 64,
     this.typewriter = true,
+    this.speaker = Speaker.profe,
   });
   final String text;
   final Widget? footer;
   final double avatarSize;
   final bool typewriter;
+  final Speaker speaker;
 
   @override
   State<ProfessorSays> createState() => _ProfessorSaysState();
@@ -268,18 +368,21 @@ class _ProfessorSaysState extends State<ProfessorSays> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Tooltip(
-          message: Professor.name,
+          message: widget.speaker.name,
           child: Column(
             children: [
-              ProfessorAvatar(size: widget.avatarSize, talking: _talking),
+              ProfessorAvatar(
+                  size: widget.avatarSize,
+                  talking: _talking,
+                  speaker: widget.speaker),
               SizedBox(
                 width: widget.avatarSize + 16,
-                child: const Text('Profe Miaurício',
+                child: Text(widget.speaker.label,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
-                        color: AppTheme.accent2)),
+                        color: widget.speaker.color)),
               ),
             ],
           ),
@@ -290,6 +393,7 @@ class _ProfessorSaysState extends State<ProfessorSays> {
             text: widget.text,
             typewriter: widget.typewriter,
             footer: widget.footer,
+            color: widget.speaker.border,
             onTyped: () {
               if (mounted) setState(() => _talking = false);
             },
@@ -303,7 +407,8 @@ class _ProfessorSaysState extends State<ProfessorSays> {
 /// Full-screen "conversation" with the professor, one line at a time,
 /// like talking to a character in an RPG.
 class ProfessorDialog {
-  static Future<void> show(BuildContext context, List<String> lines) {
+  static Future<void> show(BuildContext context, List<String> lines,
+      {Speaker speaker = Speaker.profe, String? lastLabel}) {
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -317,14 +422,18 @@ class ProfessorDialog {
           child: child,
         ),
       ),
-      pageBuilder: (_, __, ___) => _ConversationView(lines: lines),
+      pageBuilder: (_, __, ___) => _ConversationView(
+          lines: lines, speaker: speaker, lastLabel: lastLabel),
     );
   }
 }
 
 class _ConversationView extends StatefulWidget {
-  const _ConversationView({required this.lines});
+  const _ConversationView(
+      {required this.lines, required this.speaker, this.lastLabel});
   final List<String> lines;
+  final Speaker speaker;
+  final String? lastLabel;
 
   @override
   State<_ConversationView> createState() => _ConversationViewState();
@@ -345,18 +454,23 @@ class _ConversationViewState extends State<_ConversationView> {
   Widget build(BuildContext context) {
     final l = L.instance;
     final last = _i == widget.lines.length - 1;
-    return SafeArea(
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 620),
-          child: Material(
-            type: MaterialType.transparency,
+    final boss = widget.speaker == Speaker.boss;
+    return Material(
+      // Own dim layer so the character always stands out, boss in red.
+      color: (boss ? const Color(0xFF3A0008) : Colors.black)
+          .withValues(alpha: 0.78),
+      child: SafeArea(
+        child: Align(
+          alignment: const Alignment(0, -0.35),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 620),
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: ProfessorSays(
                 key: ValueKey(_i),
                 text: widget.lines[_i],
                 avatarSize: 110,
+                speaker: widget.speaker,
                 footer: Row(
                   children: [
                     Text('${_i + 1}/${widget.lines.length}',
@@ -368,7 +482,9 @@ class _ConversationViewState extends State<_ConversationView> {
                       child: FilledButton(
                         autofocus: true,
                         onPressed: _next,
-                        child: Text(l.t(last ? 'profe_go' : 'profe_next')),
+                        child: Text(last
+                            ? (widget.lastLabel ?? l.t('profe_go'))
+                            : l.t('profe_next')),
                       ),
                     ),
                   ],

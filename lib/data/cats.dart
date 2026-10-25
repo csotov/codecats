@@ -528,9 +528,9 @@ const kCats = <CatMeme>[
     hintEn: 'Hold 200 Meowdollars at once',
   ),
   CatMeme(
-    id: 'angry',
-    nameEs: 'Gato Furioso',
-    nameEn: 'Angry Cat',
+    id: 'twerk',
+    nameEs: 'Gato Meneo',
+    nameEn: 'Wiggle Cat',
     rarity: CatRarity.epico,
     trigger: CatTrigger.solvedN,
     need: 40,

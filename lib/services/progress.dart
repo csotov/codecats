@@ -96,6 +96,9 @@ class Progress extends ChangeNotifier {
   /// Cat-meme collection: ids of unlocked cats (see data/cats.dart).
   final Set<String> unlockedCats = {};
 
+  /// Big O classes the professor already explained.
+  final Set<String> taughtBigO = {};
+
   /// Consecutive victories — resets on a failed battle.
   int streak = 0;
 
@@ -181,6 +184,9 @@ class Progress extends ChangeNotifier {
         unlockedCats
           ..clear()
           ..addAll((j['cats'] as List? ?? const []).map((e) => '$e'));
+        taughtBigO
+          ..clear()
+          ..addAll((j['bo'] as List? ?? const []).map((e) => '$e'));
       } catch (_) {/* corrupted state -> start fresh */}
     }
     if (save) await prefs.setString(_activeKey, active!.id);
@@ -201,6 +207,7 @@ class Progress extends ChangeNotifier {
           'rd': lastSolveDay,
           'gh': ghostStartDay,
           'cats': unlockedCats.toList(),
+          'bo': taughtBigO.toList(),
           'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
         }));
   }
@@ -283,6 +290,16 @@ class Progress extends ChangeNotifier {
     _save();
     notifyListeners();
     return true;
+  }
+
+  /// O(1) is explained together with O(n), when loops arrive.
+  bool shouldTeachBigO(String id) => id != 'c1' && !taughtBigO.contains(id);
+
+  void markBigOTaught(String id) {
+    taughtBigO.add(id);
+    if (id == 'n') taughtBigO.add('c1');
+    _save();
+    notifyListeners();
   }
 
   /// Free hint from the professor's tutorial (after repeated fails).
@@ -439,6 +456,7 @@ class Progress extends ChangeNotifier {
     coins = kStartCoins;
     streak = 0;
     unlockedCats.clear();
+    taughtBigO.clear();
     levels.clear();
     final prefs = await SharedPreferences.getInstance();
     if (active != null) {

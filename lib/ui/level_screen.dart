@@ -22,6 +22,7 @@ import 'coin.dart';
 import 'keyboard_scroll.dart';
 import 'level_intro.dart';
 import 'meme_player.dart';
+import '../data/complexity.dart';
 import 'professor.dart';
 import 'results.dart';
 import 'theme.dart';
@@ -87,7 +88,11 @@ class _LevelScreenState extends State<LevelScreen>
     super.initState();
     _runner = createRunner();
     _openLevels++;
-    Sfx.battle();
+    if (widget.level.boss) {
+      Sfx.boss();
+    } else {
+      Sfx.battle();
+    }
     // Every visit (or retry) starts clean: no leftover code from
     // the previous attempt. Paid hints stay unlocked.
     _roots = blocksFromJson(null);
@@ -105,6 +110,15 @@ class _LevelScreenState extends State<LevelScreen>
       await ProfessorDialog.show(context, Professor.introLines());
       if (!mounted) return;
     }
+    if (!mounted) return;
+    if (widget.level.boss && !_welcomeShown) {
+      _welcomeShown = true; // the boss taunt replaces the welcome meme
+      await ProfessorDialog.show(context, Boss.introLines(),
+          speaker: Speaker.boss, lastLabel: Boss.replyLabel());
+      if (!mounted) return;
+    }
+    await _teachBigO();
+    if (!mounted) return;
     if (!_welcomeShown) {
       _welcomeShown = true;
       final v = _cat('vibing');
@@ -257,6 +271,12 @@ class _LevelScreenState extends State<LevelScreen>
       if (!mounted) return;
       // Banana cat cries with you on the first fail of the session —
       // funny, not punishing; detailed results still show after.
+      if (widget.level.boss) {
+        await ProfessorDialog.show(context, [Boss.failTaunt(_failStreak)],
+            speaker: Speaker.boss, lastLabel: Boss.replyLabel());
+        if (!mounted) return;
+      }
+
       if (!_failMemeShown) {
         _failMemeShown = true;
         final b = _cat('banana');
@@ -280,6 +300,12 @@ class _LevelScreenState extends State<LevelScreen>
     _failStreak = 0;
     _won = true;
     _encourage?.cancel();
+    if (widget.level.boss) {
+      await ProfessorDialog.show(context, [Boss.defeatLine()],
+          speaker: Speaker.boss,
+          lastLabel: L.instance.pick('¡Gané!', 'I won!'));
+      if (!mounted) return;
+    }
 
     // Hints are paid in Miaudólares now, so they no longer cost stars.
     final stars = _attemptsThisSession <= 1 ? 3 : 2;
@@ -456,6 +482,8 @@ class _LevelScreenState extends State<LevelScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _bigOChip(),
+          const SizedBox(height: 6),
           Text(l.pick(lv.storyEs, lv.storyEn),
               style: const TextStyle(
                   fontStyle: FontStyle.italic,
@@ -607,6 +635,66 @@ class _LevelScreenState extends State<LevelScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _teachBigO({bool force = false}) async {
+    if (widget.examMode) return;
+    final bo = complexityOf(widget.level);
+    if (!force && !Progress.instance.shouldTeachBigO(bo.id)) return;
+    await ProfessorDialog.show(context, bigOLesson(bo));
+    if (!mounted) return;
+    Progress.instance.markBigOTaught(bo.id);
+    setState(() {});
+  }
+
+  /// Small note until the professor teaches this class, then it grows.
+  Widget _bigOChip() {
+    final l = L.instance;
+    final bo = complexityOf(widget.level);
+    final taught = Progress.instance.taughtBigO.contains(bo.id);
+    final color = taught ? AppTheme.accent2 : AppTheme.textLo;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Tooltip(
+        message: l.t('tip_bigo'),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => _teachBigO(force: true),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOut,
+            padding: EdgeInsets.symmetric(
+                horizontal: taught ? 12 : 8, vertical: taught ? 6 : 2),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: taught
+                  ? AppTheme.accent2.withValues(alpha: 0.12)
+                  : Colors.transparent,
+              border: Border.all(
+                  color: color.withValues(alpha: taught ? 0.9 : 0.45),
+                  width: taught ? 1.5 : 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.speed, size: taught ? 16 : 11, color: color),
+                SizedBox(width: taught ? 6 : 4),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 400),
+                  style: TextStyle(
+                      fontSize: taught ? 14 : 10.5,
+                      fontWeight: taught ? FontWeight.w800 : FontWeight.w600,
+                      color: color),
+                  child: Text(taught
+                      ? 'Big O: ${bo.notation} · ${bo.name}'
+                      : 'Big O: ${bo.notation}'),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
