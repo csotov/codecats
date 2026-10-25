@@ -46,82 +46,84 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
     final p = Progress.instance;
     final cats =
         kCats.where((c) => c.trigger == CatTrigger.halloweenN).toList();
-    final owned = cats.where((c) => p.unlockedCats.contains(c.id)).length;
     return AnimatedBuilder(
       animation: p,
-      builder: (context, _) => Scaffold(
-        backgroundColor: _night,
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF2A0E05),
-          title: Text(
-              l.pick('🎃 Noche de Brujas Gatuna', '🎃 Cat Halloween Night'),
-              style:
-                  const TextStyle(fontWeight: FontWeight.w900, color: _orange)),
-        ),
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFF2A0E05), _night, Color(0xFF1E0A2E)],
-            ),
+      builder: (context, _) {
+        final owned = cats.where((c) => p.unlockedCats.contains(c.id)).length;
+        return Scaffold(
+          backgroundColor: _night,
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF2A0E05),
+            title: Text(
+                l.pick('🎃 Noche de Brujas Gatuna', '🎃 Cat Halloween Night'),
+                style: const TextStyle(
+                    fontWeight: FontWeight.w900, color: _orange)),
           ),
-          child: KeyboardScroll(
-            controller: _scroll,
-            child: ListView(
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF2A0E05), _night, Color(0xFF1E0A2E)],
+              ),
+            ),
+            child: KeyboardScroll(
               controller: _scroll,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
-              children: [
-                const Center(
-                  child: Text('🦇   🕸️   👻   🎃   🍬   🕸️   🦇',
-                      style: TextStyle(fontSize: 26)),
-                ),
-                const SizedBox(height: 10),
-                Center(
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: _orange),
-                      color: _orange.withValues(alpha: 0.12),
-                    ),
-                    child: Text(
-                      l.pick(
-                          '⏳ Evento por tiempo limitado: quedan '
-                              '${Halloween.daysLeft} días',
-                          '⏳ Limited-time event: ${Halloween.daysLeft} days left'),
-                      style: const TextStyle(
-                          color: _orange, fontWeight: FontWeight.w800),
+              child: ListView(
+                controller: _scroll,
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 30),
+                children: [
+                  const Center(
+                    child: Text('🦇   🕸️   👻   🎃   🍬   🕸️   🦇',
+                        style: TextStyle(fontSize: 26)),
+                  ),
+                  const SizedBox(height: 10),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: _orange),
+                        color: _orange.withValues(alpha: 0.12),
+                      ),
+                      child: Text(
+                        l.pick(
+                            '⏳ Evento por tiempo limitado: quedan '
+                                '${Halloween.daysLeft} días',
+                            '⏳ Limited-time event: ${Halloween.daysLeft} days left'),
+                        style: const TextStyle(
+                            color: _orange, fontWeight: FontWeight.w800),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 14),
-                ProfessorSays(
-                  text: l.pick(
-                      '¡Muajaja! Hoy me puse el sombrero de bruja. Resolvé '
-                          'estos 5 hechizos de C++ y vas a ganar gatos de '
-                          'Halloween que después desaparecen. ¡No te los '
-                          'pierdas!',
-                      'Mwahaha! Today I wear my witch hat. Solve these 5 C++ '
-                          'spells to win Halloween cats that disappear later. '
-                          'Do not miss them!'),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  l.pick('Gatos del evento: $owned/${cats.length}',
-                      'Event cats: $owned/${cats.length}'),
-                  style: const TextStyle(
-                      color: _orange, fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 10),
-                for (var i = 0; i < kHalloweenLevels.length; i++)
-                  _levelCard(context, l, i),
-              ],
+                  const SizedBox(height: 14),
+                  ProfessorSays(
+                    text: l.pick(
+                        '¡Muajaja! Hoy me puse el sombrero de bruja. Resolvé '
+                            'estos 5 hechizos de C++ y vas a ganar gatos de '
+                            'Halloween que después desaparecen. ¡No te los '
+                            'pierdas!',
+                        'Mwahaha! Today I wear my witch hat. Solve these 5 C++ '
+                            'spells to win Halloween cats that disappear later. '
+                            'Do not miss them!'),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    l.pick('Gatos del evento: $owned/${cats.length}',
+                        'Event cats: $owned/${cats.length}'),
+                    style: const TextStyle(
+                        color: _orange, fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 10),
+                  for (var i = 0; i < kHalloweenLevels.length; i++)
+                    _levelCard(context, l, i),
+                ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

@@ -89,6 +89,15 @@ class _LevelScreenState extends State<LevelScreen>
     super.initState();
     _runner = createRunner();
     _openLevels++;
+    // Clips this level may show: welcome, fail, victory, encouragement,
+    // plus the next unseen cats. Fetched now so they play without lag.
+    MemeBurst.warm(kCats
+        .where((c) =>
+            kCommonPool.contains(c.id) ||
+            const ['vibing', 'banana', 'chipi', 'nyan', 'oiia']
+                .contains(c.id) ||
+            !Progress.instance.unlockedCats.contains(c.id))
+        .take(14));
     if (Halloween.isEventLevel(widget.level.id)) {
       Sfx.spooky();
     } else if (widget.level.boss) {
@@ -144,7 +153,8 @@ class _LevelScreenState extends State<LevelScreen>
       return;
     }
     final id = _nudgeCats[_nudges++ % _nudgeCats.length];
-    final cat = kCats.firstWhere((c) => c.id == id, orElse: () => kCats.first);
+    // Only owned or starter cats: watching a nudge must not award a cat.
+    final cat = _cat(id) ?? _cat('happy')!;
     await MemeBurst.show(context, cat,
         captionEs: L.instance.t('you_can_do_it'),
         captionEn: L.instance.t('you_can_do_it'),

@@ -6,6 +6,8 @@ import 'package:video_player/video_player.dart';
 import '../data/cats.dart';
 import '../l10n.dart';
 import '../services/progress.dart';
+import '../services/prefetch_io.dart'
+    if (dart.library.js_interop) '../services/prefetch_web.dart';
 import '../services/sfx.dart';
 import 'theme.dart';
 
@@ -15,6 +17,11 @@ import 'theme.dart';
 class MemeBurst {
   /// [minDuration]: short clips loop until at least this long has
   /// passed, so no meme flashes by too fast to enjoy.
+  /// Download clips in the background before they are needed.
+  static void warm(Iterable<CatMeme> cats) {
+    prefetchAssets([for (final c in cats) c.file]);
+  }
+
   static Future<void> show(BuildContext context, CatMeme cat,
       {String? captionEs,
       String? captionEn,
@@ -67,6 +74,11 @@ class _BurstDialogState extends State<_BurstDialog>
 
   Future<void> _init() async {
     try {
+      // Make sure the whole clip is local before it starts, so it never
+      // freezes halfway (fast when MemeBurst.warm already fetched it).
+      await prefetchAssets([widget.cat.file])
+          .timeout(const Duration(seconds: 3), onTimeout: () {});
+      if (!mounted) return;
       final c = VideoPlayerController.asset(widget.cat.file);
       _vc = c;
       await c.initialize();

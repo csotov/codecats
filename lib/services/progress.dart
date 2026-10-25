@@ -370,16 +370,31 @@ class Progress extends ChangeNotifier {
   /// Gatoteca only when actually shown (see [markSeen]).
   List<CatMeme> checkCatUnlocks() {
     final fresh = <CatMeme>[];
-    for (final c in kCats) {
-      if (unlockedCats.contains(c.id)) continue;
-      if (c.trigger == CatTrigger.always) continue;
-      if (!_catMet(c.trigger, c.need)) continue;
-      if (fresh.isNotEmpty) break;
-      fresh.add(c);
-    }
+    int rank(CatMeme c) => c.trigger == CatTrigger.halloweenN
+        ? 0
+        : _momentTriggers.contains(c.trigger)
+            ? 1
+            : 2;
+    final eligible = [
+      for (final c in kCats)
+        if (!unlockedCats.contains(c.id) &&
+            c.trigger != CatTrigger.always &&
+            _catMet(c.trigger, c.need))
+          c
+    ];
+    // Event and "this win" cats first: they can't wait for a later draw
+    // (the event ends; the win context is cleared below).
+    final order = {for (var i = 0; i < kCats.length; i++) kCats[i].id: i};
+    eligible.sort((a, b) {
+      final r = rank(a) - rank(b);
+      return r != 0 ? r : order[a.id]! - order[b.id]!;
+    });
+    if (eligible.isNotEmpty) fresh.add(eligible.first);
     if (fresh.isNotEmpty) {
-      final give =
-          unlockedCats.isEmpty || _dryChecks >= 2 || _rng.nextDouble() < 0.5;
+      final give = rank(fresh.first) < 2 ||
+          unlockedCats.isEmpty ||
+          _dryChecks >= 2 ||
+          _rng.nextDouble() < 0.5;
       if (give) {
         _dryChecks = 0;
       } else {
@@ -395,6 +410,13 @@ class Progress extends ChangeNotifier {
     _lastSolve = null;
     return fresh;
   }
+
+  static const _momentTriggers = {
+    CatTrigger.perfect,
+    CatTrigger.codeMode,
+    CatTrigger.worldBoss,
+    CatTrigger.syntaxFix,
+  };
 
   bool _catMet(CatTrigger t, int need) {
     final s = _lastSolve;
@@ -476,9 +498,13 @@ class Progress extends ChangeNotifier {
     return levels[world.levels[idx - 1].id]?.solved ?? false;
   }
 
-  int get totalStars => levels.values.fold(0, (s, p) => s + p.stars);
+  /// Campaign-only totals; Halloween event levels (hw*) count separately.
+  Iterable<LevelProgress> get _campaign =>
+      levels.entries.where((e) => !e.key.startsWith('hw')).map((e) => e.value);
 
-  int get solvedCount => levels.values.where((p) => p.solved).length;
+  int get totalStars => _campaign.fold(0, (s, p) => s + p.stars);
+
+  int get solvedCount => _campaign.where((p) => p.solved).length;
 
   /// Reset only the ACTIVE profile's progress (start from zero).
   Future<void> reset() async {
