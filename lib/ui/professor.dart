@@ -52,8 +52,8 @@ class Professor {
   }
 }
 
-/// The professor's face: orange cat, round glasses, graduation cap and
-/// a big moustache. [talking] animates the mouth.
+/// The professor: Chemistry Cat with glasses and bow tie. Idle he
+/// floats gently; while [talking] he hops and wiggles.
 class ProfessorAvatar extends StatefulWidget {
   const ProfessorAvatar({super.key, this.size = 72, this.talking = false});
   final double size;
@@ -77,178 +77,32 @@ class _ProfessorAvatarState extends State<ProfessorAvatar>
 
   @override
   Widget build(BuildContext context) {
+    final img = Image.asset('assets/profe.png',
+        width: widget.size,
+        height: widget.size,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.medium);
     return AnimatedBuilder(
       animation: _t,
-      builder: (_, __) {
-        final v = _t.value;
-        final bob = math.sin(v * 2 * math.pi) * widget.size * 0.025;
-        final mouth = widget.talking
-            ? (0.5 + 0.5 * math.sin(v * 2 * math.pi * 7)).abs()
-            : 0.0;
-        final blink = v > 0.93;
+      child: img,
+      builder: (_, child) {
+        final v = _t.value * 2 * math.pi;
+        final double dy;
+        final double tilt;
+        if (widget.talking) {
+          dy = -(math.sin(v * 6).abs()) * widget.size * 0.06;
+          tilt = math.sin(v * 3) * 0.05;
+        } else {
+          dy = math.sin(v) * widget.size * 0.02;
+          tilt = 0;
+        }
         return Transform.translate(
-          offset: Offset(0, bob),
-          child: SizedBox.square(
-            dimension: widget.size,
-            child: CustomPaint(
-                painter: _ProfessorPainter(mouth: mouth, blink: blink)),
-          ),
+          offset: Offset(0, dy),
+          child: Transform.rotate(angle: tilt, child: child),
         );
       },
     );
   }
-}
-
-class _ProfessorPainter extends CustomPainter {
-  _ProfessorPainter({required this.mouth, required this.blink});
-  final double mouth;
-  final bool blink;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final s = size.width;
-    final fur = Paint()..color = const Color(0xFFF2A541);
-    final furDark = Paint()..color = const Color(0xFFC9772A);
-    final white = Paint()..color = const Color(0xFFFFF4E6);
-    final ink = Paint()..color = const Color(0xFF2B1A12);
-    final head = Offset(s * 0.5, s * 0.58);
-    final hr = s * 0.32;
-
-    // ears
-    for (final side in [-1.0, 1.0]) {
-      final ear = Path()
-        ..moveTo(head.dx + side * hr * 0.95, head.dy - hr * 0.2)
-        ..lineTo(head.dx + side * hr * 0.9, head.dy - hr * 1.35)
-        ..lineTo(head.dx + side * hr * 0.2, head.dy - hr * 0.85)
-        ..close();
-      canvas.drawPath(ear, fur);
-      final inner = Path()
-        ..moveTo(head.dx + side * hr * 0.82, head.dy - hr * 0.4)
-        ..lineTo(head.dx + side * hr * 0.8, head.dy - hr * 1.1)
-        ..lineTo(head.dx + side * hr * 0.35, head.dy - hr * 0.8)
-        ..close();
-      canvas.drawPath(inner, Paint()..color = const Color(0xFFFFB3C7));
-    }
-    // head + stripes
-    canvas.drawOval(
-        Rect.fromCenter(center: head, width: hr * 2.15, height: hr * 1.9), fur);
-    for (var i = -1; i <= 1; i++) {
-      canvas.drawRRect(
-          RRect.fromRectAndRadius(
-              Rect.fromCenter(
-                  center: Offset(head.dx + i * hr * 0.28, head.dy - hr * 0.72),
-                  width: hr * 0.12,
-                  height: hr * 0.36),
-              Radius.circular(hr)),
-          furDark);
-    }
-    // muzzle
-    canvas.drawOval(
-        Rect.fromCenter(
-            center: Offset(head.dx, head.dy + hr * 0.42),
-            width: hr * 1.15,
-            height: hr * 0.75),
-        white);
-    // eyes
-    for (final side in [-1.0, 1.0]) {
-      final c = Offset(head.dx + side * hr * 0.42, head.dy - hr * 0.08);
-      if (blink) {
-        canvas.drawLine(
-            c.translate(-hr * 0.13, 0),
-            c.translate(hr * 0.13, 0),
-            ink
-              ..strokeWidth = s * 0.02
-              ..strokeCap = StrokeCap.round);
-      } else {
-        canvas.drawOval(
-            Rect.fromCenter(center: c, width: hr * 0.26, height: hr * 0.34),
-            ink);
-        canvas.drawCircle(
-            c.translate(-hr * 0.04, -hr * 0.06), hr * 0.05, white);
-      }
-      // round glasses
-      canvas.drawCircle(
-          c,
-          hr * 0.3,
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = s * 0.025
-            ..color = const Color(0xFF3D2A6B));
-    }
-    canvas.drawLine(
-        Offset(head.dx - hr * 0.12, head.dy - hr * 0.1),
-        Offset(head.dx + hr * 0.12, head.dy - hr * 0.1),
-        Paint()
-          ..strokeWidth = s * 0.025
-          ..color = const Color(0xFF3D2A6B));
-    // nose
-    final nose = Path()
-      ..moveTo(head.dx - hr * 0.1, head.dy + hr * 0.2)
-      ..lineTo(head.dx + hr * 0.1, head.dy + hr * 0.2)
-      ..lineTo(head.dx, head.dy + hr * 0.32)
-      ..close();
-    canvas.drawPath(nose, Paint()..color = const Color(0xFFE5677F));
-    // mouth (opens while talking)
-    canvas.drawOval(
-        Rect.fromCenter(
-            center: Offset(head.dx, head.dy + hr * 0.52),
-            width: hr * 0.28,
-            height: hr * (0.06 + 0.22 * mouth)),
-        Paint()..color = const Color(0xFF7A2335));
-    // big moustache
-    final stache = Paint()..color = const Color(0xFF6B3E1E);
-    for (final side in [-1.0, 1.0]) {
-      final p = Path()
-        ..moveTo(head.dx, head.dy + hr * 0.34)
-        ..quadraticBezierTo(head.dx + side * hr * 0.45, head.dy + hr * 0.22,
-            head.dx + side * hr * 0.85, head.dy + hr * 0.5)
-        ..quadraticBezierTo(head.dx + side * hr * 0.45, head.dy + hr * 0.45,
-            head.dx, head.dy + hr * 0.44)
-        ..close();
-      canvas.drawPath(p, stache);
-    }
-    // whiskers
-    final wh = Paint()
-      ..color = Colors.white70
-      ..strokeWidth = s * 0.01;
-    for (final side in [-1.0, 1.0]) {
-      for (var i = -1; i <= 1; i++) {
-        canvas.drawLine(
-            Offset(head.dx + side * hr * 0.6, head.dy + hr * 0.35),
-            Offset(head.dx + side * hr * 1.25, head.dy + hr * (0.3 + i * 0.15)),
-            wh);
-      }
-    }
-    // graduation cap
-    final capTop = head.dy - hr * 1.05;
-    final board = Path()
-      ..moveTo(head.dx, capTop - hr * 0.32)
-      ..lineTo(head.dx + hr * 0.95, capTop)
-      ..lineTo(head.dx, capTop + hr * 0.3)
-      ..lineTo(head.dx - hr * 0.95, capTop)
-      ..close();
-    final capPaint = Paint()..color = const Color(0xFF1B1030);
-    canvas.drawRect(
-        Rect.fromCenter(
-            center: Offset(head.dx, capTop + hr * 0.22),
-            width: hr * 0.95,
-            height: hr * 0.35),
-        capPaint);
-    canvas.drawPath(board, capPaint);
-    final tassel = Paint()
-      ..color = AppTheme.accent2
-      ..strokeWidth = s * 0.02;
-    canvas.drawLine(Offset(head.dx, capTop),
-        Offset(head.dx + hr * 0.75, capTop + hr * 0.1), tassel);
-    canvas.drawLine(Offset(head.dx + hr * 0.75, capTop + hr * 0.1),
-        Offset(head.dx + hr * 0.78, capTop + hr * 0.55), tassel);
-    canvas.drawCircle(
-        Offset(head.dx + hr * 0.78, capTop + hr * 0.6), s * 0.025, tassel);
-  }
-
-  @override
-  bool shouldRepaint(_ProfessorPainter old) =>
-      old.mouth != mouth || old.blink != blink;
 }
 
 /// A comic speech bubble whose tail points left (at the speaker).
