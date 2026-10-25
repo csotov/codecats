@@ -96,6 +96,9 @@ class Progress extends ChangeNotifier {
   /// Cat-meme collection: ids of unlocked cats (see data/cats.dart).
   final Set<String> unlockedCats = {};
 
+  /// Big O classes the professor already explained.
+  final Set<String> taughtBigO = {};
+
   /// Consecutive victories — resets on a failed battle.
   int streak = 0;
 
@@ -181,6 +184,9 @@ class Progress extends ChangeNotifier {
         unlockedCats
           ..clear()
           ..addAll((j['cats'] as List? ?? const []).map((e) => '$e'));
+        taughtBigO
+          ..clear()
+          ..addAll((j['bo'] as List? ?? const []).map((e) => '$e'));
       } catch (_) {/* corrupted state -> start fresh */}
     }
     if (save) await prefs.setString(_activeKey, active!.id);
@@ -201,6 +207,7 @@ class Progress extends ChangeNotifier {
           'rd': lastSolveDay,
           'gh': ghostStartDay,
           'cats': unlockedCats.toList(),
+          'bo': taughtBigO.toList(),
           'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
         }));
   }
@@ -285,6 +292,25 @@ class Progress extends ChangeNotifier {
     return true;
   }
 
+  /// O(1) is explained together with O(n), when loops arrive.
+  bool shouldTeachBigO(String id) => id != 'c1' && !taughtBigO.contains(id);
+
+  void markBigOTaught(String id) {
+    taughtBigO.add(id);
+    if (id == 'n') taughtBigO.add('c1');
+    _save();
+    notifyListeners();
+  }
+
+  /// Free hint from the professor's tutorial (after repeated fails).
+  void giftHint(String levelId) {
+    final p = of(levelId);
+    p.hintsBought++;
+    p.hintUsed = true;
+    _save();
+    notifyListeners();
+  }
+
   static String _dayKey(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
@@ -332,7 +358,7 @@ class Progress extends ChangeNotifier {
     final fresh = <CatMeme>[];
     for (final c in kCats) {
       if (unlockedCats.contains(c.id)) continue;
-      if (_catMet(c.trigger)) {
+      if (_catMet(c.trigger, c.need)) {
         unlockedCats.add(c.id);
         fresh.add(c);
       }
@@ -345,7 +371,7 @@ class Progress extends ChangeNotifier {
     return fresh;
   }
 
-  bool _catMet(CatTrigger t) {
+  bool _catMet(CatTrigger t, int need) {
     final s = _lastSolve;
     switch (t) {
       case CatTrigger.always:
@@ -387,6 +413,14 @@ class Progress extends ChangeNotifier {
       case CatTrigger.allStarsW1:
         final w1 = kWorlds.first;
         return w1.levels.every((lv) => (levels[lv.id]?.stars ?? 0) >= 3);
+      case CatTrigger.solvedN:
+        return solvedCount >= need;
+      case CatTrigger.starsN:
+        return totalStars >= need;
+      case CatTrigger.triesN:
+        return levels.values.fold(0, (n, p) => n + p.attempts) >= need;
+      case CatTrigger.coinsN:
+        return coins >= need;
     }
   }
 
@@ -422,6 +456,7 @@ class Progress extends ChangeNotifier {
     coins = kStartCoins;
     streak = 0;
     unlockedCats.clear();
+    taughtBigO.clear();
     levels.clear();
     final prefs = await SharedPreferences.getInstance();
     if (active != null) {

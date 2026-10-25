@@ -218,6 +218,34 @@ class L {
       'es': 'Gasta Miaudólares para ver una ayuda',
       'en': 'Spend Meowdollars to see a clue'
     },
+    'profe_next': {'es': 'Siguiente', 'en': 'Next'},
+    'profe_go': {'es': '¡A programar!', 'en': "Let's code!"},
+    'tip_profe_next': {
+      'es': 'Ver lo que sigue diciendo el profe',
+      'en': 'See what the teacher says next'
+    },
+    'tip_profe_done': {
+      'es': 'Cerrar y volver al nivel',
+      'en': 'Close and go back to the level'
+    },
+    'tutorial_skip': {'es': 'Saltar', 'en': 'Skip'},
+    'tip_tutorial_skip': {
+      'es': 'Cerrar el tutorial ahora',
+      'en': 'Close the tutorial now'
+    },
+    'tutorial_done': {'es': '¡Entendido!', 'en': 'Got it!'},
+    'tutorial_open': {'es': 'Tutorial del profe', 'en': "Teacher's tutorial"},
+    'tip_tutorial_open': {
+      'es': 'El profe te muestra paso a paso qué hacer',
+      'en': 'The teacher shows you step by step what to do'
+    },
+    'tip_bigo': {
+      'es': 'Cuánto crece el tiempo del programa cuando crecen los datos. '
+          'Toca para que el profe lo explique',
+      'en': 'How much the program\'s time grows as the data grows. '
+          'Tap so the teacher explains it'
+    },
+    'bigo_lesson': {'es': 'Lección del profe', 'en': "Teacher's lesson"},
     'no_coins': {
       'es': '¡Te faltan Miaudólares! Gana o repasa niveles para conseguir más.',
       'en': 'Not enough Meowdollars! Win or replay levels to earn more.'

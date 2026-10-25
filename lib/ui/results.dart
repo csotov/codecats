@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../engine/judge.dart';
 import '../l10n.dart';
+import 'professor.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -30,8 +31,8 @@ class ResultsSheet extends StatelessWidget {
     final l = L.instance;
     return DraggableScrollableSheet(
       expand: false,
-      initialChildSize: 0.55,
-      maxChildSize: 0.9,
+      initialChildSize: 0.88,
+      maxChildSize: 0.95,
       builder: (c, scroll) => ListView(
         controller: scroll,
         padding: const EdgeInsets.all(16),
@@ -56,38 +57,9 @@ class ResultsSheet extends StatelessWidget {
   }
 
   Widget _coachCard(L l) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      color: AppTheme.accent2.withOpacity(0.12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: AppTheme.accent2.withOpacity(0.5)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('💡', style: TextStyle(fontSize: 20)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(l.t('coach'),
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                          color: AppTheme.accent2)),
-                  const SizedBox(height: 4),
-                  Text(l.pick(coach!.es, coach!.en),
-                      style: const TextStyle(fontSize: 13, height: 1.4)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: ProfessorSays(text: l.pick(coach!.es, coach!.en)),
     );
   }
 
@@ -96,12 +68,21 @@ class ResultsSheet extends StatelessWidget {
       TcStatus.pass => (Icons.check_circle, AppTheme.good, l.t('passed')),
       TcStatus.fail => (Icons.cancel, AppTheme.bad, l.t('wrong_answer')),
       TcStatus.tle => (Icons.timer_off, AppTheme.accent2, l.t('tle')),
-      TcStatus.parseError =>
-        (Icons.error_outline, AppTheme.bad, l.t('parse_error')),
-      TcStatus.runtimeError =>
-        (Icons.bug_report, AppTheme.bad, l.t('runtime_error')),
-      TcStatus.engineError =>
-        (Icons.warning_amber, AppTheme.accent2, l.t('runtime_error')),
+      TcStatus.parseError => (
+          Icons.error_outline,
+          AppTheme.bad,
+          l.t('parse_error')
+        ),
+      TcStatus.runtimeError => (
+          Icons.bug_report,
+          AppTheme.bad,
+          l.t('runtime_error')
+        ),
+      TcStatus.engineError => (
+          Icons.warning_amber,
+          AppTheme.accent2,
+          l.t('runtime_error')
+        ),
     };
 
     return Card(
@@ -128,15 +109,13 @@ class ResultsSheet extends StatelessWidget {
             if (!r.hidden && r.input.isNotEmpty) ...[
               const SizedBox(height: 6),
               Text(l.t('stdin_label'),
-                  style:
-                      const TextStyle(color: AppTheme.textLo, fontSize: 11)),
+                  style: const TextStyle(color: AppTheme.textLo, fontSize: 11)),
               MonoBox(text: r.input),
             ],
             if (!r.hidden && r.status != TcStatus.pass) ...[
               const SizedBox(height: 6),
               Text(l.t('expected'),
-                  style:
-                      const TextStyle(color: AppTheme.good, fontSize: 11)),
+                  style: const TextStyle(color: AppTheme.good, fontSize: 11)),
               MonoBox(text: r.expected, color: AppTheme.good),
               const SizedBox(height: 4),
               Text(l.t('got'),

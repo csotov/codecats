@@ -22,6 +22,8 @@ import 'coin.dart';
 import 'keyboard_scroll.dart';
 import 'level_intro.dart';
 import 'meme_player.dart';
+import '../data/complexity.dart';
+import 'professor.dart';
 import 'results.dart';
 import 'theme.dart';
 import 'victory.dart';
@@ -86,7 +88,11 @@ class _LevelScreenState extends State<LevelScreen>
     super.initState();
     _runner = createRunner();
     _openLevels++;
-    Sfx.battle();
+    if (widget.level.boss) {
+      Sfx.boss();
+    } else {
+      Sfx.battle();
+    }
     // Every visit (or retry) starts clean: no leftover code from
     // the previous attempt. Paid hints stay unlocked.
     _roots = blocksFromJson(null);
@@ -96,13 +102,27 @@ class _LevelScreenState extends State<LevelScreen>
     _tabController = TabController(length: _hybrid ? 2 : 1, vsync: this);
   }
 
-  void _introDone() {
+  Future<void> _introDone() async {
     if (!mounted) return;
     setState(() => _showIntro = false);
+    if (!widget.examMode && await Professor.firstMeeting()) {
+      if (!mounted) return;
+      await ProfessorDialog.show(context, Professor.introLines());
+      if (!mounted) return;
+    }
+    if (!mounted) return;
+    if (widget.level.boss && !_welcomeShown) {
+      _welcomeShown = true; // the boss taunt replaces the welcome meme
+      await ProfessorDialog.show(context, Boss.introLines(),
+          speaker: Speaker.boss, lastLabel: Boss.replyLabel());
+      if (!mounted) return;
+    }
+    await _teachBigO();
+    if (!mounted) return;
     if (!_welcomeShown) {
       _welcomeShown = true;
       final v = _cat('vibing');
-      if (v != null) MemeBurst.show(context, v);
+      if (v != null && mounted) MemeBurst.show(context, v);
     }
     _scheduleNudge(_firstNudge);
   }
@@ -211,6 +231,14 @@ class _LevelScreenState extends State<LevelScreen>
         _console = _describeError(res);
       }
     });
+    // Bring the output into view so it never hides below the editor.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _consoleKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(ctx,
+            alignment: 0.5, duration: const Duration(milliseconds: 300));
+      }
+    });
   }
 
   Future<void> _fight() async {
@@ -243,6 +271,12 @@ class _LevelScreenState extends State<LevelScreen>
       if (!mounted) return;
       // Banana cat cries with you on the first fail of the session —
       // funny, not punishing; detailed results still show after.
+      if (widget.level.boss) {
+        await ProfessorDialog.show(context, [Boss.failTaunt(_failStreak)],
+            speaker: Speaker.boss, lastLabel: Boss.replyLabel());
+        if (!mounted) return;
+      }
+
       if (!_failMemeShown) {
         _failMemeShown = true;
         final b = _cat('banana');
@@ -255,12 +289,23 @@ class _LevelScreenState extends State<LevelScreen>
           ? null
           : Coach.analyze(report, failStreak: _failStreak);
       _failStreak++;
+      _lastTip = tip;
       await ResultsSheet.show(context, report, coach: tip);
+      if (mounted && _failStreak >= 3 && !_tutorialShown && !widget.examMode) {
+        _tutorialShown = true;
+        await _runTutorial();
+      }
       return;
     }
     _failStreak = 0;
     _won = true;
     _encourage?.cancel();
+    if (widget.level.boss) {
+      await ProfessorDialog.show(context, [Boss.defeatLine()],
+          speaker: Speaker.boss,
+          lastLabel: L.instance.pick('¡Gané!', 'I won!'));
+      if (!mounted) return;
+    }
 
     // Hints are paid in Miaudólares now, so they no longer cost stars.
     final stars = _attemptsThisSession <= 1 ? 3 : 2;
@@ -294,6 +339,16 @@ class _LevelScreenState extends State<LevelScreen>
   }
 
   bool _failMemeShown = false;
+  bool _tutorialShown = false;
+  ({String es, String en})? _lastTip;
+
+  // Spotlight targets for the professor's tutorial.
+  final _missionKey = GlobalKey();
+  final _hintsKey = GlobalKey();
+  final _programKey = GlobalKey();
+  final _consoleKey = GlobalKey();
+  final _runKey = GlobalKey();
+  final _fightKey = GlobalKey();
 
   /// Consecutive failed battles on this level — feeds Coach escalation.
   int _failStreak = 0;
@@ -398,10 +453,11 @@ class _LevelScreenState extends State<LevelScreen>
                     controller: _scroll,
                     padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
                     children: [
-                      _missionCard(),
-                      _hintsCard(),
-                      _editorSection(),
-                      if (_console.isNotEmpty) _consoleCard(),
+                      KeyedSubtree(key: _missionKey, child: _missionCard()),
+                      KeyedSubtree(key: _hintsKey, child: _hintsCard()),
+                      KeyedSubtree(key: _programKey, child: _editorSection()),
+                      if (_console.isNotEmpty)
+                        KeyedSubtree(key: _consoleKey, child: _consoleCard()),
                     ],
                   ),
                 ),
@@ -426,6 +482,8 @@ class _LevelScreenState extends State<LevelScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _bigOChip(),
+          const SizedBox(height: 6),
           Text(l.pick(lv.storyEs, lv.storyEn),
               style: const TextStyle(
                   fontStyle: FontStyle.italic,
@@ -513,12 +571,21 @@ class _LevelScreenState extends State<LevelScreen>
     final l = L.instance;
     final hints = l.pickList(widget.level.hintsEs, widget.level.hintsEn);
     if (hints.isEmpty) return const SizedBox.shrink();
+    final shown = math.min(_hintsShown, hints.length);
+    final speech = shown == 0
+        ? l.pick(
+            '¿Te trabaste? Te vendo una pista por ${Progress.kHintCost} '
+                'Miaudólares. ¡Palabra de gato!',
+            'Stuck? I will sell you a hint for ${Progress.kHintCost} '
+                'Meowdollars. Cat\'s honor!')
+        : hints[shown - 1];
     return SectionCard(
       title: l.t('hints'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (var i = 0; i < _hintsShown && i < hints.length; i++)
+          // Earlier hints stay listed; the newest one is "spoken".
+          for (var i = 0; i < shown - 1; i++)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(
@@ -533,39 +600,179 @@ class _LevelScreenState extends State<LevelScreen>
                 ],
               ),
             ),
-          if (_hintsShown < hints.length)
-            Tooltip(
-              message: l.t('buy_hint_tip'),
-              child: TextButton.icon(
-                onPressed: () async {
-                  if (!Progress.instance.buyHint(widget.level.id)) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l.t('no_coins'))),
-                    );
-                    return;
-                  }
-                  setState(() => _hintsShown++);
-                  for (final c in Progress.instance.checkCatUnlocks()) {
-                    if (!mounted) return;
-                    await MemeBurst.show(context, c,
-                        captionEs: '¡Gato nuevo en tu Gatoteca!',
-                        captionEn: 'New cat in your Cat-dex!');
-                  }
-                },
-                icon: const Icon(Icons.lightbulb, size: 16),
-                label: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                        '${l.t('buy_hint')} (${_hintsShown + 1}/${hints.length})  '),
-                    const CoinPrice(Progress.kHintCost, size: 13),
-                  ],
-                ),
-              ),
-            )
+          ProfessorSays(
+            text: speech,
+            footer: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                if (shown < hints.length)
+                  Tooltip(
+                    message: l.t('buy_hint_tip'),
+                    child: FilledButton.tonalIcon(
+                      onPressed: _buyHint,
+                      icon: const Icon(Icons.lightbulb, size: 16),
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                              '${l.t('buy_hint')} (${shown + 1}/${hints.length})  '),
+                          const CoinPrice(Progress.kHintCost, size: 13),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (_failStreak >= 3 && !widget.examMode)
+                  Tooltip(
+                    message: l.t('tip_tutorial_open'),
+                    child: TextButton.icon(
+                      onPressed: _runTutorial,
+                      icon: const Icon(Icons.school, size: 16),
+                      label: Text(l.t('tutorial_open')),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _teachBigO({bool force = false}) async {
+    if (widget.examMode) return;
+    final bo = complexityOf(widget.level);
+    if (!force && !Progress.instance.shouldTeachBigO(bo.id)) return;
+    await ProfessorDialog.show(context, bigOLesson(bo));
+    if (!mounted) return;
+    Progress.instance.markBigOTaught(bo.id);
+    setState(() {});
+  }
+
+  /// Small note until the professor teaches this class, then it grows.
+  Widget _bigOChip() {
+    final l = L.instance;
+    final bo = complexityOf(widget.level);
+    final taught = Progress.instance.taughtBigO.contains(bo.id);
+    final color = taught ? AppTheme.accent2 : AppTheme.textLo;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Tooltip(
+        message: l.t('tip_bigo'),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => _teachBigO(force: true),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOut,
+            padding: EdgeInsets.symmetric(
+                horizontal: taught ? 12 : 8, vertical: taught ? 6 : 2),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: taught
+                  ? AppTheme.accent2.withValues(alpha: 0.12)
+                  : Colors.transparent,
+              border: Border.all(
+                  color: color.withValues(alpha: taught ? 0.9 : 0.45),
+                  width: taught ? 1.5 : 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.speed, size: taught ? 16 : 11, color: color),
+                SizedBox(width: taught ? 6 : 4),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 400),
+                  style: TextStyle(
+                      fontSize: taught ? 14 : 10.5,
+                      fontWeight: taught ? FontWeight.w800 : FontWeight.w600,
+                      color: color),
+                  child: Text(taught
+                      ? 'Big O: ${bo.notation} · ${bo.name}'
+                      : 'Big O: ${bo.notation}'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _buyHint() async {
+    final l = L.instance;
+    if (!Progress.instance.buyHint(widget.level.id)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l.t('no_coins'))),
+      );
+      return;
+    }
+    setState(() => _hintsShown++);
+    for (final c in Progress.instance.checkCatUnlocks()) {
+      if (!mounted) return;
+      await MemeBurst.show(context, c,
+          captionEs: '¡Gato nuevo en tu Gatoteca!',
+          captionEn: 'New cat in your Cat-dex!');
+    }
+  }
+
+  /// After 3 failed battles the professor walks through the screen:
+  /// mission, a free hint, the editor, then Run and Fight.
+  Future<void> _runTutorial() async {
+    final l = L.instance;
+    final lv = widget.level;
+    final hints = l.pickList(lv.hintsEs, lv.hintsEn);
+    String? gift;
+    if (_hintsShown < hints.length) {
+      Progress.instance.giftHint(lv.id);
+      setState(() => _hintsShown++);
+      gift = hints[_hintsShown - 1];
+    }
+    final tip = _lastTip;
+    await SpotlightTutorial.show(context, [
+      TutorialStep(
+          _missionKey,
+          l.pick(
+              'Paso 1: respiremos y releamos la misión. Te piden: '
+                  '"${lv.statementEs}". Mirá los ejemplos: lo que entra y lo '
+                  'que tiene que salir, letra por letra.',
+              'Step 1: deep breath, let\'s reread the mission: '
+                  '"${lv.statementEn}". Check the examples: what goes in and '
+                  'exactly what must come out.')),
+      TutorialStep(
+          _hintsKey,
+          gift != null
+              ? l.pick('Paso 2: esta pista va por mi cuenta, gratis: "$gift"',
+                  'Step 2: this hint is on me, free: "$gift"')
+              : l.pick(
+                  'Paso 2: ya tenés todas mis pistas. Leelas de nuevo con '
+                      'calma, ahí está la clave.',
+                  'Step 2: you already have all my hints. Read them again '
+                      'calmly, the key is there.')),
+      TutorialStep(
+          _programKey,
+          l.pick('Paso 3: acá armás tu programa. ',
+                  'Step 3: build your program here. ') +
+              (tip != null
+                  ? l.pick('Lo que falló la última vez: ${tip.es}',
+                      'What failed last time: ${tip.en}')
+                  : l.pick('Cambiá una cosa por vez.',
+                      'Change one thing at a time.'))),
+      TutorialStep(
+          _runKey,
+          l.pick(
+              'Paso 4: tocá Ejecutar para probar con el ejemplo. No gasta '
+                  'intentos y vas a ver la salida en la consola.',
+              'Step 4: press Run to try the example. It costs no attempts '
+                  'and shows the output in the console.')),
+      TutorialStep(
+          _fightKey,
+          l.pick(
+              'Paso 5: cuando la salida sea igualita a la esperada, tocá '
+                  '¡Combatir! ¡Vos podés, miau!',
+              'Step 5: when the output matches exactly, press Fight! '
+                  'You can do it, meow!')),
+    ]);
   }
 
   Widget _editorSection() {
@@ -723,6 +930,7 @@ class _LevelScreenState extends State<LevelScreen>
           children: [
             Expanded(
               child: Tooltip(
+                key: _runKey,
                 message: l.t('tip_run'),
                 child: OutlinedButton.icon(
                   onPressed: _busy ? null : _runSample,
@@ -740,6 +948,7 @@ class _LevelScreenState extends State<LevelScreen>
             Expanded(
               flex: 2,
               child: Tooltip(
+                key: _fightKey,
                 message: l.t('tip_submit'),
                 child: FilledButton.icon(
                   onPressed: _busy ? null : _fight,

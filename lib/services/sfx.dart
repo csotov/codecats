@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Tiny synthesized sound effects & music — no audio assets needed.
 /// Everything is rendered to WAV in memory: a victory arpeggio plus
 /// two loopable chiptune tracks (menu: calm; battle: driving).
-enum _Track { menu, battle }
+enum _Track { menu, battle, boss }
 
 class Sfx {
   Sfx._();
@@ -29,7 +29,7 @@ class Sfx {
       final prefs = await SharedPreferences.getInstance();
       muted = prefs.getBool(_mutedKey) ?? false;
       await _music.setReleaseMode(ReleaseMode.loop);
-      await _music.setVolume(0.28);
+      await _music.setVolume(0.4);
       _music.onPlayerStateChanged
           .listen((s) => _musicPlaying = s == PlayerState.playing);
       _musicReady = true;
@@ -48,8 +48,11 @@ class Sfx {
     _unlocked = true;
     final t = _track;
     _track = '';
-    await _play(t == _Track.battle.name ? _Track.battle : _Track.menu);
+    await _play(_byName(t));
   }
+
+  static _Track _byName(String n) =>
+      _Track.values.firstWhere((t) => t.name == n, orElse: () => _Track.menu);
 
   /// Menu loop: Am–F–C–G at 92 bpm, soft arpeggios.
   static Future<void> menu() => _play(_Track.menu);
@@ -57,16 +60,25 @@ class Sfx {
   /// Battle loop: Am–F–Dm–E at 132 bpm, driving bass.
   static Future<void> battle() => _play(_Track.battle);
 
+  /// Boss fight: "Aura Farming" clip (assets/music/boss.mp3).
+  static Future<void> boss() => _play(_Track.boss);
+
   static Future<void> _play(_Track t) async {
     if (_track == t.name) return;
     _track = t.name;
     if (!_musicReady || muted) return;
     try {
+      await _music.stop();
+      if (t == _Track.boss) {
+        await _music.play(AssetSource('music/boss.mp3'));
+        return;
+      }
       final wav = t == _Track.menu
           ? (_menuWav ??= _synthMenu())
           : (_battleWav ??= _synthBattle());
-      await _music.stop();
-      await _music.play(BytesSource(wav));
+      // The WAV must be labelled as such: on web the bytes become a data
+      // URI and some browsers refuse to decode a WAV tagged audio/mpeg.
+      await _music.play(BytesSource(wav, mimeType: 'audio/wav'));
     } catch (_) {}
   }
 
@@ -80,11 +92,7 @@ class Sfx {
       } else {
         final t = _track;
         _track = '';
-        if (t == _Track.battle.name) {
-          await battle();
-        } else {
-          await menu();
-        }
+        await _play(_byName(t));
       }
     } catch (_) {}
   }
@@ -93,7 +101,7 @@ class Sfx {
     try {
       _victoryWav ??= _synthVictory();
       await _player.stop();
-      await _player.play(BytesSource(_victoryWav!));
+      await _player.play(BytesSource(_victoryWav!, mimeType: 'audio/wav'));
     } catch (_) {
       // Audio is a bonus — never let it break the game.
     }
@@ -185,8 +193,8 @@ class Sfx {
     return _toWav(samples, sr);
   }
 
-  static void _tone(Float32List out, int start, int dur, double freq,
-      double gain, int sr,
+  static void _tone(
+      Float32List out, int start, int dur, double freq, double gain, int sr,
       {bool square = false}) {
     for (var i = 0; i < dur && start + i < out.length; i++) {
       final t = i / sr;
@@ -224,8 +232,8 @@ class Sfx {
     wStr(36, 'data');
     pcm.setUint32(40, n * 2, Endian.little);
     for (var i = 0; i < n; i++) {
-      pcm.setInt16(44 + i * 2, (samples[i] / peak * 30000).round(),
-          Endian.little);
+      pcm.setInt16(
+          44 + i * 2, (samples[i] / peak * 30000).round(), Endian.little);
     }
     return pcm.buffer.asUint8List();
   }
@@ -253,8 +261,8 @@ class Sfx {
         var s = math.sin(2 * math.pi * f * t) +
             0.25 * math.sin(2 * math.pi * f * 3 * t);
         // attack/decay envelope
-        final env = math.min(1.0, t / 0.015) *
-            math.exp(-3.0 * t / (nt[2] + 0.001));
+        final env =
+            math.min(1.0, t / 0.015) * math.exp(-3.0 * t / (nt[2] + 0.001));
         samples[start + i] += (s * env * 0.5).toDouble();
       }
     }
