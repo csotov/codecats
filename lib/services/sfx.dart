@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'music_out_io.dart' if (dart.library.js_interop) 'music_out_web.dart';
+
 /// Tiny synthesized sound effects & music — no audio assets needed.
 /// Everything is rendered to WAV in memory: a victory arpeggio plus
 /// two loopable chiptune tracks (menu: calm; battle: driving).
@@ -12,7 +14,7 @@ enum _Track { menu, battle, boss }
 class Sfx {
   Sfx._();
   static final AudioPlayer _player = AudioPlayer();
-  static final AudioPlayer _music = AudioPlayer();
+  static final MusicOut _music = MusicOut();
   static Uint8List? _victoryWav;
   static Uint8List? _menuWav;
   static Uint8List? _battleWav;
@@ -20,7 +22,6 @@ class Sfx {
   static bool muted = false;
   static String _track = '';
   static bool _musicReady = false;
-  static bool _musicPlaying = false;
 
   static const _mutedKey = 'codecats_music_muted';
 
@@ -28,10 +29,7 @@ class Sfx {
     try {
       final prefs = await SharedPreferences.getInstance();
       muted = prefs.getBool(_mutedKey) ?? false;
-      await _music.setReleaseMode(ReleaseMode.loop);
-      await _music.setVolume(0.4);
-      _music.onPlayerStateChanged
-          .listen((s) => _musicPlaying = s == PlayerState.playing);
+      await _music.init(0.4);
       _musicReady = true;
     } catch (_) {}
   }
@@ -44,7 +42,7 @@ class Sfx {
   /// blocked can still report "playing" while staying silent.
   static Future<void> poke() async {
     if (!_musicReady || muted || _track.isEmpty) return;
-    if (_unlocked && _musicPlaying) return;
+    if (_unlocked && _music.playing) return;
     _unlocked = true;
     final t = _track;
     _track = '';
@@ -68,17 +66,15 @@ class Sfx {
     _track = t.name;
     if (!_musicReady || muted) return;
     try {
-      await _music.stop();
       if (t == _Track.boss) {
-        await _music.play(AssetSource('music/boss.mp3'));
+        await _music.playAsset('music/boss.mp3');
         return;
       }
-      final wav = t == _Track.menu
-          ? (_menuWav ??= _synthMenu())
-          : (_battleWav ??= _synthBattle());
-      // The WAV must be labelled as such: on web the bytes become a data
-      // URI and some browsers refuse to decode a WAV tagged audio/mpeg.
-      await _music.play(BytesSource(wav, mimeType: 'audio/wav'));
+      await _music.playWav(
+          t.name,
+          () => t == _Track.menu
+              ? (_menuWav ??= _synthMenu())
+              : (_battleWav ??= _synthBattle()));
     } catch (_) {}
   }
 
