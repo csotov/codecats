@@ -28,7 +28,6 @@ class Cloud extends ChangeNotifier {
       DateTime.now().millisecondsSinceEpoch.toRadixString(36);
 
   final List<Map<String, dynamic>> _queue = [];
-  Timer? _flushTimer;
 
   Future<void> init() async {
     if (!configured) return;
@@ -38,7 +37,7 @@ class Cloud extends ChangeNotifier {
       _c = Supabase.instance.client;
       _c!.auth.onAuthStateChange.listen((_) => _refreshProfile());
       await _refreshProfile();
-      _flushTimer = Timer.periodic(const Duration(seconds: 10), (_) => flush());
+      Timer.periodic(const Duration(seconds: 10), (_) => flush());
     } catch (e) {
       debugPrint('Cloud init failed: $e');
     }
