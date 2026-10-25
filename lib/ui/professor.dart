@@ -461,11 +461,12 @@ class _ConversationViewState extends State<_ConversationView> {
           .withValues(alpha: 0.78),
       child: SafeArea(
         child: Align(
-          alignment: const Alignment(0, -0.35),
+          alignment: Alignment.topCenter,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 620),
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.fromLTRB(
+                  20, MediaQuery.sizeOf(context).height * 0.22, 20, 20),
               child: ProfessorSays(
                 key: ValueKey(_i),
                 text: widget.lines[_i],
