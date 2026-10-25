@@ -36,10 +36,16 @@ class Sfx {
     } catch (_) {}
   }
 
+  static bool _unlocked = false;
+
   /// Browsers block audio until the first user gesture; call this from
   /// a pointer-down listener so the queued track actually starts.
+  /// The first gesture always restarts the track: a play() the browser
+  /// blocked can still report "playing" while staying silent.
   static Future<void> poke() async {
-    if (!_musicReady || muted || _musicPlaying || _track.isEmpty) return;
+    if (!_musicReady || muted || _track.isEmpty) return;
+    if (_unlocked && _musicPlaying) return;
+    _unlocked = true;
     final t = _track;
     _track = '';
     await _play(t == _Track.battle.name ? _Track.battle : _Track.menu);
