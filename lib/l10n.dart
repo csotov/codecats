@@ -320,6 +320,13 @@ class L {
       'es': 'Cuenta: guardá tu progreso y seguí en otro dispositivo',
       'en': 'Account: save your progress and continue on another device'
     },
+    'remote_judge': {'es': 'Juez real (g++)', 'en': 'Real judge (g++)'},
+    'tip_remote_judge': {
+      'es':
+          'Compila con un g++ de verdad en la nube: toda la STL, velocidad real y límite de tiempo real. Necesita internet y tarda unos segundos más.',
+      'en':
+          'Compiles with a real g++ in the cloud: full STL, real speed and real time limit. Needs internet and takes a few seconds longer.'
+    },
     'tip_admin': {
       'es': 'Panel de admin: qué hace cada jugador',
       'en': 'Admin panel: what each player does'
