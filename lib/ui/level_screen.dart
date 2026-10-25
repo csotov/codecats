@@ -22,6 +22,7 @@ import 'coin.dart';
 import 'keyboard_scroll.dart';
 import 'level_intro.dart';
 import 'meme_player.dart';
+import 'professor.dart';
 import 'results.dart';
 import 'theme.dart';
 import 'victory.dart';
@@ -96,13 +97,18 @@ class _LevelScreenState extends State<LevelScreen>
     _tabController = TabController(length: _hybrid ? 2 : 1, vsync: this);
   }
 
-  void _introDone() {
+  Future<void> _introDone() async {
     if (!mounted) return;
     setState(() => _showIntro = false);
+    if (!widget.examMode && await Professor.firstMeeting()) {
+      if (!mounted) return;
+      await ProfessorDialog.show(context, Professor.introLines());
+      if (!mounted) return;
+    }
     if (!_welcomeShown) {
       _welcomeShown = true;
       final v = _cat('vibing');
-      if (v != null) MemeBurst.show(context, v);
+      if (v != null && mounted) MemeBurst.show(context, v);
     }
     _scheduleNudge(_firstNudge);
   }
@@ -211,6 +217,14 @@ class _LevelScreenState extends State<LevelScreen>
         _console = _describeError(res);
       }
     });
+    // Bring the output into view so it never hides below the editor.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final ctx = _consoleKey.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(ctx,
+            alignment: 0.5, duration: const Duration(milliseconds: 300));
+      }
+    });
   }
 
   Future<void> _fight() async {
@@ -255,7 +269,12 @@ class _LevelScreenState extends State<LevelScreen>
           ? null
           : Coach.analyze(report, failStreak: _failStreak);
       _failStreak++;
+      _lastTip = tip;
       await ResultsSheet.show(context, report, coach: tip);
+      if (mounted && _failStreak >= 3 && !_tutorialShown && !widget.examMode) {
+        _tutorialShown = true;
+        await _runTutorial();
+      }
       return;
     }
     _failStreak = 0;
@@ -294,6 +313,16 @@ class _LevelScreenState extends State<LevelScreen>
   }
 
   bool _failMemeShown = false;
+  bool _tutorialShown = false;
+  ({String es, String en})? _lastTip;
+
+  // Spotlight targets for the professor's tutorial.
+  final _missionKey = GlobalKey();
+  final _hintsKey = GlobalKey();
+  final _programKey = GlobalKey();
+  final _consoleKey = GlobalKey();
+  final _runKey = GlobalKey();
+  final _fightKey = GlobalKey();
 
   /// Consecutive failed battles on this level — feeds Coach escalation.
   int _failStreak = 0;
@@ -398,10 +427,11 @@ class _LevelScreenState extends State<LevelScreen>
                     controller: _scroll,
                     padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
                     children: [
-                      _missionCard(),
-                      _hintsCard(),
-                      _editorSection(),
-                      if (_console.isNotEmpty) _consoleCard(),
+                      KeyedSubtree(key: _missionKey, child: _missionCard()),
+                      KeyedSubtree(key: _hintsKey, child: _hintsCard()),
+                      KeyedSubtree(key: _programKey, child: _editorSection()),
+                      if (_console.isNotEmpty)
+                        KeyedSubtree(key: _consoleKey, child: _consoleCard()),
                     ],
                   ),
                 ),
@@ -513,12 +543,21 @@ class _LevelScreenState extends State<LevelScreen>
     final l = L.instance;
     final hints = l.pickList(widget.level.hintsEs, widget.level.hintsEn);
     if (hints.isEmpty) return const SizedBox.shrink();
+    final shown = math.min(_hintsShown, hints.length);
+    final speech = shown == 0
+        ? l.pick(
+            '¿Te trabaste? Te vendo una pista por ${Progress.kHintCost} '
+                'Miaudólares. ¡Palabra de gato!',
+            'Stuck? I will sell you a hint for ${Progress.kHintCost} '
+                'Meowdollars. Cat\'s honor!')
+        : hints[shown - 1];
     return SectionCard(
       title: l.t('hints'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (var i = 0; i < _hintsShown && i < hints.length; i++)
+          // Earlier hints stay listed; the newest one is "spoken".
+          for (var i = 0; i < shown - 1; i++)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(
@@ -533,39 +572,119 @@ class _LevelScreenState extends State<LevelScreen>
                 ],
               ),
             ),
-          if (_hintsShown < hints.length)
-            Tooltip(
-              message: l.t('buy_hint_tip'),
-              child: TextButton.icon(
-                onPressed: () async {
-                  if (!Progress.instance.buyHint(widget.level.id)) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l.t('no_coins'))),
-                    );
-                    return;
-                  }
-                  setState(() => _hintsShown++);
-                  for (final c in Progress.instance.checkCatUnlocks()) {
-                    if (!mounted) return;
-                    await MemeBurst.show(context, c,
-                        captionEs: '¡Gato nuevo en tu Gatoteca!',
-                        captionEn: 'New cat in your Cat-dex!');
-                  }
-                },
-                icon: const Icon(Icons.lightbulb, size: 16),
-                label: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                        '${l.t('buy_hint')} (${_hintsShown + 1}/${hints.length})  '),
-                    const CoinPrice(Progress.kHintCost, size: 13),
-                  ],
-                ),
-              ),
-            )
+          ProfessorSays(
+            text: speech,
+            footer: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                if (shown < hints.length)
+                  Tooltip(
+                    message: l.t('buy_hint_tip'),
+                    child: FilledButton.tonalIcon(
+                      onPressed: _buyHint,
+                      icon: const Icon(Icons.lightbulb, size: 16),
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                              '${l.t('buy_hint')} (${shown + 1}/${hints.length})  '),
+                          const CoinPrice(Progress.kHintCost, size: 13),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (_failStreak >= 3 && !widget.examMode)
+                  Tooltip(
+                    message: l.t('tip_tutorial_open'),
+                    child: TextButton.icon(
+                      onPressed: _runTutorial,
+                      icon: const Icon(Icons.school, size: 16),
+                      label: Text(l.t('tutorial_open')),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _buyHint() async {
+    final l = L.instance;
+    if (!Progress.instance.buyHint(widget.level.id)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l.t('no_coins'))),
+      );
+      return;
+    }
+    setState(() => _hintsShown++);
+    for (final c in Progress.instance.checkCatUnlocks()) {
+      if (!mounted) return;
+      await MemeBurst.show(context, c,
+          captionEs: '¡Gato nuevo en tu Gatoteca!',
+          captionEn: 'New cat in your Cat-dex!');
+    }
+  }
+
+  /// After 3 failed battles the professor walks through the screen:
+  /// mission, a free hint, the editor, then Run and Fight.
+  Future<void> _runTutorial() async {
+    final l = L.instance;
+    final lv = widget.level;
+    final hints = l.pickList(lv.hintsEs, lv.hintsEn);
+    String? gift;
+    if (_hintsShown < hints.length) {
+      Progress.instance.giftHint(lv.id);
+      setState(() => _hintsShown++);
+      gift = hints[_hintsShown - 1];
+    }
+    final tip = _lastTip;
+    await SpotlightTutorial.show(context, [
+      TutorialStep(
+          _missionKey,
+          l.pick(
+              'Paso 1: respiremos y releamos la misión. Te piden: '
+                  '"${lv.statementEs}". Mirá los ejemplos: lo que entra y lo '
+                  'que tiene que salir, letra por letra.',
+              'Step 1: deep breath, let\'s reread the mission: '
+                  '"${lv.statementEn}". Check the examples: what goes in and '
+                  'exactly what must come out.')),
+      TutorialStep(
+          _hintsKey,
+          gift != null
+              ? l.pick('Paso 2: esta pista va por mi cuenta, gratis: "$gift"',
+                  'Step 2: this hint is on me, free: "$gift"')
+              : l.pick(
+                  'Paso 2: ya tenés todas mis pistas. Leelas de nuevo con '
+                      'calma, ahí está la clave.',
+                  'Step 2: you already have all my hints. Read them again '
+                      'calmly, the key is there.')),
+      TutorialStep(
+          _programKey,
+          l.pick('Paso 3: acá armás tu programa. ',
+                  'Step 3: build your program here. ') +
+              (tip != null
+                  ? l.pick('Lo que falló la última vez: ${tip.es}',
+                      'What failed last time: ${tip.en}')
+                  : l.pick('Cambiá una cosa por vez.',
+                      'Change one thing at a time.'))),
+      TutorialStep(
+          _runKey,
+          l.pick(
+              'Paso 4: tocá Ejecutar para probar con el ejemplo. No gasta '
+                  'intentos y vas a ver la salida en la consola.',
+              'Step 4: press Run to try the example. It costs no attempts '
+                  'and shows the output in the console.')),
+      TutorialStep(
+          _fightKey,
+          l.pick(
+              'Paso 5: cuando la salida sea igualita a la esperada, tocá '
+                  '¡Combatir! ¡Vos podés, miau!',
+              'Step 5: when the output matches exactly, press Fight! '
+                  'You can do it, meow!')),
+    ]);
   }
 
   Widget _editorSection() {
@@ -723,6 +842,7 @@ class _LevelScreenState extends State<LevelScreen>
           children: [
             Expanded(
               child: Tooltip(
+                key: _runKey,
                 message: l.t('tip_run'),
                 child: OutlinedButton.icon(
                   onPressed: _busy ? null : _runSample,
@@ -740,6 +860,7 @@ class _LevelScreenState extends State<LevelScreen>
             Expanded(
               flex: 2,
               child: Tooltip(
+                key: _fightKey,
                 message: l.t('tip_submit'),
                 child: FilledButton.icon(
                   onPressed: _busy ? null : _fight,

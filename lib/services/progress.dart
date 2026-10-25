@@ -285,6 +285,15 @@ class Progress extends ChangeNotifier {
     return true;
   }
 
+  /// Free hint from the professor's tutorial (after repeated fails).
+  void giftHint(String levelId) {
+    final p = of(levelId);
+    p.hintsBought++;
+    p.hintUsed = true;
+    _save();
+    notifyListeners();
+  }
+
   static String _dayKey(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
@@ -332,7 +341,7 @@ class Progress extends ChangeNotifier {
     final fresh = <CatMeme>[];
     for (final c in kCats) {
       if (unlockedCats.contains(c.id)) continue;
-      if (_catMet(c.trigger)) {
+      if (_catMet(c.trigger, c.need)) {
         unlockedCats.add(c.id);
         fresh.add(c);
       }
@@ -345,7 +354,7 @@ class Progress extends ChangeNotifier {
     return fresh;
   }
 
-  bool _catMet(CatTrigger t) {
+  bool _catMet(CatTrigger t, int need) {
     final s = _lastSolve;
     switch (t) {
       case CatTrigger.always:
@@ -387,6 +396,14 @@ class Progress extends ChangeNotifier {
       case CatTrigger.allStarsW1:
         final w1 = kWorlds.first;
         return w1.levels.every((lv) => (levels[lv.id]?.stars ?? 0) >= 3);
+      case CatTrigger.solvedN:
+        return solvedCount >= need;
+      case CatTrigger.starsN:
+        return totalStars >= need;
+      case CatTrigger.triesN:
+        return levels.values.fold(0, (n, p) => n + p.attempts) >= need;
+      case CatTrigger.coinsN:
+        return coins >= need;
     }
   }
 
