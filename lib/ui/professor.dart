@@ -181,13 +181,21 @@ class _ProfessorAvatarState extends State<ProfessorAvatar>
     final img = widget.speaker == Speaker.profe && Halloween.active
         ? SizedBox.square(
             dimension: s,
-            child: Stack(clipBehavior: Clip.none, children: [
-              photo,
+            child: Stack(children: [
+              // Shrink the photo so the hat fits inside the square and
+              // never gets clipped by cards or rows.
               Positioned(
-                left: s * 0.24,
-                top: -s * 0.30,
-                width: s * 0.52,
-                height: s * 0.44,
+                left: s * 0.11,
+                top: s * 0.22,
+                width: s * 0.78,
+                height: s * 0.78,
+                child: photo,
+              ),
+              Positioned(
+                left: s * 0.29,
+                top: 0,
+                width: s * 0.42,
+                height: s * 0.36,
                 child: const CustomPaint(painter: _WitchHatPainter()),
               ),
             ]),

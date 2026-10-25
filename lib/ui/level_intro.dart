@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/halloween.dart';
 import '../data/worlds.dart';
 import '../l10n.dart';
 import '../models.dart';
@@ -23,6 +24,7 @@ const kWorldColors = <Color>[
 ];
 
 Color worldColor(Level level) {
+  if (Halloween.isEventLevel(level.id)) return const Color(0xFFFF8A1F);
   final w = worldOf(level);
   final i = w == null ? 0 : kWorlds.indexOf(w);
   return kWorldColors[i % kWorldColors.length];
@@ -92,7 +94,10 @@ class _LevelIntroState extends State<LevelIntro>
     final lv = widget.level;
     final w = worldOf(lv);
     final wi = w == null ? 0 : kWorlds.indexOf(w);
-    final li = levelIndexInWorld(lv);
+    final event = Halloween.isEventLevel(lv.id);
+    final li = event
+        ? kHalloweenLevels.indexWhere((e) => e.id == lv.id)
+        : levelIndexInWorld(lv);
     final color = worldColor(lv);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -126,8 +131,11 @@ class _LevelIntroState extends State<LevelIntro>
                       Opacity(
                         opacity: _seg(0.0, 0.15),
                         child: Text(
-                          '${l.t('world').toUpperCase()} ${wi + 1}'
-                          '${w == null ? '' : ' · ${l.pick(w.titleEs, w.titleEn)}'}',
+                          event
+                              ? l.pick(
+                                  '🎃 EVENTO HALLOWEEN', '🎃 HALLOWEEN EVENT')
+                              : '${l.t('world').toUpperCase()} ${wi + 1}'
+                                  '${w == null ? '' : ' · ${l.pick(w.titleEs, w.titleEn)}'}',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               color: color,

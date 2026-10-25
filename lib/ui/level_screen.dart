@@ -428,8 +428,10 @@ class _LevelScreenState extends State<LevelScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${l.t('world')} ${w == null ? '' : kWorlds.indexOf(w) + 1}'
-                    ' · ${lv.boss ? l.t('boss') : '${l.t('level')} ${levelIndexInWorld(lv) + 1}'}',
+                    Halloween.isEventLevel(lv.id)
+                        ? '🎃 Halloween · ${lv.boss ? l.t('boss') : '${l.t('level')} ${kHalloweenLevels.indexWhere((e) => e.id == lv.id) + 1}'}'
+                        : '${l.t('world')} ${w == null ? '' : kWorlds.indexOf(w) + 1}'
+                            ' · ${lv.boss ? l.t('boss') : '${l.t('level')} ${levelIndexInWorld(lv) + 1}'}',
                     style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
