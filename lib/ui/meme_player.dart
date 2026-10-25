@@ -91,10 +91,16 @@ class _BurstDialogState extends State<_BurstDialog>
     }
   }
 
+  bool _closed = false;
+
+  /// Pops only this dialog, once. The video listener keeps firing at the
+  /// end of the clip; a second pop would close the screen underneath.
   void _close() {
-    if (!mounted) return;
+    if (!mounted || _closed) return;
+    _closed = true;
     _autoClose?.cancel();
-    Navigator.of(context, rootNavigator: true).maybePop();
+    _vc?.pause();
+    Navigator.of(context, rootNavigator: true).pop();
   }
 
   @override
