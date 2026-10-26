@@ -1,5 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+
+import '../data/phases.dart';
+import 'phase_exam.dart';
 import 'olympiad_screens.dart';
 import '../data/olympiad_tracks.dart';
 
@@ -205,7 +208,10 @@ class _MapScreenState extends State<MapScreen> {
                           fontSize: 12,
                           fontStyle: FontStyle.italic)),
                 ),
-                for (final w in kWorlds) _worldSection(w),
+                for (final ph in kPhases) ...[
+                  _phaseHeader(ph),
+                  for (final w in ph.worlds) _worldSection(w),
+                ],
               ],
             ),
           ),
@@ -713,12 +719,66 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  Widget _phaseHeader(Phase ph) {
+    final l = L.instance;
+    final p = Progress.instance;
+    final open = phaseOpen(ph, p);
+    final soon = ph.worlds.isEmpty;
+    return Container(
+      margin: const EdgeInsets.only(top: 6, bottom: 14),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+            color: open ? AppTheme.accent : AppTheme.cardEdge, width: 1.6),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+              '${open ? '🚩' : '🔒'} ${l.pick('Fase', 'Phase')} ${ph.n} · ${l.pick(ph.titleEs, ph.titleEn)}',
+              style:
+                  const TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+          Text(l.pick(ph.descEs, ph.descEn),
+              style: const TextStyle(color: AppTheme.textLo, fontSize: 12)),
+          if (!open && !soon) ...[
+            const SizedBox(height: 8),
+            Text(
+                l.pick(
+                    'Se abre al ganar los jefes de la Fase ${ph.n - 1}… o aprobando el examen para saltar.',
+                    'Opens when you beat the Phase ${ph.n - 1} bosses… or pass the skip exam.'),
+                style: const TextStyle(fontSize: 12)),
+            const SizedBox(height: 6),
+            Tooltip(
+              message: l.pick(
+                  'Problemas de la fase anterior, sin pistas y con reloj',
+                  'Previous phase problems, no hints, with a clock'),
+              child: FilledButton.tonalIcon(
+                icon: const Icon(Icons.school, size: 16),
+                label: Text(p.examActive && p.examPhase == ph.n
+                    ? l.pick('Seguir el examen', 'Resume the exam')
+                    : l.pick('Examen para saltar', 'Skip exam')),
+                onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => PhaseExamScreen(phase: ph))),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _worldSection(World w) {
     final l = L.instance;
     final progress = Progress.instance;
     final solvedInWorld =
         w.levels.where((lv) => progress.of(lv.id).solved).length;
-    final worldUnlocked = w.levels.any((lv) => progress.isUnlocked(lv, w));
+    final ph = phaseOfWorld(w.id);
+    final worldUnlocked = w.levels.any((lv) => progress.isUnlocked(lv, w)) &&
+        (ph == null || phaseOpen(ph, progress));
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
@@ -790,7 +850,9 @@ class _MapScreenState extends State<MapScreen> {
     final level = world.levels[index];
     final progress = Progress.instance;
     final p = progress.of(level.id);
-    final unlocked = progress.isUnlocked(level, world);
+    final ph = phaseOfWorld(world.id);
+    final unlocked = progress.isUnlocked(level, world) &&
+        (ph == null || phaseOpen(ph, progress));
 
     return Tooltip(
       message: unlocked

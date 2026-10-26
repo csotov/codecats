@@ -188,6 +188,43 @@ class Progress extends ChangeNotifier {
     if (blitzMin == kBlitzEvery) notifyListeners();
   }
 
+  /// Phases opened by the skip exam, and the exam in progress.
+  final Set<int> openPhases = {};
+  int examPhase = 0;
+  List<String> examIds = const [];
+  int examEndMs = 0;
+  final Set<String> examSolved = {};
+
+  bool get examActive =>
+      examPhase > 0 && DateTime.now().millisecondsSinceEpoch < examEndMs;
+
+  void startExam(int phase, List<String> ids, Duration length) {
+    examPhase = phase;
+    examIds = List.unmodifiable(ids);
+    examEndMs = DateTime.now().add(length).millisecondsSinceEpoch;
+    examSolved.clear();
+    _save();
+    notifyListeners();
+  }
+
+  void markExamSolved(String id) {
+    if (!examActive || !examIds.contains(id)) return;
+    examSolved.add(id);
+    _save();
+    notifyListeners();
+  }
+
+  /// Ends the exam; opens the phase when [passed].
+  void endExam({required bool passed}) {
+    if (passed && examPhase > 0) openPhases.add(examPhase);
+    examPhase = 0;
+    examIds = const [];
+    examEndMs = 0;
+    examSolved.clear();
+    _save();
+    notifyListeners();
+  }
+
   /// Leitner boxes for lightning concept cards: id -> [box, dueRound].
   final Map<String, List<int>> blitzCards = {};
 
@@ -344,6 +381,16 @@ class Progress extends ChangeNotifier {
         blitzMin = (j['bzm'] as num?)?.toInt() ?? 0;
         blitzOk = (j['bzo'] as num?)?.toInt() ?? 0;
         blitzSeq = (j['bzs'] as num?)?.toInt() ?? 0;
+        openPhases
+          ..clear()
+          ..addAll((j['php'] as List? ?? const []).map((e) => (e as num).toInt()));
+        examPhase = (j['exp'] as num?)?.toInt() ?? 0;
+        examIds =
+            List.unmodifiable((j['exi'] as List? ?? const []).map((e) => '$e'));
+        examEndMs = (j['exe'] as num?)?.toInt() ?? 0;
+        examSolved
+          ..clear()
+          ..addAll((j['exs'] as List? ?? const []).map((e) => '$e'));
         blitzCards
           ..clear()
           ..addAll(_intLists(j['bq']));
@@ -380,6 +427,11 @@ class Progress extends ChangeNotifier {
         'bzm': blitzMin,
         'bzo': blitzOk,
         'bzs': blitzSeq,
+        'php': openPhases.toList(),
+        'exp': examPhase,
+        'exi': examIds,
+        'exe': examEndMs,
+        'exs': examSolved.toList(),
         'bq': blitzCards,
         'ct': contestIds,
         'cte': contestEndMs,
@@ -425,6 +477,8 @@ class Progress extends ChangeNotifier {
     });
     blitzOk = math.max(blitzOk, (d['bzo'] as num?)?.toInt() ?? 0);
     blitzSeq = math.max(blitzSeq, (d['bzs'] as num?)?.toInt() ?? 0);
+    openPhases.addAll(
+        (d['php'] as List? ?? const []).map((e) => (e as num).toInt()));
     _mergeMax(blitzCards, d['bq']);
     final lv = d['lv'];
     if (lv is Map) {
@@ -471,6 +525,11 @@ class Progress extends ChangeNotifier {
           'bzm': blitzMin,
           'bzo': blitzOk,
         'bzs': blitzSeq,
+        'php': openPhases.toList(),
+        'exp': examPhase,
+        'exi': examIds,
+        'exe': examEndMs,
+        'exs': examSolved.toList(),
         'bq': blitzCards,
           'ct': contestIds,
           'cte': contestEndMs,
