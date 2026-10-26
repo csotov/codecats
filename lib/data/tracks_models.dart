@@ -1,4 +1,17 @@
 import '../l10n.dart';
+import 'profe_talks.dart';
+
+/// A lightning-round question about a concept taught by [levelId].
+class BlitzCard {
+  const BlitzCard({
+    required this.id,
+    required this.levelId,
+    required this.quiz,
+  });
+  final String id;
+  final String levelId;
+  final ProfeQuiz quiz;
+}
 
 /// ISIJ "Coder round" task kinds.
 enum CoderKind {

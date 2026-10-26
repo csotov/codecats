@@ -1327,3 +1327,331 @@ final List<ProfeQuiz> kBlitz = [
       whyEs: 'El truco de Gauss: n × (n + 1) / 2 = 100 × 101 / 2 = 5050.',
       whyEn: 'Gauss trick: n × (n + 1) / 2 = 100 × 101 / 2 = 5050.'),
 ];
+
+/// Lightning round concept cards (retrieval practice), unlocked by the level that teaches them.
+const List<BlitzCard> kConceptCards = [
+  BlitzCard(
+      id: 'cout1',
+      levelId: 'w1l1',
+      quiz: ProfeQuiz(
+          qEs: '¿Qué imprime cout << "Hola" << "Gato";?',
+          qEn: 'What does cout << "Hola" << "Gato"; print?',
+          optsEs: ['HolaGato', 'Hola Gato', 'Hola y Gato en dos líneas'],
+          optsEn: ['HolaGato', 'Hola Gato', 'Hola and Gato on two lines'],
+          answer: 0,
+          whyEs:
+              'cout no agrega espacios ni saltos solo: imprime exactamente lo que le das.',
+          whyEn:
+              'cout adds no spaces or line breaks by itself: it prints exactly what you give it.')),
+  BlitzCard(
+      id: 'cout2',
+      levelId: 'w1l1',
+      quiz: ProfeQuiz(
+          qEs: '¿Qué imprime cout << 2 + 3;?',
+          qEn: 'What does cout << 2 + 3; print?',
+          optsEs: ['5', '2 + 3', '23'],
+          optsEn: ['5', '2 + 3', '23'],
+          answer: 0,
+          whyEs: 'Sin comillas es una cuenta: C++ la calcula.',
+          whyEn: 'Without quotes it is math: C++ computes it.')),
+  BlitzCard(
+      id: 'cout3',
+      levelId: 'w1l1',
+      quiz: ProfeQuiz(
+          qEs: '¿Qué imprime cout << "2 + 3";?',
+          qEn: 'What does cout << "2 + 3"; print?',
+          optsEs: ['2 + 3', '5', '23'],
+          optsEn: ['2 + 3', '5', '23'],
+          answer: 0,
+          whyEs: 'Entre comillas es texto: se imprime tal cual.',
+          whyEn: 'In quotes it is text: printed as is.')),
+  BlitzCard(
+      id: 'endl',
+      levelId: 'w1l2',
+      quiz: ProfeQuiz(
+          qEs: '¿Qué hace "\\n" dentro de un cout?',
+          qEn: 'What does "\\n" do inside a cout?',
+          optsEs: [
+            'Salta a la línea siguiente',
+            'Imprime la letra n',
+            'Termina el programa'
+          ],
+          optsEn: [
+            'Goes to the next line',
+            'Prints the letter n',
+            'Ends the program'
+          ],
+          answer: 0,
+          whyEs: '\\n es el salto de línea, igual que endl pero más rápido.',
+          whyEn: '\\n is a line break, like endl but faster.')),
+  BlitzCard(
+      id: 'cin1',
+      levelId: 'w1l3',
+      quiz: ProfeQuiz(
+          qEs:
+              'La entrada es "4 9". Con int a, b; cin >> a >> b; cout << b; ¿qué se imprime?',
+          qEn:
+              'The input is "4 9". With int a, b; cin >> a >> b; cout << b; what is printed?',
+          optsEs: ['9', '4', '49'],
+          optsEn: ['9', '4', '49'],
+          answer: 0,
+          whyEs: 'cin llena las variables en orden: a = 4, b = 9.',
+          whyEn: 'cin fills variables in order: a = 4, b = 9.')),
+  BlitzCard(
+      id: 'decl',
+      levelId: 'w1l3',
+      quiz: ProfeQuiz(
+          qEs: '¿Qué hace falta antes de usar una variable x?',
+          qEn: 'What is needed before using a variable x?',
+          optsEs: ['Declararla: int x;', 'Nada', 'Ponerla entre comillas'],
+          optsEn: ['Declare it: int x;', 'Nothing', 'Put it in quotes'],
+          answer: 0,
+          whyEs: 'Hay que crear la caja antes de guardar algo en ella.',
+          whyEn: 'You must create the box before storing something in it.')),
+  BlitzCard(
+      id: 'assign',
+      levelId: 'w1l4',
+      quiz: ProfeQuiz(
+          qEs: 'int x = 5; x = x + 3; cout << x; ¿qué imprime?',
+          qEn: 'int x = 5; x = x + 3; cout << x; what is printed?',
+          optsEs: ['8', '5', '3'],
+          optsEn: ['8', '5', '3'],
+          answer: 0,
+          whyEs:
+              'x = x + 3 toma el valor viejo (5), le suma 3 y lo guarda en x.',
+          whyEn:
+              'x = x + 3 takes the old value (5), adds 3 and stores it in x.')),
+  BlitzCard(
+      id: 'inc',
+      levelId: 'w1l6',
+      quiz: ProfeQuiz(
+          qEs: 'int g = 7; g++; cout << g; ¿qué imprime?',
+          qEn: 'int g = 7; g++; cout << g; what is printed?',
+          optsEs: ['8', '7', '70'],
+          optsEn: ['8', '7', '70'],
+          answer: 0,
+          whyEs: 'g++ suma 1 a g.',
+          whyEn: 'g++ adds 1 to g.')),
+  BlitzCard(
+      id: 'div',
+      levelId: 'w1l7',
+      quiz: ProfeQuiz(
+          qEs: '¿Qué imprime cout << 7 / 2; con enteros?',
+          qEn: 'What does cout << 7 / 2; print with integers?',
+          optsEs: ['3', '3.5', '4'],
+          optsEn: ['3', '3.5', '4'],
+          answer: 0,
+          whyEs: 'La división entera tira los decimales.',
+          whyEn: 'Integer division drops the decimals.')),
+  BlitzCard(
+      id: 'mod',
+      levelId: 'w1l7',
+      quiz: ProfeQuiz(
+          qEs: '¿Qué imprime cout << 7 % 2;?',
+          qEn: 'What does cout << 7 % 2; print?',
+          optsEs: ['1', '3', '0'],
+          optsEn: ['1', '3', '0'],
+          answer: 0,
+          whyEs: '% da el resto: 7 = 3 × 2 + 1.',
+          whyEn: '% gives the remainder: 7 = 3 × 2 + 1.')),
+  BlitzCard(
+      id: 'mod10',
+      levelId: 'w1l8',
+      quiz: ProfeQuiz(
+          qEs: '¿Cómo sacás el último dígito de n?',
+          qEn: 'How do you get the last digit of n?',
+          optsEs: ['n % 10', 'n / 10', 'n * 10'],
+          optsEn: ['n % 10', 'n / 10', 'n * 10'],
+          answer: 0,
+          whyEs: 'El resto de dividir por 10 es el último dígito.',
+          whyEn: 'The remainder when dividing by 10 is the last digit.')),
+  BlitzCard(
+      id: 'div10',
+      levelId: 'w1l8',
+      quiz: ProfeQuiz(
+          qEs: 'int n = 1234; cout << n / 10; ¿qué imprime?',
+          qEn: 'int n = 1234; cout << n / 10; what is printed?',
+          optsEs: ['123', '4', '1234'],
+          optsEn: ['123', '4', '1234'],
+          answer: 0,
+          whyEs: '/ 10 borra el último dígito.',
+          whyEn: '/ 10 removes the last digit.')),
+  BlitzCard(
+      id: 'swap',
+      levelId: 'w1l9',
+      quiz: ProfeQuiz(
+          qEs: 'Con a = 1 y b = 2 hacés a = b; b = a; ¿cómo quedan?',
+          qEn: 'With a = 1 and b = 2 you do a = b; b = a; what are they now?',
+          optsEs: ['a = 2, b = 2', 'a = 2, b = 1', 'a = 1, b = 2'],
+          optsEn: ['a = 2, b = 2', 'a = 2, b = 1', 'a = 1, b = 2'],
+          answer: 0,
+          whyEs:
+              'El 1 se perdió al hacer a = b. Por eso hace falta la caja aux.',
+          whyEn:
+              'The 1 was lost when doing a = b. That is why you need the aux box.')),
+  BlitzCard(
+      id: 'prec',
+      levelId: 'w1l10',
+      quiz: ProfeQuiz(
+          qEs: '¿Qué imprime cout << 2 + 3 * 4;?',
+          qEn: 'What does cout << 2 + 3 * 4; print?',
+          optsEs: ['14', '20', '24'],
+          optsEn: ['14', '20', '24'],
+          answer: 0,
+          whyEs: 'Primero la multiplicación: 2 + 12 = 14.',
+          whyEn: 'Multiplication first: 2 + 12 = 14.')),
+  BlitzCard(
+      id: 'paren',
+      levelId: 'w1l10',
+      quiz: ProfeQuiz(
+          qEs: '¿Qué imprime cout << (2 + 3) * 4;?',
+          qEn: 'What does cout << (2 + 3) * 4; print?',
+          optsEs: ['20', '14', '24'],
+          optsEn: ['20', '14', '24'],
+          answer: 0,
+          whyEs: 'Los paréntesis van primero: 5 × 4 = 20.',
+          whyEn: 'Parentheses go first: 5 × 4 = 20.')),
+  BlitzCard(
+      id: 'eq',
+      levelId: 'w2l1',
+      quiz: ProfeQuiz(
+          qEs: '¿Qué diferencia hay entre = y ==?',
+          qEn: 'What is the difference between = and ==?',
+          optsEs: [
+            '= guarda un valor, == compara',
+            'Son iguales',
+            '== guarda un valor, = compara'
+          ],
+          optsEn: [
+            '= stores a value, == compares',
+            'They are the same',
+            '== stores a value, = compares'
+          ],
+          answer: 0,
+          whyEs: 'if (x = 5) es un error clásico: guarda en vez de comparar.',
+          whyEn:
+              'if (x = 5) is a classic bug: it stores instead of comparing.')),
+  BlitzCard(
+      id: 'if1',
+      levelId: 'w2l1',
+      quiz: ProfeQuiz(
+          qEs:
+              'int n = 4; if (n % 2 == 0) cout << "par"; else cout << "impar"; ¿qué imprime?',
+          qEn:
+              'int n = 4; if (n % 2 == 0) cout << "par"; else cout << "impar"; what is printed?',
+          optsEs: ['par', 'impar', 'nada'],
+          optsEn: ['par', 'impar', 'nothing'],
+          answer: 0,
+          whyEs: '4 % 2 es 0, así que entra al if.',
+          whyEn: '4 % 2 is 0, so it enters the if.')),
+  BlitzCard(
+      id: 'and',
+      levelId: 'w2l5',
+      quiz: ProfeQuiz(
+          qEs: '(5 > 3) && (2 > 4) es…',
+          qEn: '(5 > 3) && (2 > 4) is…',
+          optsEs: ['falso', 'verdadero'],
+          optsEn: ['false', 'true'],
+          answer: 0,
+          whyEs: '&& necesita que las DOS sean verdaderas.',
+          whyEn: '&& needs BOTH to be true.')),
+  BlitzCard(
+      id: 'or',
+      levelId: 'w2l5',
+      quiz: ProfeQuiz(
+          qEs: '(5 > 3) || (2 > 4) es…',
+          qEn: '(5 > 3) || (2 > 4) is…',
+          optsEs: ['verdadero', 'falso'],
+          optsEn: ['true', 'false'],
+          answer: 0,
+          whyEs: '|| alcanza con que UNA sea verdadera.',
+          whyEn: '|| needs just ONE to be true.')),
+  BlitzCard(
+      id: 'for1',
+      levelId: 'w3l1',
+      quiz: ProfeQuiz(
+          qEs: 'for (int i = 0; i < 5; i++) — ¿cuántas vueltas da?',
+          qEn: 'for (int i = 0; i < 5; i++) — how many laps?',
+          optsEs: ['5', '4', '6'],
+          optsEn: ['5', '4', '6'],
+          answer: 0,
+          whyEs: 'i vale 0, 1, 2, 3, 4: cinco vueltas.',
+          whyEn: 'i is 0, 1, 2, 3, 4: five laps.')),
+  BlitzCard(
+      id: 'for2',
+      levelId: 'w3l1',
+      quiz: ProfeQuiz(
+          qEs: 'for (int i = 0; i <= 5; i++) — ¿cuántas vueltas da?',
+          qEn: 'for (int i = 0; i <= 5; i++) — how many laps?',
+          optsEs: ['6', '5', '4'],
+          optsEn: ['6', '5', '4'],
+          answer: 0,
+          whyEs: 'Con <= también entra el 5: de 0 a 5 son 6 números.',
+          whyEn: 'With <= the 5 also counts: 0 to 5 is 6 numbers.')),
+  BlitzCard(
+      id: 'bigo1',
+      levelId: 'w3l1',
+      quiz: ProfeQuiz(
+          qEs: 'Un for que recorre de 1 a n, ¿qué Big O tiene?',
+          qEn: 'A for that goes from 1 to n, what Big O is it?',
+          optsEs: ['O(n)', 'O(1)', 'O(n²)'],
+          optsEn: ['O(n)', 'O(1)', 'O(n²)'],
+          answer: 0,
+          whyEs: 'Hace una vuelta por cada número: crece igual que n.',
+          whyEn: 'One lap per number: it grows like n.')),
+  BlitzCard(
+      id: 'acc',
+      levelId: 'w3l3',
+      quiz: ProfeQuiz(
+          qEs:
+              'int s = 0; for (int i = 1; i <= 4; i++) s += i; cout << s; ¿qué imprime?',
+          qEn:
+              'int s = 0; for (int i = 1; i <= 4; i++) s += i; cout << s; what is printed?',
+          optsEs: ['10', '4', '0'],
+          optsEn: ['10', '4', '0'],
+          answer: 0,
+          whyEs: 's acumula 1 + 2 + 3 + 4 = 10.',
+          whyEn: 's accumulates 1 + 2 + 3 + 4 = 10.')),
+  BlitzCard(
+      id: 'll',
+      levelId: 'w3l6',
+      quiz: ProfeQuiz(
+          qEs: '¿Para qué sirve long long?',
+          qEn: 'What is long long for?',
+          optsEs: [
+            'Para números enteros muy grandes',
+            'Para números con coma',
+            'Para textos'
+          ],
+          optsEn: ['For very big integers', 'For decimal numbers', 'For text'],
+          answer: 0,
+          whyEs:
+              'int llega a unos 2 mil millones; long long aguanta muchísimo más.',
+          whyEn: 'int reaches about 2 billion; long long holds much more.')),
+  BlitzCard(
+      id: 'while1',
+      levelId: 'w3l8',
+      quiz: ProfeQuiz(
+          qEs: 'int n = 3; while (n > 0) { cout << n; n--; } ¿qué imprime?',
+          qEn: 'int n = 3; while (n > 0) { cout << n; n--; } what is printed?',
+          optsEs: ['321', '123', '3'],
+          optsEn: ['321', '123', '3'],
+          answer: 0,
+          whyEs: 'Imprime y baja: 3, 2, 1, y con 0 sale.',
+          whyEn: 'Prints and decreases: 3, 2, 1, and stops at 0.')),
+  BlitzCard(
+      id: 'bigo2',
+      levelId: 'w3l9',
+      quiz: ProfeQuiz(
+          qEs:
+              'Si n = 1 000 000, ¿un programa con dos for anidados de 1 a n termina en 1 segundo?',
+          qEn:
+              'If n = 1,000,000, does a program with two nested for loops from 1 to n finish in 1 second?',
+          optsEs: ['No', 'Sí'],
+          optsEn: ['No', 'Yes'],
+          answer: 0,
+          whyEs:
+              'Serían un billón de vueltas: mucho más de lo que entra en un segundo (unas 100 millones).',
+          whyEn:
+              'That is a trillion laps: far more than fit in one second (about 100 million).')),
+];
