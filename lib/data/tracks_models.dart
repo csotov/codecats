@@ -115,3 +115,33 @@ int changedLines(String a, String b) {
   final removed = x.length - common, added = y.length - common;
   return removed > added ? removed : added;
 }
+
+/// One short numeric question of the math gym.
+class MathQ {
+  const MathQ({
+    required this.qEs,
+    required this.qEn,
+    required this.answer,
+    required this.hintEs,
+    required this.hintEn,
+    required this.whyEs,
+    required this.whyEn,
+  });
+  final String qEs, qEn, answer, hintEs, hintEn, whyEs, whyEn;
+}
+
+class MathTopic {
+  const MathTopic({
+    required this.id,
+    required this.minWorld,
+    required this.titleEs,
+    required this.titleEn,
+    required this.ideaEs,
+    required this.ideaEn,
+    required this.questions,
+  });
+  final String id;
+  final int minWorld;
+  final String titleEs, titleEn, ideaEs, ideaEn;
+  final List<MathQ> questions;
+}

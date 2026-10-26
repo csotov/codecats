@@ -228,6 +228,21 @@ class Progress extends ChangeNotifier {
   /// Leitner boxes for lightning concept cards: id -> [box, dueRound].
   final Map<String, List<int>> blitzCards = {};
 
+  /// Math gym: topic id -> [questions solved in order, total right].
+  final Map<String, List<int>> mathGym = {};
+
+  void mathAnswered(String topic, bool right) {
+    final m = mathGym[topic] ?? [0, 0];
+    if (right) {
+      m[0]++;
+      m[1]++;
+      coins += 2;
+    }
+    mathGym[topic] = m;
+    _save();
+    notifyListeners();
+  }
+
   /// Questions asked so far; every 4th one is olympiad math.
   int blitzSeq = 0;
 
@@ -394,6 +409,9 @@ class Progress extends ChangeNotifier {
         blitzCards
           ..clear()
           ..addAll(_intLists(j['bq']));
+        mathGym
+          ..clear()
+          ..addAll(_intLists(j['mg']));
         contestIds =
             List.unmodifiable((j['ct'] as List? ?? const []).map((e) => '$e'));
         contestEndMs = (j['cte'] as num?)?.toInt() ?? 0;
@@ -433,6 +451,7 @@ class Progress extends ChangeNotifier {
         'exe': examEndMs,
         'exs': examSolved.toList(),
         'bq': blitzCards,
+        'mg': mathGym,
         'ct': contestIds,
         'cte': contestEndMs,
         'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
@@ -480,6 +499,7 @@ class Progress extends ChangeNotifier {
     openPhases.addAll(
         (d['php'] as List? ?? const []).map((e) => (e as num).toInt()));
     _mergeMax(blitzCards, d['bq']);
+    _mergeMax(mathGym, d['mg']);
     final lv = d['lv'];
     if (lv is Map) {
       lv.forEach((k, v) {
@@ -531,6 +551,7 @@ class Progress extends ChangeNotifier {
         'exe': examEndMs,
         'exs': examSolved.toList(),
         'bq': blitzCards,
+        'mg': mathGym,
           'ct': contestIds,
           'cte': contestEndMs,
           'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
