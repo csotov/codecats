@@ -275,6 +275,9 @@ class Progress extends ChangeNotifier {
   }
 
   /// The player's Codeforces handle, to verify linked coach problems.
+  /// Suggested handle (the owner's son uses it on every judge).
+  static const kDefaultHandle = 'augohan';
+
   String cfHandle = '';
 
   /// The player's AtCoder user, to verify linked AtCoder problems.

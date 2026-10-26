@@ -54,7 +54,10 @@ class _AtcoderScreenState extends State<AtcoderScreen> {
 
   Future<void> _askUser() async {
     final l = L.instance;
-    final ctrl = TextEditingController(text: Progress.instance.atcoderUser);
+    final ctrl = TextEditingController(
+        text: Progress.instance.atcoderUser.isEmpty
+            ? Progress.kDefaultHandle
+            : Progress.instance.atcoderUser);
     final u = await showDialog<String>(
       context: context,
       builder: (c) => AlertDialog(
