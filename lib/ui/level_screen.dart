@@ -477,9 +477,12 @@ class _LevelScreenState extends State<LevelScreen>
       Cloud.instance.log('review_done',
           levelId: widget.level.id, data: {'stage': lpWin.reviewStage});
     }
-    final golden = widget.bonus
-        ? Progress.instance.awardGoldenCard([for (final c in kCats) c.id])
-        : null;
+    // One golden card per day: a replayed Fight inside the same bonus
+    // visit (bonusLevelId is null once today's card was paid) earns none.
+    final golden =
+        widget.bonus && Progress.instance.bonusLevelId == widget.level.id
+            ? Progress.instance.awardGoldenCard([for (final c in kCats) c.id])
+            : null;
     if (golden != null) {
       Cloud.instance
           .log('bonus_done', levelId: widget.level.id, data: {'card': golden});
