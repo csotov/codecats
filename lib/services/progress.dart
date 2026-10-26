@@ -163,7 +163,10 @@ class Progress extends ChangeNotifier {
   /// Side tracks (lab, lead-ins, world closings, Coder round) do not
   /// count toward campaign totals.
   static bool _offCampaign(String id) =>
-      id.startsWith('lb') || id.startsWith('fx') || id.startsWith('cr');
+      id.startsWith('lb') ||
+      id.startsWith('fx') ||
+      id.startsWith('cr') ||
+      id.startsWith('at');
 
   /// Best partial score (0-100) per subtask level.
   final Map<String, int> scores = {};
@@ -273,6 +276,15 @@ class Progress extends ChangeNotifier {
 
   /// The player's Codeforces handle, to verify linked coach problems.
   String cfHandle = '';
+
+  /// The player's AtCoder user, to verify linked AtCoder problems.
+  String atcoderUser = '';
+
+  void setAtcoderUser(String u) {
+    atcoderUser = u.trim();
+    _save();
+    notifyListeners();
+  }
 
   void setCfHandle(String h) {
     cfHandle = h.trim();
@@ -389,6 +401,7 @@ class Progress extends ChangeNotifier {
           ..addAll((j['gc'] as List? ?? const []).map((e) => '$e'));
         bonusDay = (j['bd'] as num?)?.toInt() ?? 0;
         cfHandle = j['cfh'] as String? ?? '';
+        atcoderUser = j['acu'] as String? ?? '';
         scores
           ..clear()
           ..addAll(((j['sc'] as Map?) ?? const {})
@@ -441,6 +454,7 @@ class Progress extends ChangeNotifier {
         'gc': goldenCards.toList(),
         'bd': bonusDay,
         'cfh': cfHandle,
+        'acu': atcoderUser,
         'sc': scores,
         'bzm': blitzMin,
         'bzo': blitzOk,
@@ -491,6 +505,7 @@ class Progress extends ChangeNotifier {
     goldenCards.addAll(List<String>.from(d['gc'] ?? const []));
     bonusDay = math.max(bonusDay, (d['bd'] as num?)?.toInt() ?? 0);
     if (cfHandle.isEmpty) cfHandle = d['cfh'] as String? ?? '';
+    if (atcoderUser.isEmpty) atcoderUser = d['acu'] as String? ?? '';
     ((d['sc'] as Map?) ?? const {}).forEach((k, v) {
       scores['$k'] = math.max(scores['$k'] ?? 0, (v as num).toInt());
     });
@@ -541,6 +556,7 @@ class Progress extends ChangeNotifier {
           'gc': goldenCards.toList(),
           'bd': bonusDay,
           'cfh': cfHandle,
+        'acu': atcoderUser,
           'sc': scores,
           'bzm': blitzMin,
           'bzo': blitzOk,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../data/phases.dart';
 import 'phase_exam.dart';
 import 'math_gym_screen.dart';
+import 'atcoder_screen.dart';
 import 'olympiad_screens.dart';
 import '../data/olympiad_tracks.dart';
 
@@ -611,6 +612,9 @@ class _MapScreenState extends State<MapScreen> {
           case 'trace':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const TraceListScreen()));
+          case 'atcoder':
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AtcoderScreen()));
           case 'math':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const MathGymScreen()));
@@ -646,6 +650,8 @@ class _MapScreenState extends State<MapScreen> {
               l.pick('Problemas del entrenador', 'Coach problems')),
         item('trace', Icons.table_chart_outlined,
             l.pick('Sé la computadora', 'Be the computer')),
+        item('atcoder', Icons.public,
+            l.pick('Problemas reales de AtCoder', 'Real AtCoder problems')),
         item('math', Icons.calculate_outlined,
             l.pick('Gimnasio de matemática', 'Math gym')),
         item('coder', Icons.build_outlined,
