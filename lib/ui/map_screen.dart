@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../data/phases.dart';
 import 'phase_exam.dart';
+import 'math_gym_screen.dart';
 import 'olympiad_screens.dart';
 import '../data/olympiad_tracks.dart';
 
@@ -350,6 +351,18 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ],
+          if (mathTopicsFor(p).isNotEmpty) ...[
+            const SizedBox(height: 6),
+            _missionRow(
+              '🧮 ${l.pick('Gimnasio de matemática', 'Math gym')}',
+              l.pick('conteo, %, divisibilidad y más para olimpiada',
+                  'counting, %, divisibility and more for olympiads'),
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MathGymScreen()),
+              ),
+            ),
+          ],
           if (coderTasksFor(p).any((t) => !p.of(t.levelId).solved)) ...[
             const SizedBox(height: 6),
             _missionRow(
@@ -598,6 +611,9 @@ class _MapScreenState extends State<MapScreen> {
           case 'trace':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const TraceListScreen()));
+          case 'math':
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const MathGymScreen()));
           case 'coder':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const CoderListScreen()));
@@ -630,6 +646,8 @@ class _MapScreenState extends State<MapScreen> {
               l.pick('Problemas del entrenador', 'Coach problems')),
         item('trace', Icons.table_chart_outlined,
             l.pick('Sé la computadora', 'Be the computer')),
+        item('math', Icons.calculate_outlined,
+            l.pick('Gimnasio de matemática', 'Math gym')),
         item('coder', Icons.build_outlined,
             l.pick('Ronda Coder', 'Coder round')),
         item('notebook', Icons.menu_book_outlined,
