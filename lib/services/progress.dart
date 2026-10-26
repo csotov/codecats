@@ -188,6 +188,29 @@ class Progress extends ChangeNotifier {
     if (blitzMin == kBlitzEvery) notifyListeners();
   }
 
+  /// Leitner boxes for lightning concept cards: id -> [box, dueRound].
+  final Map<String, List<int>> blitzCards = {};
+
+  /// Questions asked so far; every 4th one is olympiad math.
+  int blitzSeq = 0;
+
+  /// Next concept card: due ones first (lowest due round), skipping the
+  /// last one asked. Null when nothing is unlocked yet.
+  String? nextBlitzCard(List<String> unlocked) {
+    if (unlocked.isEmpty) return null;
+    final sorted = [...unlocked]..sort((a, b) =>
+        (blitzCards[a]?[1] ?? 0).compareTo(blitzCards[b]?[1] ?? 0));
+    return sorted.first;
+  }
+
+  /// Right answers wait longer (1, 2, 4, 8, 16 rounds); wrong ones come
+  /// back on the next round.
+  void answerBlitzCard(String id, bool right) {
+    final c = blitzCards[id] ?? [0, 0];
+    final box = right ? math.min(c[0] + 1, 5) : 0;
+    blitzCards[id] = [box, blitzSeq + (right ? 1 << box : 1)];
+  }
+
   void finishBlitz(int right) {
     blitzMin = 0;
     blitzOk += right;
@@ -320,6 +343,10 @@ class Progress extends ChangeNotifier {
               .map((k, v) => MapEntry('$k', (v as num).toInt())));
         blitzMin = (j['bzm'] as num?)?.toInt() ?? 0;
         blitzOk = (j['bzo'] as num?)?.toInt() ?? 0;
+        blitzSeq = (j['bzs'] as num?)?.toInt() ?? 0;
+        blitzCards
+          ..clear()
+          ..addAll(_intLists(j['bq']));
         contestIds =
             List.unmodifiable((j['ct'] as List? ?? const []).map((e) => '$e'));
         contestEndMs = (j['cte'] as num?)?.toInt() ?? 0;
@@ -352,6 +379,8 @@ class Progress extends ChangeNotifier {
         'sc': scores,
         'bzm': blitzMin,
         'bzo': blitzOk,
+        'bzs': blitzSeq,
+        'bq': blitzCards,
         'ct': contestIds,
         'cte': contestEndMs,
         'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
@@ -395,6 +424,8 @@ class Progress extends ChangeNotifier {
       scores['$k'] = math.max(scores['$k'] ?? 0, (v as num).toInt());
     });
     blitzOk = math.max(blitzOk, (d['bzo'] as num?)?.toInt() ?? 0);
+    blitzSeq = math.max(blitzSeq, (d['bzs'] as num?)?.toInt() ?? 0);
+    _mergeMax(blitzCards, d['bq']);
     final lv = d['lv'];
     if (lv is Map) {
       lv.forEach((k, v) {
@@ -439,6 +470,8 @@ class Progress extends ChangeNotifier {
           'sc': scores,
           'bzm': blitzMin,
           'bzo': blitzOk,
+        'bzs': blitzSeq,
+        'bq': blitzCards,
           'ct': contestIds,
           'cte': contestEndMs,
           'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
@@ -497,6 +530,13 @@ class Progress extends ChangeNotifier {
           e.value.starMask & 4 != 0)
       .length;
 
+  static bool _countsForChallenge(String id) =>
+      !id.startsWith('hw') &&
+      !id.startsWith('cp') &&
+      !id.startsWith('cc') &&
+      !id.startsWith('tr') &&
+      !_offCampaign(id);
+
   /// Returns earned XP for this solve (first solve gives full XP).
   /// Also pays Miaudólares (see [coinsForSolve]) into [lastCoinsEarned].
   int recordSolve(String levelId, int levelXp, int stars,
@@ -504,7 +544,9 @@ class Progress extends ChangeNotifier {
     final p = of(levelId);
     var earned = 0;
     lastChallengeBonus = 0;
-    if (mask & 4 != 0 && p.starMask & 4 == 0) {
+    // Only campaign levels count toward the challenge purse; side tracks
+    // are excluded from [challengeStars], so they would re-trigger it.
+    if (mask & 4 != 0 && p.starMask & 4 == 0 && _countsForChallenge(levelId)) {
       // Every 10 challenge stars pay a bonus purse.
       if ((challengeStars + 1) % 10 == 0) {
         lastChallengeBonus = kChallengeBonus;

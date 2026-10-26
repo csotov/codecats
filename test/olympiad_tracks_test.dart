@@ -2,6 +2,8 @@ import 'package:codecats/data/olympiad_tracks.dart';
 import 'package:codecats/data/tracks_models.dart';
 import 'package:codecats/engine/judge.dart';
 import 'package:codecats/models.dart';
+import 'package:codecats/data/worlds.dart';
+import 'package:codecats/services/progress.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 JudgeReport _report(List<bool> pass) => JudgeReport(results: [
@@ -77,6 +79,38 @@ void main() {
       expect(q.answer, lessThan(q.optsEs.length));
       expect(q.optsEn.length, q.optsEs.length);
     }
+  });
+
+  test('concept cards point at real levels and have unique ids', () {
+    expect(kConceptCards.length, greaterThanOrEqualTo(20));
+    expect(kConceptCards.map((c) => c.id).toSet().length, kConceptCards.length);
+    for (final c in kConceptCards) {
+      expect(levelById(c.levelId), isNotNull, reason: c.levelId);
+      expect(c.quiz.answer, lessThan(c.quiz.optsEs.length));
+    }
+  });
+
+  test('Leitner boxes: wrong comes back next round, right waits longer', () {
+    final p = Progress.instance;
+    p.blitzSeq = 10;
+    p.answerBlitzCard('x', false);
+    expect(p.blitzCards['x'], [0, 11]);
+    p.answerBlitzCard('x', true);
+    p.answerBlitzCard('x', true);
+    expect(p.blitzCards['x'], [2, 14]);
+    p.blitzCards['y'] = [0, 5];
+    expect(p.nextBlitzCard(['x', 'y']), 'y');
+  });
+
+  test('side-track challenge stars never pay the 10-star purse', () {
+    final p = Progress.instance;
+    for (var i = 1; i <= 9; i++) {
+      p.of('w1l$i').starMask = 4;
+    }
+    p.recordSolve('fx1a', 60, 3, mask: 7);
+    expect(p.lastChallengeBonus, 0);
+    p.recordSolve('fx1b', 60, 3, mask: 7);
+    expect(p.lastChallengeBonus, 0);
   });
 
   test('Subtask model is constructible', () {

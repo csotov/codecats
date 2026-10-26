@@ -560,12 +560,27 @@ Future<void> maybeRunBlitz(BuildContext context) async {
   final n = p.blitzOk >= 6 ? 2 : 1;
   var right = 0;
   for (var i = 0; i < n; i++) {
-    final q = kBlitz[p.nextRot('blitz', kBlitz.length)];
+    // Retrieval practice: 3 of 4 questions recall programming concepts
+    // from levels already won (spaced by Leitner boxes); 1 of 4 is
+    // olympiad math.
+    final unlocked = [
+      for (final c in kConceptCards)
+        if (p.of(c.levelId).solved) c.id
+    ];
+    final cardId = p.blitzSeq % 4 == 3 ? null : p.nextBlitzCard(unlocked);
+    final card = cardId == null
+        ? null
+        : kConceptCards.firstWhere((c) => c.id == cardId);
+    final q = card?.quiz ?? kBlitz[p.nextRot('blitz', kBlitz.length)];
     if (!context.mounted) break;
     final ok = await ProfessorQuizDialog.show(context, q,
         intro: l.pick('⚡ ¡Pregunta relámpago! (${i + 1}/$n)',
             '⚡ Lightning question! (${i + 1}/$n)'));
     if (ok == true) right++;
+    if (card != null) p.answerBlitzCard(card.id, ok == true);
+    p.blitzSeq++;
+    Cloud.instance.log('blitz_q',
+        data: {'card': card?.id ?? 'math', 'ok': ok == true});
   }
   Cloud.instance.log('blitz', data: {'right': right, 'of': n});
   p.finishBlitz(right);
