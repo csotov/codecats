@@ -521,7 +521,8 @@ class ProfessorDialog {
 /// The professor asks a two-option check question; resolves to whether
 /// the answer was right (null if dismissed).
 class ProfessorQuizDialog {
-  static Future<bool?> show(BuildContext context, ProfeQuiz quiz) {
+  static Future<bool?> show(BuildContext context, ProfeQuiz quiz,
+      {String? intro}) {
     return showGeneralDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -535,14 +536,15 @@ class ProfessorQuizDialog {
           child: child,
         ),
       ),
-      pageBuilder: (_, __, ___) => _QuizView(quiz: quiz),
+      pageBuilder: (_, __, ___) => _QuizView(quiz: quiz, intro: intro),
     );
   }
 }
 
 class _QuizView extends StatefulWidget {
-  const _QuizView({required this.quiz});
+  const _QuizView({required this.quiz, this.intro});
   final ProfeQuiz quiz;
+  final String? intro;
 
   @override
   State<_QuizView> createState() => _QuizViewState();
@@ -557,7 +559,7 @@ class _QuizViewState extends State<_QuizView> {
     final q = widget.quiz;
     final right = _picked == q.answer;
     final text = _picked == null
-        ? '${l.pick('Pregunta rápida antes de repetir:', 'Quick question before I repeat:')}\n${q.question}'
+        ? '${widget.intro ?? l.pick('Pregunta rápida antes de repetir:', 'Quick question before I repeat:')}\n${q.question}'
         : '${right ? '✅' : '❌'} ${q.why}';
     return Material(
       color: Colors.black.withValues(alpha: 0.78),

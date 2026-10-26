@@ -160,6 +160,42 @@ class Progress extends ChangeNotifier {
   /// spaced reviews feel like a treat, not homework.
   int bonusDay = 0;
 
+  /// Side tracks (lab, lead-ins, world closings, Coder round) do not
+  /// count toward campaign totals.
+  static bool _offCampaign(String id) =>
+      id.startsWith('lb') || id.startsWith('fx') || id.startsWith('cr');
+
+  /// Best partial score (0-100) per subtask level.
+  final Map<String, int> scores = {};
+
+  void recordScore(String levelId, int score) {
+    if (score <= (scores[levelId] ?? -1)) return;
+    scores[levelId] = score;
+    _save();
+    notifyListeners();
+  }
+
+  /// Minutes played since the last lightning round, and right answers so
+  /// far (more right answers -> 2 questions per round instead of 1).
+  int blitzMin = 0;
+  int blitzOk = 0;
+  static const kBlitzEvery = 30;
+  static const kBlitzCoins = 5;
+
+  void tickBlitz() {
+    blitzMin++;
+    if (blitzMin % 5 == 0 || blitzMin == kBlitzEvery) _save();
+    if (blitzMin == kBlitzEvery) notifyListeners();
+  }
+
+  void finishBlitz(int right) {
+    blitzMin = 0;
+    blitzOk += right;
+    coins += right * kBlitzCoins;
+    _save();
+    notifyListeners();
+  }
+
   /// The player's Codeforces handle, to verify linked coach problems.
   String cfHandle = '';
 
@@ -278,6 +314,12 @@ class Progress extends ChangeNotifier {
           ..addAll((j['gc'] as List? ?? const []).map((e) => '$e'));
         bonusDay = (j['bd'] as num?)?.toInt() ?? 0;
         cfHandle = j['cfh'] as String? ?? '';
+        scores
+          ..clear()
+          ..addAll(((j['sc'] as Map?) ?? const {})
+              .map((k, v) => MapEntry('$k', (v as num).toInt())));
+        blitzMin = (j['bzm'] as num?)?.toInt() ?? 0;
+        blitzOk = (j['bzo'] as num?)?.toInt() ?? 0;
         contestIds =
             List.unmodifiable((j['ct'] as List? ?? const []).map((e) => '$e'));
         contestEndMs = (j['cte'] as num?)?.toInt() ?? 0;
@@ -307,6 +349,9 @@ class Progress extends ChangeNotifier {
         'gc': goldenCards.toList(),
         'bd': bonusDay,
         'cfh': cfHandle,
+        'sc': scores,
+        'bzm': blitzMin,
+        'bzo': blitzOk,
         'ct': contestIds,
         'cte': contestEndMs,
         'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
@@ -346,6 +391,10 @@ class Progress extends ChangeNotifier {
     goldenCards.addAll(List<String>.from(d['gc'] ?? const []));
     bonusDay = math.max(bonusDay, (d['bd'] as num?)?.toInt() ?? 0);
     if (cfHandle.isEmpty) cfHandle = d['cfh'] as String? ?? '';
+    ((d['sc'] as Map?) ?? const {}).forEach((k, v) {
+      scores['$k'] = math.max(scores['$k'] ?? 0, (v as num).toInt());
+    });
+    blitzOk = math.max(blitzOk, (d['bzo'] as num?)?.toInt() ?? 0);
     final lv = d['lv'];
     if (lv is Map) {
       lv.forEach((k, v) {
@@ -387,6 +436,9 @@ class Progress extends ChangeNotifier {
           'gc': goldenCards.toList(),
           'bd': bonusDay,
           'cfh': cfHandle,
+          'sc': scores,
+          'bzm': blitzMin,
+          'bzo': blitzOk,
           'ct': contestIds,
           'cte': contestEndMs,
           'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
@@ -441,6 +493,7 @@ class Progress extends ChangeNotifier {
           !e.key.startsWith('cp') &&
           !e.key.startsWith('cc') &&
           !e.key.startsWith('tr') &&
+          !_offCampaign(e.key) &&
           e.value.starMask & 4 != 0)
       .length;
 
@@ -866,7 +919,9 @@ class Progress extends ChangeNotifier {
       .where((e) =>
           !e.key.startsWith('hw') &&
           !e.key.startsWith('cp') &&
-          !e.key.startsWith('cc'))
+          !e.key.startsWith('cc') &&
+          !e.key.startsWith('tr') &&
+          !_offCampaign(e.key))
       .map((e) => e.value);
 
   int get totalStars => _campaign.fold(0, (s, p) => s + p.stars);
