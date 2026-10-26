@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../data/catalog.dart';
@@ -45,6 +46,9 @@ class _MapScreenState extends State<MapScreen> {
     final l = L.instance;
     final progress = Progress.instance;
     final ids = orderedLevelIds(kWorlds);
+    // Phones in portrait: the row of icons does not fit, so everything
+    // but coins/profile/event goes into one menu.
+    final narrow = MediaQuery.sizeOf(context).width < 760;
 
     return AnimatedBuilder(
       animation: Listenable.merge([progress, Cloud.instance]),
@@ -70,79 +74,83 @@ class _MapScreenState extends State<MapScreen> {
                   icon: const Text('🎃', style: TextStyle(fontSize: 22)),
                   onPressed: _openHalloween,
                 ),
-              IconButton(
-                tooltip: l.t('tip_contest'),
-                icon: const Icon(Icons.emoji_events_outlined),
-                onPressed: _openContest,
-              ),
-              IconButton(
-                tooltip: l.t('tip_collection'),
-                icon: const Icon(Icons.catching_pokemon),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CollectionScreen()),
-                ),
-              ),
-              IconButton(
-                tooltip: l.t('tip_practice'),
-                icon: const Icon(Icons.fitness_center),
-                onPressed: _openPractice,
-              ),
-              IconButton(
-                tooltip: l.t('tip_notebook'),
-                icon: Badge(
-                  isLabelVisible: Progress.instance.bonusLevelId != null ||
-                      Progress.instance.unsolvedFails.isNotEmpty,
-                  label: Text(
-                      '${Progress.instance.unsolvedFails.length + (Progress.instance.bonusLevelId == null ? 0 : 1)}'),
-                  child: const Icon(Icons.menu_book_outlined),
-                ),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ReviewScreen()),
-                ),
-              ),
-              IconButton(
-                tooltip: l.t('tip_dashboard'),
-                icon: const Icon(Icons.leaderboard_outlined),
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const DashboardScreen()),
-                ),
-              ),
-              if (Cloud.configured)
+              if (narrow)
+                _moreMenu(l)
+              else ...[
                 IconButton(
-                  tooltip: l.t('tip_account'),
-                  icon: Icon(Cloud.instance.signedIn
-                      ? Icons.cloud_done_outlined
-                      : Icons.account_circle_outlined),
+                  tooltip: l.t('tip_contest'),
+                  icon: const Icon(Icons.emoji_events_outlined),
+                  onPressed: _openContest,
+                ),
+                IconButton(
+                  tooltip: l.t('tip_collection'),
+                  icon: const Icon(Icons.catching_pokemon),
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const AccountScreen()),
+                    MaterialPageRoute(builder: (_) => const CollectionScreen()),
                   ),
                 ),
-              if (Cloud.instance.isAdmin)
                 IconButton(
-                  tooltip: l.t('tip_admin'),
-                  icon: const Icon(Icons.admin_panel_settings_outlined),
+                  tooltip: l.t('tip_practice'),
+                  icon: const Icon(Icons.fitness_center),
+                  onPressed: _openPractice,
+                ),
+                IconButton(
+                  tooltip: l.t('tip_notebook'),
+                  icon: Badge(
+                    isLabelVisible: Progress.instance.bonusLevelId != null ||
+                        Progress.instance.unsolvedFails.isNotEmpty,
+                    label: Text(
+                        '${Progress.instance.unsolvedFails.length + (Progress.instance.bonusLevelId == null ? 0 : 1)}'),
+                    child: const Icon(Icons.menu_book_outlined),
+                  ),
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const AdminScreen()),
+                    MaterialPageRoute(builder: (_) => const ReviewScreen()),
                   ),
                 ),
-              IconButton(
-                tooltip: l.t('tip_music'),
-                icon: Icon(Sfx.muted
-                    ? Icons.music_off_outlined
-                    : Icons.music_note_outlined),
-                onPressed: _soundPanel,
-              ),
-              _langButton(),
-              IconButton(
-                tooltip: l.t('tip_reset'),
-                icon: const Icon(Icons.restart_alt),
-                onPressed: _confirmReset,
-              ),
+                IconButton(
+                  tooltip: l.t('tip_dashboard'),
+                  icon: const Icon(Icons.leaderboard_outlined),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                  ),
+                ),
+                if (Cloud.configured)
+                  IconButton(
+                    tooltip: l.t('tip_account'),
+                    icon: Icon(Cloud.instance.signedIn
+                        ? Icons.cloud_done_outlined
+                        : Icons.account_circle_outlined),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AccountScreen()),
+                    ),
+                  ),
+                if (Cloud.instance.isAdmin)
+                  IconButton(
+                    tooltip: l.t('tip_admin'),
+                    icon: const Icon(Icons.admin_panel_settings_outlined),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AdminScreen()),
+                    ),
+                  ),
+                IconButton(
+                  tooltip: l.t('tip_music'),
+                  icon: Icon(Sfx.muted
+                      ? Icons.music_off_outlined
+                      : Icons.music_note_outlined),
+                  onPressed: _soundPanel,
+                ),
+                _langButton(),
+                IconButton(
+                  tooltip: l.t('tip_reset'),
+                  icon: const Icon(Icons.restart_alt),
+                  onPressed: _confirmReset,
+                ),
+              ],
             ],
           ),
           body: KeyboardScroll(
@@ -349,7 +357,7 @@ class _MapScreenState extends State<MapScreen> {
 
   void _openContest() {
     final l = L.instance;
-    if (!canStartContest()) {
+    if (!Progress.instance.contestActive && !canStartContest()) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l.t('contest_need'))),
       );
@@ -357,8 +365,7 @@ class _MapScreenState extends State<MapScreen> {
     }
     Navigator.push(
       context,
-      MaterialPageRoute(
-          builder: (_) => ContestScreen(problems: pickContestLevels())),
+      MaterialPageRoute(builder: (_) => ContestScreen.openOrResume()),
     );
   }
 
@@ -431,7 +438,7 @@ class _MapScreenState extends State<MapScreen> {
         builder: (c, set) => AlertDialog(
           title: Text(l.t('sound_title')),
           content: SizedBox(
-            width: 380,
+            width: math.min(380, MediaQuery.sizeOf(c).width - 72),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -478,6 +485,73 @@ class _MapScreenState extends State<MapScreen> {
       ),
     );
     if (mounted) setState(() {});
+  }
+
+  /// Everything the wide app bar shows as icons, as one menu for phones.
+  Widget _moreMenu(L l) {
+    final p = Progress.instance;
+    final due = p.unsolvedFails.length + (p.bonusLevelId == null ? 0 : 1);
+    PopupMenuItem<String> item(String v, IconData i, String text) =>
+        PopupMenuItem(
+          value: v,
+          child: Row(children: [
+            Icon(i, size: 20),
+            const SizedBox(width: 10),
+            Expanded(child: Text(text)),
+          ]),
+        );
+    return PopupMenuButton<String>(
+      tooltip: l.pick('Más opciones', 'More options'),
+      icon: Badge(
+        isLabelVisible: due > 0,
+        label: Text('$due'),
+        child: const Icon(Icons.menu),
+      ),
+      onSelected: (v) {
+        switch (v) {
+          case 'contest':
+            _openContest();
+          case 'collection':
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const CollectionScreen()));
+          case 'practice':
+            _openPractice();
+          case 'notebook':
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const ReviewScreen()));
+          case 'dashboard':
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const DashboardScreen()));
+          case 'account':
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AccountScreen()));
+          case 'admin':
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AdminScreen()));
+          case 'sound':
+            _soundPanel();
+          case 'lang':
+            l.setLang(l.isEs ? 'en' : 'es');
+          case 'reset':
+            _confirmReset();
+        }
+      },
+      itemBuilder: (c) => [
+        item('contest', Icons.emoji_events_outlined, l.t('tip_contest')),
+        item('collection', Icons.catching_pokemon, l.t('tip_collection')),
+        item('practice', Icons.fitness_center, l.t('tip_practice')),
+        item('notebook', Icons.menu_book_outlined,
+            '${l.t('notebook')}${due > 0 ? ' ($due)' : ''}'),
+        item('dashboard', Icons.leaderboard_outlined, l.t('tip_dashboard')),
+        if (Cloud.configured)
+          item('account', Icons.account_circle_outlined, l.t('tip_account')),
+        if (Cloud.configured && Cloud.instance.isAdmin)
+          item('admin', Icons.admin_panel_settings_outlined, l.t('tip_admin')),
+        item('sound', Icons.music_note_outlined, l.t('sound_title')),
+        item('lang', Icons.translate, l.isEs ? 'English' : 'Español'),
+        item('reset', Icons.restart_alt, l.t('tip_reset')),
+      ],
+    );
   }
 
   Widget _langButton() {

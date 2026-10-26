@@ -1,5 +1,6 @@
 import '../models.dart';
 import '../services/progress.dart';
+import 'contest_pool.dart';
 import 'halloween.dart';
 import 'world1.dart';
 import 'world2.dart';
@@ -43,6 +44,9 @@ Level? levelById(String id) {
   }
   for (final l in kHalloweenLevels) {
     if (l.id == id) return l;
+  }
+  for (final c in kContestPool) {
+    if (c.level.id == id) return c.level;
   }
   return null;
 }

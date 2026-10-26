@@ -147,6 +147,28 @@ class Progress extends ChangeNotifier {
   /// spaced reviews feel like a treat, not homework.
   int bonusDay = 0;
 
+  /// Mock contest in progress: problem ids and end time (epoch ms), so an
+  /// accidental exit never loses the run.
+  List<String> contestIds = const [];
+  int contestEndMs = 0;
+  bool get contestActive =>
+      contestIds.isNotEmpty &&
+      contestEndMs > DateTime.now().millisecondsSinceEpoch;
+
+  void startContest(List<String> ids, Duration length) {
+    contestIds = List.unmodifiable(ids);
+    contestEndMs = DateTime.now().add(length).millisecondsSinceEpoch;
+    _save();
+    notifyListeners();
+  }
+
+  void endContest() {
+    contestIds = const [];
+    contestEndMs = 0;
+    _save();
+    notifyListeners();
+  }
+
   /// Epoch-day of the first solve — anchors the ghost rival's
   /// steady advance (~1 level every 2 days).
   int ghostStartDay = 0;
@@ -233,6 +255,9 @@ class Progress extends ChangeNotifier {
           ..clear()
           ..addAll((j['gc'] as List? ?? const []).map((e) => '$e'));
         bonusDay = (j['bd'] as num?)?.toInt() ?? 0;
+        contestIds =
+            List.unmodifiable((j['ct'] as List? ?? const []).map((e) => '$e'));
+        contestEndMs = (j['cte'] as num?)?.toInt() ?? 0;
         unlockedCats
           ..clear()
           ..addAll((j['cats'] as List? ?? const []).map((e) => '$e'));
@@ -333,6 +358,8 @@ class Progress extends ChangeNotifier {
           'dy': days,
           'gc': goldenCards.toList(),
           'bd': bonusDay,
+          'ct': contestIds,
+          'cte': contestEndMs,
           'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
         }));
   }
@@ -784,8 +811,9 @@ class Progress extends ChangeNotifier {
   }
 
   /// Campaign-only totals; Halloween event levels (hw*) count separately.
-  Iterable<LevelProgress> get _campaign =>
-      levels.entries.where((e) => !e.key.startsWith('hw')).map((e) => e.value);
+  Iterable<LevelProgress> get _campaign => levels.entries
+      .where((e) => !e.key.startsWith('hw') && !e.key.startsWith('cp'))
+      .map((e) => e.value);
 
   int get totalStars => _campaign.fold(0, (s, p) => s + p.stars);
 
@@ -804,6 +832,8 @@ class Progress extends ChangeNotifier {
     days.clear();
     goldenCards.clear();
     bonusDay = 0;
+    contestIds = const [];
+    contestEndMs = 0;
     final prefs = await SharedPreferences.getInstance();
     if (active != null) {
       await prefs.remove(_keyFor(active!.id));
