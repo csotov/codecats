@@ -283,6 +283,8 @@ class Progress extends ChangeNotifier {
         'dy': days,
         'gc': goldenCards.toList(),
         'bd': bonusDay,
+        'ct': contestIds,
+        'cte': contestEndMs,
         'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
       };
 
