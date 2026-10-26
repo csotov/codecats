@@ -181,7 +181,9 @@ class Progress extends ChangeNotifier {
     return fresh;
   }
 
+  /// Only shop badges ('s_' ids) can be worn for now.
   void equipBadge(String id) {
+    if (!id.startsWith('s_')) return;
     equippedBadge = equippedBadge == id ? '' : id;
     _save();
     notifyListeners();
@@ -548,6 +550,7 @@ class Progress extends ChangeNotifier {
     bonusDay = math.max(bonusDay, (d['bd'] as num?)?.toInt() ?? 0);
     badges.addAll(List<String>.from(d['bdg'] ?? const []));
     if (equippedBadge.isEmpty) equippedBadge = d['bde'] as String? ?? '';
+    if (!equippedBadge.startsWith('s_')) equippedBadge = '';
     if (cfHandle.isEmpty) cfHandle = d['cfh'] as String? ?? '';
     if (atcoderUser.isEmpty) atcoderUser = d['acu'] as String? ?? '';
     ((d['sc'] as Map?) ?? const {}).forEach((k, v) {

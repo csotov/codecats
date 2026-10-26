@@ -50,7 +50,7 @@ class BadgeArt extends StatelessWidget {
                 ),
               ),
             )
-          : Image.asset('assets/memes/${b.cat}.jpg',
+          : Image.asset('assets/badges/${b.cat}.jpg',
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => const Center(child: Text('🐱'))),
     );
@@ -182,7 +182,11 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
     final owned = p.badges.contains(b.id);
     final worn = p.equippedBadge == b.id;
     final Widget action;
-    if (owned) {
+    if (owned && !b.isShop) {
+      action = Text(l.pick('¡Ganada!', 'Earned!'),
+          style: const TextStyle(
+              fontWeight: FontWeight.w800, color: AppTheme.accent2));
+    } else if (owned) {
       action = Tooltip(
         message: worn
             ? l.pick('Sacártela del perfil', 'Remove it from your profile')
@@ -271,13 +275,6 @@ Future<void> showNewBadges(BuildContext context, List<CatBadge> fresh) async {
               style: const TextStyle(color: AppTheme.textLo)),
         ]),
         actions: [
-          TextButton(
-            onPressed: () {
-              Progress.instance.equipBadge(b.id);
-              Navigator.pop(c);
-            },
-            child: Text(l.pick('Ponérmela', 'Wear it')),
-          ),
           FilledButton(
               onPressed: () => Navigator.pop(c),
               child: Text(l.pick('¡Genial!', 'Great!'))),
