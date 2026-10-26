@@ -20,6 +20,7 @@ import 'keyboard_scroll.dart';
 import 'level_screen.dart';
 import 'profiles.dart';
 import 'review_screen.dart';
+import '../data/challenges.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -775,7 +776,10 @@ class _MapScreenState extends State<MapScreen> {
                         : AppTheme.accent,
               ),
               const SizedBox(height: 6),
-              StarsRow(stars: p.stars, size: 13),
+              Tooltip(
+                message: starsSummary(level, p.starMask),
+                child: StarsRow(stars: p.stars, size: 13),
+              ),
             ],
           ),
         ),

@@ -24,6 +24,7 @@ class LevelProgress {
     this.failDay = 0,
     this.reviewStage = 0,
     this.reviewDue = 0,
+    this.starMask = 0,
   });
 
   bool solved;
@@ -43,6 +44,10 @@ class LevelProgress {
   int reviewStage;
   int reviewDue;
 
+  /// Which of the three visible stars were ever earned (win / no hint /
+  /// level challenge), OR-ed across visits.
+  int starMask;
+
   Map<String, dynamic> toJson() => {
         's': solved,
         'st': stars,
@@ -54,6 +59,7 @@ class LevelProgress {
         if (failDay > 0) 'fd': failDay,
         if (reviewStage > 0) 'rs': reviewStage,
         if (reviewDue > 0) 'rv': reviewDue,
+        if (starMask > 0) 'sm': starMask,
       };
 
   factory LevelProgress.fromJson(Map<String, dynamic> j) => LevelProgress(
@@ -64,6 +70,13 @@ class LevelProgress {
         failDay: (j['fd'] as num?)?.toInt() ?? 0,
         reviewStage: (j['rs'] as num?)?.toInt() ?? 0,
         reviewDue: (j['rv'] as num?)?.toInt() ?? 0,
+        // Levels won before visible star rules: map old stars onto flags.
+        starMask: (j['sm'] as num?)?.toInt() ??
+            (j['s'] == true
+                ? 1 |
+                    (((j['st'] as num?)?.toInt() ?? 0) >= 2 ? 2 : 0) |
+                    (((j['st'] as num?)?.toInt() ?? 0) >= 3 ? 4 : 0)
+                : 0),
         hintsBought: (j['hb'] as num?)?.toInt() ?? 0,
         code: j['c'] as String? ?? '',
         blocksJson: j['b'] as List<dynamic>?,
@@ -334,6 +347,7 @@ class Progress extends ChangeNotifier {
         p.failDay = math.max(p.failDay, r.failDay);
         p.reviewStage = math.max(p.reviewStage, r.reviewStage);
         p.reviewDue = math.max(p.reviewDue, r.reviewDue);
+        p.starMask |= r.starMask;
       });
     }
     await _save();
@@ -404,12 +418,32 @@ class Progress extends ChangeNotifier {
 
   LevelProgress of(String levelId) => levels[levelId] ??= LevelProgress();
 
+  static const kChallengeBonus = 30;
+  int lastChallengeBonus = 0;
+
+  /// Levels whose challenge (third) star was earned, campaign only.
+  int get challengeStars => levels.entries
+      .where((e) =>
+          !e.key.startsWith('hw') &&
+          !e.key.startsWith('cp') &&
+          e.value.starMask & 4 != 0)
+      .length;
+
   /// Returns earned XP for this solve (first solve gives full XP).
   /// Also pays Miaudólares (see [coinsForSolve]) into [lastCoinsEarned].
   int recordSolve(String levelId, int levelXp, int stars,
-      {bool codeMode = false, bool boss = false}) {
+      {bool codeMode = false, bool boss = false, int mask = 0}) {
     final p = of(levelId);
     var earned = 0;
+    lastChallengeBonus = 0;
+    if (mask & 4 != 0 && p.starMask & 4 == 0) {
+      // Every 10 challenge stars pay a bonus purse.
+      if ((challengeStars + 1) % 10 == 0) {
+        lastChallengeBonus = kChallengeBonus;
+        coins += kChallengeBonus;
+      }
+    }
+    p.starMask |= mask;
     lastCoinsEarned =
         coinsForSolve(firstSolve: !p.solved, stars: stars, boss: boss);
     coins += lastCoinsEarned;
