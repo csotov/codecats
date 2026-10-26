@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../data/worlds.dart';
 import '../data/cats.dart';
+import '../data/complexity.dart';
 import '../l10n.dart';
 import '../services/cloud.dart';
 import 'keyboard_scroll.dart';
+import 'theme.dart';
 import 'widgets.dart';
 
 /// Parent/admin view: what each player actually does in the game.
@@ -105,6 +107,12 @@ class _AdminScreenState extends State<AdminScreen> {
                     const Center(child: CircularProgressIndicator())
                   else if (_userId != null) ...[
                     _summary(l),
+                    const SizedBox(height: 12),
+                    _weekCompare(l),
+                    const SizedBox(height: 12),
+                    _trend(l),
+                    const SizedBox(height: 12),
+                    _mastery(l),
                     const SizedBox(height: 12),
                     _hours(l),
                     const SizedBox(height: 12),
@@ -209,6 +217,271 @@ class _AdminScreenState extends State<AdminScreen> {
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  DateTime? _ts(Map<String, dynamic> e) =>
+      DateTime.tryParse(e['ts'] as String? ?? '')?.toLocal();
+
+  static String _day(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  static String _fmtMin(num s) => s >= 3600
+      ? '${(s / 3600).toStringAsFixed(1)} h'
+      : '${(s / 60).round()} min';
+
+  /// Aggregates for the events between [from] (inclusive) and [to].
+  Map<String, num> _window(DateTime from, DateTime to) {
+    final sessions = <Object?>{};
+    num secs = 0, fights = 0, wins = 0, hints = 0, quiz = 0, quizOk = 0;
+    num reviews = 0, talks = 0, compile = 0;
+    for (final e in _events) {
+      final ts = _ts(e);
+      if (ts == null || ts.isBefore(from) || !ts.isBefore(to)) continue;
+      final d = _data(e);
+      sessions.add(e['session_id']);
+      switch (e['type']) {
+        case 'level_leave':
+          secs += (d['seconds'] as num?) ?? 0;
+        case 'fight':
+          fights++;
+          if (d['won'] == true) wins++;
+        case 'hint_buy':
+          if (d['ok'] == true) hints++;
+        case 'compile_error':
+          compile++;
+        case 'bigo_quiz':
+          quiz++;
+          if (d['right'] == true) quizOk++;
+        case 'review_done':
+          reviews++;
+        case 'mental_talk':
+          talks++;
+      }
+    }
+    return {
+      'sessions': sessions.length,
+      'secs': secs,
+      'fights': fights,
+      'wins': wins,
+      'hints': hints,
+      'compile': compile,
+      'quiz': quiz,
+      'quizOk': quizOk,
+      'reviews': reviews,
+      'talks': talks,
+    };
+  }
+
+  /// This week against the previous one: is the training trend up or down?
+  Widget _weekCompare(L l) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final cur = _window(today.subtract(const Duration(days: 6)),
+        today.add(const Duration(days: 1)));
+    final prev = _window(today.subtract(const Duration(days: 13)),
+        today.subtract(const Duration(days: 6)));
+    String pct(num a, num b) => b == 0 ? '—' : '${(100 * a / b).round()}%';
+    String arrow(num a, num b) => a > b
+        ? ' ▲'
+        : a < b
+            ? ' ▼'
+            : '';
+    final rows = <List<String>>[
+      [
+        l.pick('Sesiones', 'Sessions'),
+        '${cur['sessions']}${arrow(cur['sessions']!, prev['sessions']!)}',
+        '${prev['sessions']}'
+      ],
+      [
+        l.pick('Tiempo', 'Time'),
+        '${_fmtMin(cur['secs']!)}${arrow(cur['secs']!, prev['secs']!)}',
+        _fmtMin(prev['secs']!)
+      ],
+      [
+        l.pick('Batallas / ganadas', 'Battles / won'),
+        '${cur['fights']} / ${cur['wins']} (${pct(cur['wins']!, cur['fights']!)})',
+        '${prev['fights']} / ${prev['wins']} (${pct(prev['wins']!, prev['fights']!)})'
+      ],
+      [
+        l.pick('Errores de compilación', 'Compile errors'),
+        '${cur['compile']}',
+        '${prev['compile']}'
+      ],
+      [l.pick('Pistas', 'Hints'), '${cur['hints']}', '${prev['hints']}'],
+      [
+        l.pick('Preguntas Big O acertadas', 'Big O checks right'),
+        '${cur['quizOk']}/${cur['quiz']}',
+        '${prev['quizOk']}/${prev['quiz']}'
+      ],
+      [
+        l.pick('Repasos del cuaderno', 'Notebook reviews'),
+        '${cur['reviews']}',
+        '${prev['reviews']}'
+      ],
+      [
+        l.pick('Charlas de mentalidad', 'Mindset talks'),
+        '${cur['talks']}',
+        '${prev['talks']}'
+      ],
+    ];
+    return SectionCard(
+      title: l.pick('Esta semana vs la anterior', 'This week vs last'),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const SizedBox(width: 190),
+              Expanded(
+                  child: Text(l.pick('Últimos 7 días', 'Last 7 days'),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 12))),
+              Expanded(
+                  child: Text(l.pick('7 anteriores', 'Previous 7'),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 12))),
+            ],
+          ),
+          for (final r in rows)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                children: [
+                  SizedBox(
+                      width: 190,
+                      child: Text(r[0],
+                          style: const TextStyle(fontWeight: FontWeight.w600))),
+                  Expanded(child: Text(r[1])),
+                  Expanded(
+                      child: Text(r[2],
+                          style: const TextStyle(color: AppTheme.textLo))),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Day by day over the last 14 days.
+  Widget _trend(L l) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final days = [
+      for (var i = 13; i >= 0; i--) today.subtract(Duration(days: i)),
+    ];
+    return SectionCard(
+      title: l.pick('Últimos 14 días', 'Last 14 days'),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columnSpacing: 14,
+          headingRowHeight: 32,
+          dataRowMinHeight: 28,
+          dataRowMaxHeight: 32,
+          columns: [
+            DataColumn(label: Text(l.pick('Día', 'Day'))),
+            DataColumn(label: Text(l.pick('Sesiones', 'Sess.'))),
+            DataColumn(label: Text(l.pick('Tiempo', 'Time'))),
+            DataColumn(label: Text(l.pick('Batallas', 'Battles'))),
+            DataColumn(label: Text(l.pick('Ganadas', 'Won'))),
+            DataColumn(label: Text(l.pick('Pistas', 'Hints'))),
+            const DataColumn(label: Text('Big O')),
+            DataColumn(label: Text(l.pick('Repasos', 'Reviews'))),
+          ],
+          rows: [
+            for (final d in days)
+              () {
+                final w = _window(d, d.add(const Duration(days: 1)));
+                final idle = w['sessions'] == 0;
+                final style = TextStyle(
+                    color: idle ? AppTheme.textLo : null, fontSize: 12);
+                return DataRow(cells: [
+                  DataCell(Text(_day(d).substring(5), style: style)),
+                  DataCell(Text('${w['sessions']}', style: style)),
+                  DataCell(
+                      Text(idle ? '—' : _fmtMin(w['secs']!), style: style)),
+                  DataCell(Text('${w['fights']}', style: style)),
+                  DataCell(Text('${w['wins']}', style: style)),
+                  DataCell(Text('${w['hints']}', style: style)),
+                  DataCell(Text(
+                      w['quiz'] == 0 ? '—' : '${w['quizOk']}/${w['quiz']}',
+                      style: style)),
+                  DataCell(Text('${w['reviews']}', style: style)),
+                ]);
+              }(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Big O understanding per class, notebook follow-through and which
+  /// mindset talks fired.
+  Widget _mastery(L l) {
+    final quiz = <String, List<int>>{};
+    for (final e in _of('bigo_quiz')) {
+      final d = _data(e);
+      final q = quiz.putIfAbsent('${d['bo']}', () => [0, 0]);
+      q[d['right'] == true ? 0 : 1]++;
+    }
+    final talks = <String, int>{};
+    for (final e in _of('mental_talk')) {
+      final ev = '${_data(e)['ev']}';
+      talks[ev] = (talks[ev] ?? 0) + 1;
+    }
+    final reviewOpen = _of('review_open').length;
+    final reviewDone = _of('review_done').length;
+    final talkNames = {
+      'threeFails': l.pick('tras 3 fallos', 'after 3 fails'),
+      'leaveUnsolved': l.pick('al irse sin ganar', 'leaving unsolved'),
+      'winAfterFails': l.pick('victoria tras fallar', 'win after fails'),
+    };
+    Widget row(String a, String b) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Row(children: [
+            SizedBox(
+                width: 190,
+                child: Text(a,
+                    style: const TextStyle(fontWeight: FontWeight.w600))),
+            Expanded(child: Text(b)),
+          ]),
+        );
+    return SectionCard(
+      title: l.pick('Comprensión y hábitos', 'Understanding and habits'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+              l.pick(
+                  'Preguntas del profe sobre Big O', 'Big O check questions'),
+              style: const TextStyle(
+                  fontWeight: FontWeight.w800, color: AppTheme.textLo)),
+          if (quiz.isEmpty)
+            row('—', l.pick('todavía ninguna', 'none yet'))
+          else
+            for (final e in quiz.entries)
+              row(
+                  kBigO[e.key]?.notation ?? e.key,
+                  '${e.value[0]} ${l.pick('bien', 'right')} · ${e.value[1]} ${l.pick('mal', 'wrong')}'
+                  '${e.value[1] > e.value[0] ? '  ⚠️ ${l.pick('repasar', 'review')}' : ''}'),
+          const SizedBox(height: 8),
+          Text(l.pick('Cuaderno de errores', 'Error notebook'),
+              style: const TextStyle(
+                  fontWeight: FontWeight.w800, color: AppTheme.textLo)),
+          row(l.pick('Repasos abiertos / ganados', 'Reviews opened / won'),
+              '$reviewOpen / $reviewDone'),
+          const SizedBox(height: 8),
+          Text(l.pick('Charlas de mentalidad', 'Mindset talks'),
+              style: const TextStyle(
+                  fontWeight: FontWeight.w800, color: AppTheme.textLo)),
+          if (talks.isEmpty)
+            row('—', l.pick('todavía ninguna', 'none yet'))
+          else
+            for (final e in talks.entries)
+              row(talkNames[e.key] ?? e.key, '${e.value}'),
         ],
       ),
     );

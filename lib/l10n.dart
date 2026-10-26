@@ -246,6 +246,17 @@ class L {
           'Tap so the teacher explains it'
     },
     'bigo_lesson': {'es': 'Lección del profe', 'en': "Teacher's lesson"},
+    'tip_quiz_option': {'es': 'Elegí tu respuesta', 'en': 'Pick your answer'},
+    'notebook': {'es': 'Cuaderno de errores', 'en': 'Error notebook'},
+    'tip_notebook': {
+      'es': 'Cuaderno de errores: niveles perdidos que vuelven para repasar',
+      'en': 'Error notebook: lost levels that come back for review'
+    },
+    'tip_retry_level': {
+      'es': 'Volver a intentar este nivel',
+      'en': 'Try this level again'
+    },
+    'my_week': {'es': 'Mi semana', 'en': 'My week'},
     'no_coins': {
       'es': '¡Te faltan Miaudólares! Gana o repasa niveles para conseguir más.',
       'en': 'Not enough Meowdollars! Win or replay levels to earn more.'

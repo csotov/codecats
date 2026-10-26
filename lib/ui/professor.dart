@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../l10n.dart';
+import '../data/profe_talks.dart';
 import '../services/progress.dart';
 import '../data/complexity.dart';
 import '../data/halloween.dart';
@@ -87,13 +88,13 @@ class Speaker {
 }
 
 /// What the professor says when a Big O class first becomes relevant.
-List<String> bigOLesson(BigO bo) => [
+List<String> bigOLesson(BigO bo, {List<String>? lines}) => [
       L.instance.pick(
           '¡Momento de ciencia! Este nivel es ${bo.notation}, complejidad '
               '${bo.name}. Te explico qué significa.',
           'Science time! This level is ${bo.notation}, ${bo.name} '
               'complexity. Let me explain.'),
-      ...bo.lines,
+      ...(lines ?? bo.lines),
       L.instance.pick(
           'Vas a ver la nota "Big O" arriba de cada misión. Tocala cuando '
               'quieras que te lo repita.',
@@ -101,9 +102,47 @@ List<String> bigOLesson(BigO bo) => [
               'time you want me to repeat this.'),
     ];
 
+/// A fresh phrasing of a Big O class, never the same one twice in a row.
+List<String> bigOVariantLines(BigO bo) {
+  final vs = kBigOVariants[bo.id];
+  if (vs == null || vs.isEmpty) return bo.lines;
+  return vs[Progress.instance.nextRot('bo_${bo.id}', vs.length)].lines;
+}
+
+/// What the professor says after a check question: a new detail when
+/// the answer was right, a different explanation when it was wrong.
+List<String> bigORecap(BigO bo, {required bool right}) => [
+      right
+          ? L.instance.pick(
+              '¡Correcto! Ya lo tenés. Te sumo un detalle nuevo sobre '
+                  '${bo.notation}:',
+              'Correct! You have got it. Here is a new detail about '
+                  '${bo.notation}:')
+          : L.instance.pick('Casi. No pasa nada: te lo explico de otra manera.',
+              'Almost. No problem: let me explain it another way.'),
+      ...bigOVariantLines(bo),
+    ];
+
+/// Pick the next check question for a Big O class, or null if none.
+ProfeQuiz? bigOQuiz(BigO bo) {
+  final qs = kBigOQuiz[bo.id];
+  if (qs == null || qs.isEmpty) return null;
+  return qs[Progress.instance.nextRot('qz_${bo.id}', qs.length)];
+}
+
+/// A short mindset talk for [ev], rotating through the bank.
+List<String> mentalTalk(MentalEvent ev) {
+  final list = kMentalTalks[ev]!;
+  final i = Progress.instance.nextRot('mt_${ev.name}', list.length);
+  return L.instance.pick(list[i][0], list[i][1]).split('\n');
+}
+
 /// The world boss: an angry cat who taunts you.
 class Boss {
   Boss._();
+  static String fleeLine() => L.instance.pick(
+      '¡¿Te vas?! ¡Jajaja, huiste! Volvé cuando te animes, gatito... miau.',
+      'Leaving?! Hahaha, you fled! Come back when you dare, kitty... meow.');
 
   static List<String> introLines() => L.instance.isEs
       ? [
@@ -475,6 +514,99 @@ class ProfessorDialog {
       ),
       pageBuilder: (_, __, ___) => _ConversationView(
           lines: lines, speaker: speaker, lastLabel: lastLabel),
+    );
+  }
+}
+
+/// The professor asks a two-option check question; resolves to whether
+/// the answer was right (null if dismissed).
+class ProfessorQuizDialog {
+  static Future<bool?> show(BuildContext context, ProfeQuiz quiz) {
+    return showGeneralDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      transitionDuration: const Duration(milliseconds: 280),
+      transitionBuilder: (_, a, __, child) => FadeTransition(
+        opacity: a,
+        child: SlideTransition(
+          position: Tween(begin: const Offset(0, 0.08), end: Offset.zero)
+              .animate(CurvedAnimation(parent: a, curve: Curves.easeOut)),
+          child: child,
+        ),
+      ),
+      pageBuilder: (_, __, ___) => _QuizView(quiz: quiz),
+    );
+  }
+}
+
+class _QuizView extends StatefulWidget {
+  const _QuizView({required this.quiz});
+  final ProfeQuiz quiz;
+
+  @override
+  State<_QuizView> createState() => _QuizViewState();
+}
+
+class _QuizViewState extends State<_QuizView> {
+  int? _picked;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L.instance;
+    final q = widget.quiz;
+    final right = _picked == q.answer;
+    final text = _picked == null
+        ? '${l.pick('Pregunta rápida antes de repetir:', 'Quick question before I repeat:')}\n${q.question}'
+        : '${right ? '✅' : '❌'} ${q.why}';
+    return Material(
+      color: Colors.black.withValues(alpha: 0.78),
+      child: SafeArea(
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 620),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                  20, MediaQuery.sizeOf(context).height * 0.22, 20, 20),
+              child: ProfessorSays(
+                key: ValueKey(_picked),
+                text: text,
+                avatarSize: 110,
+                footer: _picked == null
+                    ? Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (var i = 0; i < q.options.length; i++)
+                            Tooltip(
+                              message: l.t('tip_quiz_option'),
+                              child: FilledButton.tonal(
+                                autofocus: i == 0,
+                                onPressed: () => setState(() => _picked = i),
+                                child: Text(q.options[i]),
+                              ),
+                            ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          const Spacer(),
+                          Tooltip(
+                            message: l.t('tip_profe_done'),
+                            child: FilledButton(
+                              autofocus: true,
+                              onPressed: () => Navigator.of(context).pop(right),
+                              child: Text(l.t('profe_go')),
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

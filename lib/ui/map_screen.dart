@@ -18,6 +18,7 @@ import 'halloween_screen.dart';
 import 'keyboard_scroll.dart';
 import 'level_screen.dart';
 import 'profiles.dart';
+import 'review_screen.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -86,6 +87,18 @@ class _MapScreenState extends State<MapScreen> {
                 tooltip: l.t('tip_practice'),
                 icon: const Icon(Icons.fitness_center),
                 onPressed: _openPractice,
+              ),
+              IconButton(
+                tooltip: l.t('tip_notebook'),
+                icon: Badge(
+                  isLabelVisible: Progress.instance.dueReviews.isNotEmpty,
+                  label: Text('${Progress.instance.dueReviews.length}'),
+                  child: const Icon(Icons.menu_book_outlined),
+                ),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ReviewScreen()),
+                ),
               ),
               IconButton(
                 tooltip: l.t('tip_dashboard'),
@@ -256,6 +269,17 @@ class _MapScreenState extends State<MapScreen> {
               () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => LevelScreen(level: rec)),
+              ),
+            ),
+          ],
+          if (p.dueReviews.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            _missionRow(
+              '📓 ${l.t('notebook')}',
+              '${p.dueReviews.length} ${l.pick('para repasar hoy', 'to review today')}',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ReviewScreen()),
               ),
             ),
           ],

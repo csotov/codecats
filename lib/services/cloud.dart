@@ -168,7 +168,7 @@ class Cloud extends ChangeNotifier {
   }
 
   Future<List<Map<String, dynamic>>> recentEvents(String userId,
-      {int limit = 2000}) async {
+      {int limit = 6000}) async {
     if (_c == null) return const [];
     final rows = await _c!
         .from('events')

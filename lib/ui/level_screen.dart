@@ -25,6 +25,7 @@ import 'keyboard_scroll.dart';
 import 'level_intro.dart';
 import 'meme_player.dart';
 import '../data/complexity.dart';
+import '../data/profe_talks.dart';
 import '../data/halloween.dart';
 import 'professor.dart';
 import 'results.dart';
@@ -176,6 +177,17 @@ class _LevelScreenState extends State<LevelScreen>
     }
     await _teachBigO();
     if (!mounted) return;
+    final lp = Progress.instance.of(widget.level.id);
+    if (!_welcomeShown &&
+        !widget.examMode &&
+        lp.failDay > 0 &&
+        Progress.instance.dueReviews.contains(widget.level.id)) {
+      _welcomeShown = true; // error-notebook visit: the talk is the welcome
+      Cloud.instance.log('review_open',
+          levelId: widget.level.id, data: {'stage': lp.reviewStage});
+      await ProfessorDialog.show(context, mentalTalk(MentalEvent.review));
+      if (!mounted) return;
+    }
     if (!_welcomeShown) {
       _welcomeShown = true;
       final v = _cat('vibing');
@@ -239,6 +251,8 @@ class _LevelScreenState extends State<LevelScreen>
       'promoted': _promotedToCode,
     });
     Cloud.instance.flush();
+    Progress.instance
+        .addLevelSeconds(DateTime.now().difference(_enteredAt).inSeconds);
     _encourage?.cancel();
     _tabController.dispose();
     _scroll.dispose();
@@ -404,8 +418,15 @@ class _LevelScreenState extends State<LevelScreen>
           ? null
           : Coach.analyze(report, failStreak: _failStreak);
       _failStreak++;
+      Progress.instance.recordFail(widget.level.id);
       _lastTip = tip;
       await ResultsSheet.show(context, report, coach: tip);
+      if (mounted && !widget.examMode && _failStreak % 3 == 0) {
+        Cloud.instance.log('mental_talk',
+            levelId: widget.level.id, data: {'ev': 'threeFails'});
+        await ProfessorDialog.show(context, mentalTalk(MentalEvent.threeFails));
+        if (!mounted) return;
+      }
       if (mounted && _failStreak >= 3 && !_tutorialShown && !widget.examMode) {
         _tutorialShown = true;
         Cloud.instance.log('tutorial_shown', levelId: widget.level.id);
@@ -413,6 +434,10 @@ class _LevelScreenState extends State<LevelScreen>
       }
       return;
     }
+    final hadFails = _failStreak >= 2;
+    final lpWin = Progress.instance.of(widget.level.id);
+    final wasReview = lpWin.reviewStage >= 1 &&
+        Progress.instance.dueReviews.contains(widget.level.id);
     _failStreak = 0;
     _won = true;
     _encourage?.cancel();
@@ -433,6 +458,10 @@ class _LevelScreenState extends State<LevelScreen>
         codeMode: !_usesBlocks || _promotedToCode, boss: widget.level.boss);
     final newCats =
         rewardCat ? Progress.instance.checkCatUnlocks() : const <CatMeme>[];
+    if (wasReview) {
+      Cloud.instance.log('review_done',
+          levelId: widget.level.id, data: {'stage': lpWin.reviewStage});
+    }
 
     if (!mounted) return;
     final next = nextLevel(widget.level.id);
@@ -452,6 +481,12 @@ class _LevelScreenState extends State<LevelScreen>
         Navigator.pushReplacement(context, levelRoute(next!));
       },
     );
+    if (hadFails && mounted && !widget.examMode) {
+      Cloud.instance.log('mental_talk',
+          levelId: widget.level.id, data: {'ev': 'winAfterFails'});
+      await ProfessorDialog.show(
+          context, mentalTalk(MentalEvent.winAfterFails));
+    }
     // Celebrar gatos nuevos DESPUÉS de la victoria — uno por uno.
     for (final c in newCats) {
       if (!mounted) return;
@@ -463,6 +498,33 @@ class _LevelScreenState extends State<LevelScreen>
 
   bool _failMemeShown = false;
   bool _tutorialShown = false;
+  bool _leaveTalkShown = false;
+
+  /// Leaving after losing: the boss gloats, the professor sends you off
+  /// with a short mindset talk (once per visit), then the level closes.
+  Future<void> _onPopInvoked(bool didPop, Object? result) async {
+    if (didPop) return;
+    final nav = Navigator.of(context);
+    if (!_won &&
+        _failStreak > 0 &&
+        !_leaveTalkShown &&
+        !widget.examMode &&
+        !_busy) {
+      _leaveTalkShown = true;
+      Cloud.instance.log('mental_talk',
+          levelId: widget.level.id, data: {'ev': 'leaveUnsolved'});
+      if (widget.level.boss) {
+        await ProfessorDialog.show(context, [Boss.fleeLine()],
+            speaker: Speaker.boss, lastLabel: Boss.replyLabel());
+        if (!mounted) return;
+      }
+      await ProfessorDialog.show(
+          context, mentalTalk(MentalEvent.leaveUnsolved));
+      if (!mounted) return;
+    }
+    nav.pop();
+  }
+
   ({String es, String en})? _lastTip;
 
   // Spotlight targets for the professor's tutorial.
@@ -521,79 +583,83 @@ class _LevelScreenState extends State<LevelScreen>
     final lv = widget.level;
     final w = worldOf(lv);
     final color = worldColor(lv);
-    return Scaffold(
-      appBar: AppBar(
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(3),
-          child: Container(height: 3, color: color),
-        ),
-        title: Row(
-          children: [
-            if (lv.boss)
-              const Padding(
-                padding: EdgeInsets.only(right: 6),
-                child: Icon(Icons.local_fire_department,
-                    color: AppTheme.bad, size: 20),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: _onPopInvoked,
+      child: Scaffold(
+        appBar: AppBar(
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(3),
+            child: Container(height: 3, color: color),
+          ),
+          title: Row(
+            children: [
+              if (lv.boss)
+                const Padding(
+                  padding: EdgeInsets.only(right: 6),
+                  child: Icon(Icons.local_fire_department,
+                      color: AppTheme.bad, size: 20),
+                ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      Halloween.isEventLevel(lv.id)
+                          ? '🎃 Halloween · ${lv.boss ? l.t('boss') : '${l.t('level')} ${kHalloweenLevels.indexWhere((e) => e.id == lv.id) + 1}'}'
+                          : '${l.t('world')} ${w == null ? '' : kWorlds.indexOf(w) + 1}'
+                              ' · ${lv.boss ? l.t('boss') : '${l.t('level')} ${levelIndexInWorld(lv) + 1}'}',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: color),
+                    ),
+                    Text(l.pick(lv.titleEs, lv.titleEn),
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 16)),
+                  ],
+                ),
               ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    Halloween.isEventLevel(lv.id)
-                        ? '🎃 Halloween · ${lv.boss ? l.t('boss') : '${l.t('level')} ${kHalloweenLevels.indexWhere((e) => e.id == lv.id) + 1}'}'
-                        : '${l.t('world')} ${w == null ? '' : kWorlds.indexOf(w) + 1}'
-                            ' · ${lv.boss ? l.t('boss') : '${l.t('level')} ${levelIndexInWorld(lv) + 1}'}',
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: color),
-                  ),
-                  Text(l.pick(lv.titleEs, lv.titleEn),
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 16)),
-                ],
-              ),
+            ],
+          ),
+          actions: [
+            const CoinBadge(),
+            IconButton(
+              tooltip: l.t('tip_restart'),
+              icon: const Icon(Icons.restart_alt),
+              onPressed: _busy ? null : _restart,
             ),
           ],
         ),
-        actions: [
-          const CoinBadge(),
-          IconButton(
-            tooltip: l.t('tip_restart'),
-            icon: const Icon(Icons.restart_alt),
-            onPressed: _busy ? null : _restart,
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              Expanded(
-                child: KeyboardScroll(
-                  controller: _scroll,
-                  child: ListView(
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                Expanded(
+                  child: KeyboardScroll(
                     controller: _scroll,
-                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-                    children: [
-                      KeyedSubtree(key: _missionKey, child: _missionCard()),
-                      KeyedSubtree(key: _hintsKey, child: _hintsCard()),
-                      KeyedSubtree(key: _programKey, child: _editorSection()),
-                      if (_console.isNotEmpty)
-                        KeyedSubtree(key: _consoleKey, child: _consoleCard()),
-                    ],
+                    child: ListView(
+                      controller: _scroll,
+                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+                      children: [
+                        KeyedSubtree(key: _missionKey, child: _missionCard()),
+                        KeyedSubtree(key: _hintsKey, child: _hintsCard()),
+                        KeyedSubtree(key: _programKey, child: _editorSection()),
+                        if (_console.isNotEmpty)
+                          KeyedSubtree(key: _consoleKey, child: _consoleCard()),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              _actionBar(),
-            ],
-          ),
-          if (_showIntro)
-            Positioned.fill(
-              child: LevelIntro(level: lv, onDone: _introDone),
+                _actionBar(),
+              ],
             ),
-        ],
+            if (_showIntro)
+              Positioned.fill(
+                child: LevelIntro(level: lv, onDone: _introDone),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -767,7 +833,23 @@ class _LevelScreenState extends State<LevelScreen>
     if (widget.examMode) return;
     final bo = complexityOf(widget.level);
     if (!force && !Progress.instance.shouldTeachBigO(bo.id)) return;
-    await ProfessorDialog.show(context, bigOLesson(bo));
+    // Repeat requests: a quick check first, then a fresh phrasing
+    // (a new detail if right, another explanation if wrong).
+    if (force && Progress.instance.taughtBigO.contains(bo.id)) {
+      final q = bigOQuiz(bo);
+      if (q != null) {
+        final right = await ProfessorQuizDialog.show(context, q);
+        if (!mounted || right == null) return;
+        Progress.instance.recordQuiz(bo.id, right);
+        Cloud.instance.log('bigo_quiz',
+            levelId: widget.level.id, data: {'bo': bo.id, 'right': right});
+        await ProfessorDialog.show(context, bigORecap(bo, right: right));
+        if (mounted) setState(() {});
+        return;
+      }
+    }
+    await ProfessorDialog.show(
+        context, bigOLesson(bo, lines: bigOVariantLines(bo)));
     if (!mounted) return;
     Progress.instance.markBigOTaught(bo.id);
     setState(() {});

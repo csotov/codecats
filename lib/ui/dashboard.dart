@@ -1,7 +1,9 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../data/worlds.dart';
 import '../l10n.dart';
+import '../data/profe_talks.dart';
 import '../models.dart';
 import '../services/progress.dart';
 import 'keyboard_scroll.dart';
@@ -112,6 +114,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               const SizedBox(height: 14),
 
+              _myWeek(l, p),
+              const SizedBox(height: 14),
               // ---- per world ---------------------------------------------------
               SectionCard(
                 title: l.t('world_progress'),
@@ -127,6 +131,111 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
+
+  /// "Mi semana": last 7 days of solves/fails, minutes, Big O checks and
+  /// error-notebook reviews, plus one mindset line that changes weekly.
+  Widget _myWeek(L l, Progress p) {
+    final now = DateTime.now();
+    final days = [
+      for (var i = 6; i >= 0; i--) now.subtract(Duration(days: i)),
+    ];
+    final rows = [for (final d in days) p.dayStats(d)];
+    final solves = rows.fold<int>(0, (a, r) => a + r[0]);
+    final fails = rows.fold<int>(0, (a, r) => a + r[1]);
+    final mins = rows.fold<int>(0, (a, r) => a + r[2]) ~/ 60;
+    final reviews = rows.fold<int>(0, (a, r) => a + r[3]);
+    final maxBar = rows.fold<int>(1, (a, r) => math.max(a, r[0] + r[1]));
+    var qRight = 0, qTotal = 0;
+    for (final q in p.quiz.values) {
+      qRight += q[0];
+      qTotal += q[0] + q[1];
+    }
+    final talks = kMentalTalks[MentalEvent.streak]!;
+    final week = now.millisecondsSinceEpoch ~/ (7 * 86400000);
+    final quote = talks[week % talks.length];
+    const letters = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+    const lettersEn = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    return SectionCard(
+      title: '📅 ${l.t('my_week')}',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 92,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (var i = 0; i < 7; i++)
+                  Expanded(
+                    child: Tooltip(
+                      message:
+                          '${l.pick('ganados', 'won')} ${rows[i][0]} · ${l.pick('fallos', 'fails')} ${rows[i][1]} · ${rows[i][2] ~/ 60} min',
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (rows[i][0] + rows[i][1] > 0)
+                            Text('${rows[i][0]}',
+                                style: const TextStyle(
+                                    fontSize: 10, fontWeight: FontWeight.w700)),
+                          Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 5),
+                            height: 4 + 56 * (rows[i][0] + rows[i][1]) / maxBar,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(4),
+                              color: rows[i][0] > 0
+                                  ? AppTheme.good
+                                  : rows[i][1] > 0
+                                      ? AppTheme.bad.withValues(alpha: 0.7)
+                                      : AppTheme.bgAlt,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                              l.isEs
+                                  ? letters[days[i].weekday - 1]
+                                  : lettersEn[days[i].weekday - 1],
+                              style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: i == 6
+                                      ? FontWeight.w800
+                                      : FontWeight.w400,
+                                  color: AppTheme.textLo)),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 14,
+            runSpacing: 4,
+            children: [
+              _chip('🏆', '$solves ${l.pick('ganados', 'won')}'),
+              _chip('💥', '$fails ${l.pick('fallos', 'fails')}'),
+              _chip('⏱️', '$mins min'),
+              _chip('🧠',
+                  '${l.pick('Big O', 'Big O')} ${qTotal == 0 ? '—' : '$qRight/$qTotal'}'),
+              _chip('📓',
+                  '$reviews ${l.pick('repasos', 'reviews')} · ${p.dueReviews.length} ${l.pick('pendientes', 'pending')}'),
+              _chip('🔥',
+                  '${p.dayStreak} ${l.pick('días seguidos', 'day streak')}'),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text('🐱 ${l.pick(quote[0], quote[1])}',
+              style: const TextStyle(
+                  fontSize: 12,
+                  fontStyle: FontStyle.italic,
+                  color: AppTheme.textLo)),
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(String emoji, String text) => Text('$emoji $text',
+      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600));
 
   Widget _stat(
       BuildContext context, IconData icon, String value, String label) {

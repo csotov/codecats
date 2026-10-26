@@ -21,6 +21,9 @@ class LevelProgress {
     this.hintsBought = 0,
     this.code = '',
     this.blocksJson,
+    this.failDay = 0,
+    this.reviewStage = 0,
+    this.reviewDue = 0,
   });
 
   bool solved;
@@ -33,6 +36,13 @@ class LevelProgress {
   String code;
   List<dynamic>? blocksJson;
 
+  /// Error notebook: epoch day of the last fail, and the spaced-review
+  /// ladder (0 = failed and not yet beaten, 1 = beaten, review in 3 days,
+  /// 2 = reviewed, again in 10 days, 3 = done) with its due epoch day.
+  int failDay;
+  int reviewStage;
+  int reviewDue;
+
   Map<String, dynamic> toJson() => {
         's': solved,
         'st': stars,
@@ -41,6 +51,9 @@ class LevelProgress {
         if (hintsBought > 0) 'hb': hintsBought,
         'c': code,
         if (blocksJson != null) 'b': blocksJson,
+        if (failDay > 0) 'fd': failDay,
+        if (reviewStage > 0) 'rs': reviewStage,
+        if (reviewDue > 0) 'rv': reviewDue,
       };
 
   factory LevelProgress.fromJson(Map<String, dynamic> j) => LevelProgress(
@@ -48,6 +61,9 @@ class LevelProgress {
         stars: (j['st'] as num?)?.toInt() ?? 0,
         attempts: (j['a'] as num?)?.toInt() ?? 0,
         hintUsed: j['h'] == true,
+        failDay: (j['fd'] as num?)?.toInt() ?? 0,
+        reviewStage: (j['rs'] as num?)?.toInt() ?? 0,
+        reviewDue: (j['rv'] as num?)?.toInt() ?? 0,
         hintsBought: (j['hb'] as num?)?.toInt() ?? 0,
         code: j['c'] as String? ?? '',
         blocksJson: j['b'] as List<dynamic>?,
@@ -112,6 +128,15 @@ class Progress extends ChangeNotifier {
 
   /// 'yyyy-mm-dd' of the last day a level was solved.
   String lastSolveDay = '';
+
+  /// Rotation counters so the professor never repeats his last phrasing.
+  final Map<String, int> rot = {};
+
+  /// Big O check-question results per class: [right, wrong].
+  final Map<String, List<int>> quiz = {};
+
+  /// Per-day activity, yyyy-mm-dd -> [solves, fails, seconds, reviews].
+  final Map<String, List<int>> days = {};
 
   /// Epoch-day of the first solve — anchors the ghost rival's
   /// steady advance (~1 level every 2 days).
@@ -185,6 +210,16 @@ class Progress extends ChangeNotifier {
         dayStreak = (j['dsk'] as num?)?.toInt() ?? 0;
         lastSolveDay = j['rd'] as String? ?? '';
         ghostStartDay = (j['gh'] as num?)?.toInt() ?? 0;
+        rot
+          ..clear()
+          ..addAll(((j['rot'] as Map?) ?? const {})
+              .map((k, v) => MapEntry('$k', (v as num).toInt())));
+        quiz
+          ..clear()
+          ..addAll(_intLists(j['qz']));
+        days
+          ..clear()
+          ..addAll(_intLists(j['dy']));
         unlockedCats
           ..clear()
           ..addAll((j['cats'] as List? ?? const []).map((e) => '$e'));
@@ -205,6 +240,9 @@ class Progress extends ChangeNotifier {
         'gh': ghostStartDay,
         'cats': unlockedCats.toList(),
         'bo': taughtBigO.toList(),
+        'rot': rot,
+        'qz': quiz,
+        'dy': days,
         'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
       };
 
@@ -234,6 +272,11 @@ class Progress extends ChangeNotifier {
     }
     unlockedCats.addAll(List<String>.from(d['cats'] ?? const []));
     taughtBigO.addAll(List<String>.from(d['bo'] ?? const []));
+    ((d['rot'] as Map?) ?? const {}).forEach((k, v) {
+      rot['$k'] = math.max(rot['$k'] ?? 0, (v as num).toInt());
+    });
+    _mergeMax(quiz, d['qz']);
+    _mergeMax(days, d['dy']);
     final lv = d['lv'];
     if (lv is Map) {
       lv.forEach((k, v) {
@@ -244,6 +287,9 @@ class Progress extends ChangeNotifier {
         p.attempts = math.max(p.attempts, r.attempts);
         p.hintsBought = math.max(p.hintsBought, r.hintsBought);
         p.hintUsed = p.hintUsed || r.hintUsed;
+        p.failDay = math.max(p.failDay, r.failDay);
+        p.reviewStage = math.max(p.reviewStage, r.reviewStage);
+        p.reviewDue = math.max(p.reviewDue, r.reviewDue);
       });
     }
     await _save();
@@ -265,6 +311,9 @@ class Progress extends ChangeNotifier {
           'gh': ghostStartDay,
           'cats': unlockedCats.toList(),
           'bo': taughtBigO.toList(),
+          'rot': rot,
+          'qz': quiz,
+          'dy': days,
           'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
         }));
   }
@@ -322,6 +371,15 @@ class Progress extends ChangeNotifier {
       p.solved = true;
     }
     if (stars > p.stars) p.stars = stars;
+    _bumpDay(0);
+    if (p.failDay > 0 && p.reviewStage < 3) {
+      final today = _epochDay(DateTime.now());
+      if (p.reviewStage == 0 || today >= p.reviewDue) {
+        if (p.reviewStage >= 1) _bumpDay(3);
+        p.reviewStage++;
+        p.reviewDue = today + (p.reviewStage == 1 ? 3 : 10);
+      }
+    }
     streak++;
     _bumpDayStreak();
     _lastSolve = _SolveCtx(stars: stars, codeMode: codeMode, boss: boss);
@@ -540,6 +598,110 @@ class Progress extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// A lost battle: the level enters the error notebook.
+  void recordFail(String levelId) {
+    final p = of(levelId);
+    final today = _epochDay(DateTime.now());
+    p.failDay = today;
+    if (p.reviewStage == 0) p.reviewDue = today;
+    _bumpDay(1);
+    _save();
+    notifyListeners();
+  }
+
+  /// Time spent inside a level (seconds), for the weekly summary.
+  void addLevelSeconds(int seconds) {
+    if (seconds <= 0) return;
+    _bumpDay(2, seconds);
+    _save();
+  }
+
+  /// Next phrasing index for [key] among [n] variants, cycling so the
+  /// same one never comes twice in a row.
+  int nextRot(String key, int n) {
+    if (n <= 0) return 0;
+    final i = (rot[key] ?? -1) + 1;
+    rot[key] = i;
+    _save();
+    return i % n;
+  }
+
+  void recordQuiz(String id, bool right) {
+    final q = quiz.putIfAbsent(id, () => [0, 0]);
+    q[right ? 0 : 1]++;
+    _save();
+    notifyListeners();
+  }
+
+  /// Error notebook entries ready today: failed and not yet beaten, or
+  /// beaten and whose spaced review is due.
+  List<String> get dueReviews {
+    final today = _epochDay(DateTime.now());
+    return [
+      for (final e in levels.entries)
+        if (e.value.failDay > 0 &&
+            e.value.reviewStage < 3 &&
+            (e.value.reviewStage == 0 || today >= e.value.reviewDue))
+          e.key,
+    ];
+  }
+
+  /// Beaten after a fail, review scheduled for a later day.
+  List<String> get upcomingReviews {
+    final today = _epochDay(DateTime.now());
+    return [
+      for (final e in levels.entries)
+        if (e.value.failDay > 0 &&
+            e.value.reviewStage >= 1 &&
+            e.value.reviewStage < 3 &&
+            today < e.value.reviewDue)
+          e.key,
+    ];
+  }
+
+  int daysUntilReview(String levelId) =>
+      of(levelId).reviewDue - _epochDay(DateTime.now());
+
+  /// [solves, fails, seconds, reviews] for a calendar day.
+  List<int> dayStats(DateTime d) => days[_dayKey(d)] ?? const [0, 0, 0, 0];
+
+  void _bumpDay(int idx, [int by = 1]) {
+    final key = _dayKey(DateTime.now());
+    final row = days.putIfAbsent(key, () => [0, 0, 0, 0]);
+    while (row.length < 4) {
+      row.add(0);
+    }
+    row[idx] += by;
+    if (days.length > 21) {
+      final keys = days.keys.toList()..sort();
+      for (final k in keys.take(days.length - 21)) {
+        days.remove(k);
+      }
+    }
+  }
+
+  static Map<String, List<int>> _intLists(Object? m) => m is Map
+      ? m.map((k, v) => MapEntry(
+          '$k', List<int>.from((v as List).map((e) => (e as num).toInt()))))
+      : {};
+
+  static void _mergeMax(Map<String, List<int>> into, Object? from) {
+    _intLists(from).forEach((k, v) {
+      final cur = into[k];
+      if (cur == null) {
+        into[k] = v;
+        return;
+      }
+      for (var i = 0; i < v.length; i++) {
+        if (i >= cur.length) {
+          cur.add(v[i]);
+        } else {
+          cur[i] = math.max(cur[i], v[i]);
+        }
+      }
+    });
+  }
+
   void saveCode(String levelId, String code, {List<dynamic>? blocksJson}) {
     final p = of(levelId);
     p.code = code;
@@ -572,6 +734,9 @@ class Progress extends ChangeNotifier {
     unlockedCats.clear();
     taughtBigO.clear();
     levels.clear();
+    rot.clear();
+    quiz.clear();
+    days.clear();
     final prefs = await SharedPreferences.getInstance();
     if (active != null) {
       await prefs.remove(_keyFor(active!.id));
