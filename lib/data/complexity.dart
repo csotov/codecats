@@ -218,6 +218,8 @@ const _byWorld = <String, String>{
   'w10': 'logn',
   'w11': 'nm',
   'w12': 'logn',
+  'w13': 'n',
+  'w14': 'n',
 };
 
 const _byLevel = <String, String>{

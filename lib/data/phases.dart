@@ -38,7 +38,7 @@ const kPhases = [
       'Silver',
       'Grafos, números, programación dinámica y búsqueda binaria.',
       'Graphs, number theory, dynamic programming and binary search.',
-      ['w9', 'w10', 'w11', 'w12']),
+      ['w9', 'w10', 'w11', 'w12', 'w13', 'w14']),
   Phase(4, 'Oro', 'Gold', 'Próximamente.', 'Coming soon.', []),
   Phase(5, 'Olimpiada', 'Olympiad', 'Próximamente.', 'Coming soon.', []),
 ];
