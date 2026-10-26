@@ -37,6 +37,8 @@ function codeArenaRun(code, input, maxSteps) {
     if (msg.indexOf("Parsing") !== -1 || msg.indexOf("Syntax") !== -1) {
       return finish(false, { error: "PARSE", detail: msg });
     }
+    // C++ allows falling off the end of main (implicit return 0); JSCPP doesn't.
+    if (/must return a value/i.test(msg)) return finish(true, { exitcode: 0 });
     return finish(false, { error: "RUNTIME", detail: msg });
   }
   return finish(true, { exitcode: (exitcode && exitcode.v) || exitcode || 0 });
