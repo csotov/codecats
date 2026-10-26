@@ -20,6 +20,7 @@ import 'keyboard_scroll.dart';
 import 'level_screen.dart';
 import 'profiles.dart';
 import 'review_screen.dart';
+import 'trace_screen.dart';
 import '../data/challenges.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -285,6 +286,17 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ],
+          if (traceExercisesFor(p).any((t) => !p.of(t.levelId).solved)) ...[
+            const SizedBox(height: 6),
+            _missionRow(
+              '🧠 ${l.pick('Sé la computadora', 'Be the computer')}',
+              '${traceExercisesFor(p).where((t) => !p.of(t.levelId).solved).length} ${l.pick('tablas para completar', 'tables to fill')}',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TraceListScreen()),
+              ),
+            ),
+          ],
           if (bonus != null) ...[
             const SizedBox(height: 6),
             Tooltip(
@@ -517,6 +529,9 @@ class _MapScreenState extends State<MapScreen> {
                 MaterialPageRoute(builder: (_) => const CollectionScreen()));
           case 'practice':
             _openPractice();
+          case 'trace':
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const TraceListScreen()));
           case 'notebook':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const ReviewScreen()));
@@ -541,6 +556,8 @@ class _MapScreenState extends State<MapScreen> {
         item('contest', Icons.emoji_events_outlined, l.t('tip_contest')),
         item('collection', Icons.catching_pokemon, l.t('tip_collection')),
         item('practice', Icons.fitness_center, l.t('tip_practice')),
+        item('trace', Icons.table_chart_outlined,
+            l.pick('Sé la computadora', 'Be the computer')),
         item('notebook', Icons.menu_book_outlined,
             '${l.t('notebook')}${due > 0 ? ' ($due)' : ''}'),
         item('dashboard', Icons.leaderboard_outlined, l.t('tip_dashboard')),

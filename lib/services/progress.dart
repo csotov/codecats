@@ -426,6 +426,7 @@ class Progress extends ChangeNotifier {
       .where((e) =>
           !e.key.startsWith('hw') &&
           !e.key.startsWith('cp') &&
+          !e.key.startsWith('tr') &&
           e.value.starMask & 4 != 0)
       .length;
 
@@ -848,7 +849,10 @@ class Progress extends ChangeNotifier {
 
   /// Campaign-only totals; Halloween event levels (hw*) count separately.
   Iterable<LevelProgress> get _campaign => levels.entries
-      .where((e) => !e.key.startsWith('hw') && !e.key.startsWith('cp'))
+      .where((e) =>
+          !e.key.startsWith('hw') &&
+          !e.key.startsWith('cp') &&
+          !e.key.startsWith('tr'))
       .map((e) => e.value);
 
   int get totalStars => _campaign.fold(0, (s, p) => s + p.stars);
