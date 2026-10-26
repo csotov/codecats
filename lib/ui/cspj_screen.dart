@@ -25,7 +25,9 @@ class CspjScreen extends StatelessWidget {
     final l = L.instance;
     final p = Progress.instance;
     return Scaffold(
-      appBar: AppBar(title: Text('🇨🇳 ${l.pick('Ruta CSP-J', 'CSP-J path')}')),
+      appBar: AppBar(
+          title:
+              Text('🐾 ${l.pick('El Camino del Bigote', 'The Whisker Path')}')),
       body: AnimatedBuilder(
         animation: p,
         builder: (context, _) => ListView(
@@ -33,8 +35,8 @@ class CspjScreen extends StatelessWidget {
           children: [
             ProfessorSays(
               text: l.pick(
-                  'CSP-J es la olimpiada de iniciación de China. Los chicos chinos siguen estas 18 listas de Luogu en este orden. Primero ganá los mundos del juego de cada tema y después practicá con problemas reales de Luogu o Codeforces.',
-                  'CSP-J is China\'s junior olympiad. Chinese kids follow these 18 Luogu lists in this order. First win the game worlds for each topic, then practise with real Luogu or Codeforces problems.'),
+                  '¡Bienvenido al Camino del Bigote! Son 18 paradas, en el orden en que un gato programador se vuelve campeón. En cada una te cuento por qué sirve y mi truco para practicarla. Ganá los mundos de cada parada y, si querés más, abrí problemas extra de Codeforces.',
+                  'Welcome to the Whisker Path! 18 stops, in the order a coder cat becomes a champion. At each one I tell you why it matters and my trick to practise it. Win the worlds of each stop and, for more, open extra Codeforces problems.'),
             ),
             const SizedBox(height: 8),
             for (final (i, s) in kCspjStages.indexed) _stage(i + 1, s, p, l),
@@ -69,14 +71,13 @@ class CspjScreen extends StatelessWidget {
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 15)),
               ),
-              Text(s.zh,
-                  style: const TextStyle(color: AppTheme.textLo, fontSize: 11)),
             ]),
             const SizedBox(height: 6),
             Text(l.pick(s.whyEs, s.whyEn)),
-            if (kCspjHow[s.luogu] case final how?) ...[
+            ...[
               const SizedBox(height: 4),
-              Text('📚 ${l.pick(how.$1, how.$2)}',
+              Text(
+                  '🐱 ${l.pick('Truco del Profe', 'Profe tip')}: ${l.pick(s.howEs, s.howEn)}',
                   style:
                       const TextStyle(color: AppTheme.accent2, fontSize: 12)),
             ],
@@ -98,22 +99,12 @@ class CspjScreen extends StatelessWidget {
             const SizedBox(height: 6),
             Wrap(spacing: 8, runSpacing: 4, children: [
               Tooltip(
-                message: l.pick('Abrir la lista oficial en Luogu (en chino)',
-                    'Open the official Luogu list (Chinese)'),
-                child: OutlinedButton.icon(
-                  onPressed: () => openUrl(s.luoguUrl),
-                  icon: const Icon(Icons.open_in_new, size: 16),
-                  label: const Text('Luogu'),
-                ),
-              ),
-              Tooltip(
-                message: l.pick(
-                    'Problemas fáciles de Codeforces sobre este tema',
-                    'Easy Codeforces problems on this topic'),
+                message: l.pick('Problemas extra de este tema en Codeforces',
+                    'Extra problems on this topic on Codeforces'),
                 child: OutlinedButton.icon(
                   onPressed: () => openUrl(s.cfUrl),
                   icon: const Icon(Icons.open_in_new, size: 16),
-                  label: const Text('Codeforces'),
+                  label: Text(l.pick('Más problemas', 'More problems')),
                 ),
               ),
             ]),

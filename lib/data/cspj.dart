@@ -1,14 +1,15 @@
-/// CSP-J (China's junior olympiad) syllabus as followed by Luogu's official
-/// problem lists, mapped to the CodeCats worlds that teach each topic.
+/// "El Camino del Bigote": core olympiad topics in the order of Luogu's
+/// official beginner lists (training 100-117), mapped to the worlds that
+/// teach each one. Profe tips come from the training literature the owner
+/// shared (Gomel school, ISIJ, IOI training studies).
 class CspjStage {
-  const CspjStage(this.luogu, this.zh, this.titleEs, this.titleEn, this.whyEs,
-      this.whyEn, this.worlds, this.cfTags);
+  const CspjStage(this.luogu, this.titleEs, this.titleEn, this.whyEs,
+      this.whyEn, this.worlds, this.cfTags, this.howEs, this.howEn);
 
   final int luogu;
-  final String zh, titleEs, titleEn, whyEs, whyEn, cfTags;
+  final String titleEs, titleEn, whyEs, whyEn, cfTags, howEs, howEn;
   final List<String> worlds;
 
-  String get luoguUrl => 'https://www.luogu.com.cn/training/$luogu';
   String get cfUrl =>
       'https://codeforces.com/problemset?order=BY_RATING_ASC&tags=$cfTags';
 }
@@ -16,241 +17,182 @@ class CspjStage {
 const kCspjStages = [
   CspjStage(
       100,
-      '【入门1】顺序结构',
-      'Código en secuencia',
-      'Sequential code',
-      'Leer, calcular e imprimir sin errores. En China lo repiten hasta que sale sin pensar.',
-      'Read, compute and print with no mistakes. Chinese kids repeat it until it is automatic.',
+      'El primer miau',
+      'The first meow',
+      'Leer, calcular e imprimir sin errores. Lo practicamos hasta que te salga sin pensar.',
+      'Read, compute and print with no mistakes. We practise until it is automatic.',
       ['w1'],
-      'implementation,800-800'),
+      'implementation,800-800',
+      'Muchos problemas cortos el mismo día, y "Sé la computadora" para seguir cada variable a mano.',
+      'Many short problems on the same day, plus "Be the computer" to trace every variable by hand.'),
   CspjStage(
       101,
-      '【入门2】分支结构',
-      'Decisiones (if)',
-      'Decisions (if)',
-      'Cada caso del enunciado es una rama. Entrena a no olvidarse de ningún caso.',
-      'Every case in the statement is a branch. Trains you not to forget any case.',
+      'Gato, pepino o pan',
+      'Cat, cucumber or bread',
+      'Cada caso del enunciado es un camino distinto. Que no se te escape ninguno.',
+      'Every case in the statement is a different path. Do not miss any.',
       ['w2'],
-      'implementation,800-800'),
+      'implementation,800-800',
+      'Antes de programar, escribí en papel todos los casos posibles. Si te trabás, probá un problema más chico con el mismo truco.',
+      'Before coding, list every possible case on paper. If stuck, try a smaller problem with the same trick.'),
   CspjStage(
       102,
-      '【入门3】循环结构',
-      'Bucles',
-      'Loops',
-      'Casi todo programa de olimpiada es un bucle. Acá se gana velocidad.',
-      'Almost every olympiad program is a loop. This is where speed comes from.',
+      'Los zoomies infinitos',
+      'The endless zoomies',
+      'Casi todo programa de olimpiada es un bucle. Acá ganás velocidad.',
+      'Almost every olympiad program is a loop. This is where you get fast.',
       ['w3'],
-      'implementation,800-900'),
+      'implementation,800-900',
+      'Arreglar bucles con un error de borde (< o <=) entrena más que escribir otro bucle nuevo: probá la Ronda Coder.',
+      'Fixing loops with an off-by-one bug (< vs <=) trains more than writing another new loop: try the Coder round.'),
   CspjStage(
       103,
-      '【入门4】数组',
-      'Arreglos',
-      'Arrays',
-      'Guardar muchos datos y recorrerlos: la base de todos los algoritmos.',
-      'Store many values and walk through them: the base of every algorithm.',
+      'La fila de michis',
+      'The row of kitties',
+      'Guardar muchos datos y recorrerlos: la base de todos los trucos.',
+      'Store many values and walk through them: the base of every trick.',
       ['w4'],
-      'implementation,800-1000'),
+      'implementation,800-1000',
+      'El mismo tema vuelve días después, sin pistas, para ver si quedó: eso es el Bonus dorado.',
+      'The same topic comes back days later, without hints, to check it stuck: that is the golden Bonus.'),
   CspjStage(
       104,
-      '【入门5】字符串',
-      'Textos (strings)',
-      'Strings',
-      'En CSP-J siempre hay problemas de texto: contar letras, invertir, buscar palabras.',
-      'CSP-J always has text problems: counting letters, reversing, finding words.',
+      'El miau al revés',
+      'The backwards meow',
+      'Textos: contar letras, darlos vuelta, buscar palabras. Siempre aparecen.',
+      'Text: count letters, reverse, find words. They always show up.',
       ['w4'],
-      'strings,800-1000'),
+      'strings,800-1000',
+      'Leé el enunciado entero y subrayá solo lo que te piden imprimir. Por eso el simulacro empieza con un problema de lectura.',
+      'Read the whole statement and underline only what you must print. That is why the mock contest starts with a reading problem.'),
   CspjStage(
       105,
-      '【入门6】函数与结构体',
-      'Funciones y structs',
-      'Functions and structs',
-      'Partir el problema en piezas y agrupar datos (nombre, edad, puntaje) en uno.',
-      'Split the problem into pieces and group data (name, age, score) together.',
+      'La caja de herramientas del gato',
+      'The cat toolbox',
+      'Partir el problema en piezas chicas y guardar juntos los datos de cada gato.',
+      'Split the problem into small pieces and keep each cat\'s data together.',
       ['w5'],
-      'implementation,900-1100'),
+      'implementation,900-1100',
+      'Partir el problema en funciones chicas es lo que más separa a los buenos de los muy buenos.',
+      'Splitting a problem into small functions is what most separates good from great.'),
   CspjStage(
       106,
-      '【算法1-1】模拟与高精度',
-      'Simulación y números gigantes',
-      'Simulation and huge numbers',
-      'Hacer exactamente lo que dice el enunciado, paso a paso, y sumar números de 100 cifras como en la escuela.',
-      'Do exactly what the statement says, step by step, and add 100-digit numbers like at school.',
-      [],
-      'implementation,1000-1200'),
+      'El atún de 100 cifras',
+      'The 100-digit tuna',
+      'Hacer exactamente lo que dice el enunciado, paso a paso, y sumar números gigantes como en la escuela.',
+      'Do exactly what the statement says, step by step, and add huge numbers like at school.',
+      ['w13'],
+      'implementation,1000-1200',
+      'Simulá a mano un caso chico antes de programar. Los números gigantes se suman cifra por cifra, con "me llevo 1".',
+      'Simulate a small case by hand before coding. Huge numbers are added digit by digit, carrying the 1.'),
   CspjStage(
       107,
-      '【算法1-2】排序',
-      'Ordenar',
-      'Sorting',
+      'El podio de los gatos',
+      'The cat podium',
       'Muchos problemas se vuelven fáciles después de ordenar.',
       'Many problems become easy once the data is sorted.',
       ['w6'],
-      'sortings,800-1100'),
+      'sortings,800-1100',
+      'Después de un problema de ordenar, resolvé otro distinto que se resuelve igual: así se fija el truco.',
+      'After a sorting problem, solve a different one that is solved the same way: that is how the trick sticks.'),
   CspjStage(
       108,
-      '【算法1-3】暴力枚举',
-      'Probar todo (fuerza bruta)',
-      'Try everything (brute force)',
-      'Si n es chico, probar todas las opciones da puntos seguros. Es la primera subtarea de casi todo problema.',
-      'If n is small, trying every option gives safe points. It is the first subtask of almost every problem.',
+      'Probar todas las cajas',
+      'Try every box',
+      'Si hay pocos datos, probar todas las opciones da puntos seguros.',
+      'With little data, trying every option gives safe points.',
       ['w3'],
-      'brute force,800-1100'),
+      'brute force,800-1100',
+      'Probar todo da los primeros 20 a 40 puntos aunque no sepas la solución completa. ¡Puntos son puntos!',
+      'Trying everything gives the first 20-40 points even without the full solution. Points are points!'),
   CspjStage(
       109,
-      '【算法1-4】递推与递归',
-      'Recurrencias y recursión',
-      'Recurrences and recursion',
-      'Resolver un problema usando la respuesta de uno más chico: la puerta a la programación dinámica.',
-      'Solve a problem using the answer of a smaller one: the door to dynamic programming.',
+      'Gato dentro de gato',
+      'Cat inside a cat',
+      'Resolver un problema usando la respuesta de uno más chico.',
+      'Solve a problem using the answer of a smaller one.',
       ['w5', 'w11'],
-      'math,800-1200'),
+      'math,800-1200',
+      'Si no te sale, resolvé n = 1, 2, 3 a mano y buscá el patrón.',
+      'If stuck, solve n = 1, 2, 3 by hand and look for the pattern.'),
   CspjStage(
       110,
-      '【算法1-5】贪心',
-      'Greedy (el más conveniente ahora)',
-      'Greedy',
-      'Elegir siempre lo mejor del momento, y aprender cuándo eso falla.',
-      'Always pick the best option now, and learn when that fails.',
+      'El gato avaricioso',
+      'The greedy cat',
+      'Elegir siempre lo mejor del momento, y descubrir cuándo eso falla.',
+      'Always pick the best option now, and find out when that fails.',
       ['w8'],
-      'greedy,800-1200'),
+      'greedy,800-1200',
+      'Inventá un caso que haga fallar a un gato avaricioso equivocado: es la mejor forma de entenderlo.',
+      'Invent a case that breaks a wrong greedy cat: the best way to understand it.'),
   CspjStage(
       111,
-      '【算法1-6】二分查找与二分答案',
-      'Búsqueda binaria',
-      'Binary search',
-      'Adivinar la respuesta partiendo a la mitad: pasa de millones de pasos a 20.',
-      'Guess the answer by halving: from millions of steps down to 20.',
+      'Adivina la croqueta',
+      'Guess the kibble',
+      'Partir a la mitad: de millones de pasos a solo 20.',
+      'Halve it: from millions of steps to just 20.',
       ['w6', 'w12'],
-      'binary search,1000-1300'),
+      'binary search,1000-1300',
+      'Primero jugá a adivinar el número partiendo a la mitad, después el código. Probá siempre con 1 y 2 elementos.',
+      'First play guess-the-number by halving, then code. Always test with 1 and 2 elements.'),
   CspjStage(
       112,
-      '【算法1-7】搜索',
-      'Búsqueda (DFS y BFS)',
-      'Search (DFS and BFS)',
-      'Recorrer laberintos y probar caminos. Es de lo que más aparece en CSP-J.',
-      'Walk mazes and try paths. One of the most common CSP-J topics.',
+      'La gran fuga gatuna',
+      'The great cat escape',
+      'Recorrer laberintos y probar caminos. Sale muchísimo en los concursos.',
+      'Walk mazes and try paths. It shows up a lot in contests.',
       ['w8', 'w9'],
-      'dfs and similar,1000-1300'),
+      'dfs and similar,1000-1300',
+      'Estos problemas mezclan bucles, arreglos y recursión que ya sabés: combiná tus herramientas.',
+      'These problems mix loops, arrays and recursion you already know: combine your tools.'),
   CspjStage(
       113,
-      '【数据结构1-1】线性表',
-      'Pilas, colas y listas',
-      'Stacks, queues and lists',
-      'Saber qué estructura usar ahorra tiempo de programa y de pensar.',
-      'Knowing which structure to use saves both running and thinking time.',
+      'La torre de cajas',
+      'The tower of boxes',
+      'Pilas y colas: saber cuál usar ahorra mucho trabajo.',
+      'Stacks and queues: knowing which to use saves a lot of work.',
       ['w7'],
-      'data structures,900-1200'),
+      'data structures,900-1200',
+      'Dibujá la pila o la cola en papel y mové los elementos a mano.',
+      'Draw the stack or queue on paper and move the items by hand.'),
   CspjStage(
       114,
-      '【数据结构1-2】二叉树',
-      'Árboles (padres e hijos)',
-      'Trees (parents and children)',
-      'Cada nodo tiene un padre y sus hijos. Con esto se entienden después los grafos.',
-      'Each node has a parent and children. This is what later makes graphs click.',
-      [],
-      'trees,1000-1300'),
+      'La familia de los michis',
+      'The kitty family',
+      'Cada gato tiene un papá y sus hijitos. Con esto después entendés los mapas.',
+      'Every cat has a parent and kittens. This is what later makes maps click.',
+      ['w14'],
+      'trees,1000-1300',
+      'Contalo como una familia: desde un hijito siempre podés subir al papá, y del papá al abuelo, hasta llegar al gato jefe.',
+      'Tell it as a family: from a kitten you can always climb to the parent, then the grandparent, up to the boss cat.'),
   CspjStage(
       115,
-      '【数据结构1-3】集合',
-      'Conjuntos y grupos',
-      'Sets and groups',
-      'Saber rápido si algo ya apareció, o si dos cosas están en el mismo grupo.',
-      'Know fast whether something appeared before, or whether two things are in the same group.',
+      'Sin gatos repetidos',
+      'No repeated cats',
+      'Saber rápido si algo ya apareció, o si dos gatos son de la misma manada.',
+      'Know fast whether something appeared before, or whether two cats are in the same pack.',
       ['w7'],
-      'dsu,1000-1300'),
+      'dsu,1000-1300',
+      'Volvé a hacer los que fallaste a los 3 y a los 10 días: para eso está el cuaderno de errores.',
+      'Redo the ones you failed after 3 and 10 days: that is what the error notebook is for.'),
   CspjStage(
       116,
-      '【数据结构1-4】图的基本应用',
-      'Grafos básicos',
-      'Basic graphs',
-      'Ciudades y caminos: guardar el mapa y recorrerlo.',
-      'Cities and roads: store the map and walk it.',
+      'El mapa del arenero',
+      'The sandbox map',
+      'Lugares y caminos: guardar el mapa y recorrerlo.',
+      'Places and roads: store the map and walk it.',
       ['w9'],
-      'graphs,1000-1300'),
+      'graphs,1000-1300',
+      'Al final del tema vienen problemas completos con subtareas, como en un concurso de verdad.',
+      'At the end of the topic come full problems with subtasks, like a real contest.'),
   CspjStage(
       117,
-      '【数学1】基础数学问题',
-      'Matemática básica',
-      'Basic math',
-      'Divisores, primos, MCD y el resto (%): aparecen escondidos en muchos problemas.',
-      'Divisors, primes, GCD and remainder (%): they hide inside many problems.',
+      'El secreto de Eucligato',
+      'Eucligato\'s secret',
+      'Divisores, primos y el resto (%): se esconden en muchos problemas.',
+      'Divisors, primes and remainder (%): they hide inside many problems.',
       ['w10'],
-      'number theory,800-1200'),
+      'number theory,800-1200',
+      'Preguntas cortas de %, divisores y conteo, mezcladas con lo demás: practicá en el gimnasio de matemática.',
+      'Short questions on %, divisors and counting, mixed with the rest: practise in the math gym.'),
 ];
-
-/// How to train each stage, drawn from the olympiad-training literature the
-/// owner shared (Gomel school, ISIJ Russia, IOI training studies).
-const Map<int, (String, String)> kCspjHow = {
-  100: (
-    'Gomel: muchos problemas cortos el mismo día, y "Sé la computadora" para seguir cada variable a mano.',
-    'Gomel: many short problems on the same day, plus "Be the computer" to trace every variable by hand.'
-  ),
-  101: (
-    'Gomel: antes de programar, escribí en papel todos los casos posibles. Si te trabás, pasá a un problema más chico del mismo truco.',
-    'Gomel: before coding, list every possible case on paper. If stuck, go to a smaller problem with the same trick.'
-  ),
-  102: (
-    'Rusia (ronda Coder): arreglar bucles con un error de borde (< o <=) entrena más que escribir otro bucle nuevo.',
-    'Russia (Coder round): fixing loops with an off-by-one bug (< vs <=) trains more than writing another new loop.'
-  ),
-  103: (
-    'Gomel: problemas de control. El mismo tema vuelve días después, sin pistas, para ver si quedó.',
-    'Gomel: control problems. The same topic comes back days later, without hints, to check it stuck.'
-  ),
-  104: (
-    'Rusia: leer enunciados largos y sacar solo lo que piden. Por eso el simulacro empieza con un problema de lectura.',
-    'Russia: read long statements and extract only what is asked. That is why the mock contest starts with a reading problem.'
-  ),
-  105: (
-    'Estudios IOI: partir el problema en funciones chicas es la habilidad que más separa a los buenos de los muy buenos.',
-    'IOI studies: splitting a problem into small functions is the skill that most separates good from great.'
-  ),
-  106: (
-    'Gomel: simular a mano un caso chico antes de programar. Los números gigantes se suman como en la escuela, cifra por cifra.',
-    'Gomel: simulate a small case by hand before coding. Huge numbers are added like at school, digit by digit.'
-  ),
-  107: (
-    'Gomel: analogías. Después de un problema de ordenar, resolvé otro distinto que se resuelve igual.',
-    'Gomel: analogies. After a sorting problem, solve a different one that is solved the same way.'
-  ),
-  108: (
-    'Gomel: soluciones parciales. Probar todo da los primeros 20 a 40 puntos aunque no sepas la solución completa.',
-    'Gomel: partial solutions. Trying everything gives the first 20-40 points even without the full solution.'
-  ),
-  109: (
-    'Gomel: árbol de problemas. Si no te sale, resolvé n = 1, 2, 3 a mano y buscá el patrón.',
-    'Gomel: problem tree. If stuck, solve n = 1, 2, 3 by hand and look for the pattern.'
-  ),
-  110: (
-    'Rusia (ronda Coder): inventar un caso que haga fallar a un greedy equivocado es la mejor forma de entenderlo.',
-    'Russia (Coder round): inventing a case that breaks a wrong greedy is the best way to understand it.'
-  ),
-  111: (
-    'Primero el juego de adivinar el número con la mitad, después el código. El error típico es el borde: probá siempre con 1 y 2 elementos.',
-    'First the halving guess-the-number game, then the code. The typical bug is the border: always test with 1 and 2 elements.'
-  ),
-  112: (
-    'Gomel: combinación de métodos. Los problemas de búsqueda mezclan bucles, arreglos y recursión ya vistos.',
-    'Gomel: combining methods. Search problems mix loops, arrays and recursion you already know.'
-  ),
-  113: (
-    'Sé la computadora: dibujá la pila o la cola en papel y mové los elementos a mano.',
-    'Be the computer: draw the stack or queue on paper and move the items by hand.'
-  ),
-  114: (
-    'Contalo como una familia: cada uno tiene un padre y sus hijos, y desde un hijo siempre se puede subir al padre.',
-    'Tell it as a family: everyone has a parent and children, and from a child you can always climb to the parent.'
-  ),
-  115: (
-    'Gomel: problemas de control. Volvé a hacer los que fallaste a los 3 y a los 10 días (cuaderno de errores).',
-    'Gomel: control problems. Redo the ones you failed after 3 and 10 days (error notebook).'
-  ),
-  116: (
-    'Gomel: problemas olímpicos completos al final del tema, con subtareas, como en la competencia real.',
-    'Gomel: full olympiad problems at the end of the topic, with subtasks, like the real contest.'
-  ),
-  117: (
-    'Rusia (ronda de matemática): preguntas cortas de %, divisores y conteo, mezcladas con el resto (gimnasio de matemática).',
-    'Russia (math round): short questions on %, divisors and counting, mixed with the rest (math gym).'
-  ),
-};

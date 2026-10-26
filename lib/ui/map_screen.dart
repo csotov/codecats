@@ -355,9 +355,9 @@ class _MapScreenState extends State<MapScreen> {
             ],
           const SizedBox(height: 6),
           _missionRow(
-            '🇨🇳 ${l.pick('Ruta CSP-J', 'CSP-J path')}',
-            l.pick('el orden que siguen los chicos chinos',
-                'the order Chinese kids follow'),
+            '🐾 ${l.pick('El Camino del Bigote', 'The Whisker Path')}',
+            l.pick('18 paradas para volverte campeón',
+                '18 stops to become a champion'),
             () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CspjScreen()),
@@ -627,8 +627,8 @@ class _MapScreenState extends State<MapScreen> {
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const AtcoderScreen()));
           case 'cspj':
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const CspjScreen()));
+            Navigator.push(
+                context, MaterialPageRoute(builder: (_) => const CspjScreen()));
           case 'math':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const MathGymScreen()));
@@ -665,7 +665,7 @@ class _MapScreenState extends State<MapScreen> {
         item('trace', Icons.table_chart_outlined,
             l.pick('Sé la computadora', 'Be the computer')),
         item('cspj', Icons.route_outlined,
-            l.pick('Ruta CSP-J (China)', 'CSP-J path (China)')),
+            l.pick('El Camino del Bigote', 'The Whisker Path')),
         item('atcoder', Icons.public,
             l.pick('Problemas reales de AtCoder', 'Real AtCoder problems')),
         item('math', Icons.calculate_outlined,
