@@ -4,6 +4,7 @@ import '../data/worlds.dart';
 import '../l10n.dart';
 import '../models.dart';
 import '../services/progress.dart';
+import 'bonus_variant.dart';
 import 'golden_card.dart';
 import 'keyboard_scroll.dart';
 import 'level_screen.dart';
@@ -192,8 +193,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   foregroundColor: Colors.black),
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(
-                    builder: (_) => LevelScreen(level: lv, bonus: true)),
+                bonusRoute(lv),
               ),
               child: Text(l.pick('¡Jugar Bonus!', 'Play Bonus!')),
             ),
