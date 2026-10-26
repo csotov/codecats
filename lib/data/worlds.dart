@@ -1,3 +1,4 @@
+import 'contest_long.dart';
 import 'olympiad_tracks.dart';
 import '../models.dart';
 import '../services/progress.dart';
@@ -54,7 +55,7 @@ Level? levelById(String id) {
   ]) {
     if (l.id == id) return l;
   }
-  for (final c in kContestPool) {
+  for (final c in [...kContestPool, ...kContestLong]) {
     if (c.level.id == id) return c.level;
   }
   return CoachStore.instance.levelFor(id);

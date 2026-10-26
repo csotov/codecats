@@ -43,7 +43,8 @@ void main() {
     pr.recordSolve('w1l1', 100, 3);
     final picked = pickContestLevels();
     expect(picked.length, 3);
-    expect(picked.take(2).every((l) => l.id.startsWith('cp1')), isTrue);
+    expect(picked.first.id, 'cpl1');
+    expect(picked.skip(1).take(2).every((l) => l.id.startsWith('cp1')), isTrue);
     final before = pr.solvedCount;
     pr.recordSolve('cp1a', 150, 3);
     expect(pr.solvedCount, before);
