@@ -1048,8 +1048,10 @@ class Progress extends ChangeNotifier {
 
   /// Campaign rule: the first level of every world is always unlocked,
   /// so the player can jump between worlds freely; inside a world,
-  /// each level opens when the previous one is solved.
+  /// each level opens when the previous one is solved. Levels already
+  /// solved stay open even if new levels were inserted before them.
   bool isUnlocked(Level level, World world) {
+    if (levels[level.id]?.solved ?? false) return true;
     final idx = world.levels.indexWhere((l) => l.id == level.id);
     if (idx <= 0) return true;
     return levels[world.levels[idx - 1].id]?.solved ?? false;
