@@ -316,6 +316,14 @@ class L {
       'en': 'Limited-time Halloween event'
     },
     'sound_title': {'es': 'Sonido', 'en': 'Sound'},
+    'tip_account': {
+      'es': 'Cuenta: guardá tu progreso y seguí en otro dispositivo',
+      'en': 'Account: save your progress and continue on another device'
+    },
+    'tip_admin': {
+      'es': 'Panel de admin: qué hace cada jugador',
+      'en': 'Admin panel: what each player does'
+    },
     'close': {'es': 'Cerrar', 'en': 'Close'},
     'sound_music_on': {'es': 'Música encendida', 'en': 'Music on'},
     'sound_music': {'es': 'Volumen de la música', 'en': 'Music volume'},

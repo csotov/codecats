@@ -5,7 +5,10 @@ import '../data/halloween.dart';
 import '../data/worlds.dart';
 import '../l10n.dart';
 import '../models.dart';
+import '../services/cloud.dart';
 import '../services/progress.dart';
+import 'account_screen.dart';
+import 'admin_screen.dart';
 import '../services/sfx.dart';
 import 'coin.dart';
 import 'collection.dart';
@@ -43,7 +46,7 @@ class _MapScreenState extends State<MapScreen> {
     final ids = orderedLevelIds(kWorlds);
 
     return AnimatedBuilder(
-      animation: progress,
+      animation: Listenable.merge([progress, Cloud.instance]),
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(
@@ -92,6 +95,26 @@ class _MapScreenState extends State<MapScreen> {
                   MaterialPageRoute(builder: (_) => const DashboardScreen()),
                 ),
               ),
+              if (Cloud.configured)
+                IconButton(
+                  tooltip: l.t('tip_account'),
+                  icon: Icon(Cloud.instance.signedIn
+                      ? Icons.cloud_done_outlined
+                      : Icons.account_circle_outlined),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AccountScreen()),
+                  ),
+                ),
+              if (Cloud.instance.isAdmin)
+                IconButton(
+                  tooltip: l.t('tip_admin'),
+                  icon: const Icon(Icons.admin_panel_settings_outlined),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminScreen()),
+                  ),
+                ),
               IconButton(
                 tooltip: l.t('tip_music'),
                 icon: Icon(Sfx.muted

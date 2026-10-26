@@ -37,7 +37,7 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
-      - run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+      - run: flutter build web --release --base-href "/${{ github.event.repository.name }}/" --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL || 'https://kvnijmvlpemxtyisboqs.supabase.co' }} --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY || 'sb_publishable_01LyNiWijLbPO9B2n2H4qQ_qX8LYfBB' }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web

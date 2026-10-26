@@ -14,6 +14,7 @@ import '../engine/runner.dart';
 import '../l10n.dart';
 import '../models.dart';
 import '../data/cats.dart';
+import '../services/cloud.dart';
 import '../services/progress.dart';
 import '../services/sfx.dart';
 import 'blocks_editor.dart';
@@ -81,6 +82,37 @@ class _LevelScreenState extends State<LevelScreen>
   int _hintsShown = 0;
   int _attemptsThisSession = 0;
 
+  // Telemetry: time in level, time per editor mode, typing stats.
+  final _enteredAt = DateTime.now();
+  int _codeSec = 0, _blocksSec = 0, _keys = 0, _backspaces = 0;
+  int _lastLen = -1;
+  Timer? _modeTick;
+  bool get _inCodeMode =>
+      widget.level.mode == EditorMode.code ||
+      (_promotedToCode && _tabController.index == 1);
+
+  void _onCodeChanged(String code) {
+    if (_lastLen >= 0) {
+      final d = code.length - _lastLen;
+      if (d < 0) {
+        _backspaces += -d;
+      } else {
+        _keys += d;
+      }
+    }
+    _lastLen = code.length;
+    _persist();
+  }
+
+  void _flushTyping() {
+    if (_keys == 0 && _backspaces == 0) return;
+    Cloud.instance.log('typing',
+        levelId: widget.level.id,
+        data: {'keys': _keys, 'backspaces': _backspaces});
+    _keys = 0;
+    _backspaces = 0;
+  }
+
   bool get _usesBlocks => widget.level.mode != EditorMode.code;
   bool get _hybrid => widget.level.mode == EditorMode.hybrid;
 
@@ -89,6 +121,18 @@ class _LevelScreenState extends State<LevelScreen>
     super.initState();
     _runner = createRunner();
     _openLevels++;
+    Cloud.instance.log('level_open', levelId: widget.level.id, data: {
+      'mode': widget.level.mode.name,
+      'boss': widget.level.boss,
+      'solved_before': Progress.instance.of(widget.level.id).solved,
+    });
+    _modeTick = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (_inCodeMode) {
+        _codeSec += 5;
+      } else {
+        _blocksSec += 5;
+      }
+    });
     // Clips this level may show: welcome, fail, victory, encouragement,
     // plus the next unseen cats. Fetched now so they play without lag.
     MemeBurst.warm(kCats
@@ -183,6 +227,17 @@ class _LevelScreenState extends State<LevelScreen>
 
   @override
   void dispose() {
+    _modeTick?.cancel();
+    _flushTyping();
+    Cloud.instance.log('level_leave', levelId: widget.level.id, data: {
+      'seconds': DateTime.now().difference(_enteredAt).inSeconds,
+      'code': _codeSec,
+      'blocks': _blocksSec,
+      'won': _won,
+      'attempts': _attemptsThisSession,
+      'promoted': _promotedToCode,
+    });
+    Cloud.instance.flush();
     _encourage?.cancel();
     _tabController.dispose();
     _scroll.dispose();
@@ -273,6 +328,20 @@ class _LevelScreenState extends State<LevelScreen>
     });
     if (!mounted) return;
     setState(() => _busy = false);
+    _flushTyping();
+    Cloud.instance.log('fight', levelId: widget.level.id, data: {
+      'won': report.allPassed,
+      'passed': report.passedCount,
+      'total': report.total,
+      'attempt': _attemptsThisSession,
+      'code_mode': !_usesBlocks || _promotedToCode,
+      'compile_error': report.compileError != null,
+    });
+    if (report.compileError != null) {
+      Cloud.instance.log('compile_error',
+          levelId: widget.level.id,
+          data: {'msg': report.compileError!.split('\n').first});
+    }
     if (!report.allPassed) {
       Progress.instance.failBattle();
       // Third try on the same level unlocks the Dramatic Cat.
@@ -307,6 +376,7 @@ class _LevelScreenState extends State<LevelScreen>
       await ResultsSheet.show(context, report, coach: tip);
       if (mounted && _failStreak >= 3 && !_tutorialShown && !widget.examMode) {
         _tutorialShown = true;
+        Cloud.instance.log('tutorial_shown', levelId: widget.level.id);
         await _runTutorial();
       }
       return;
@@ -722,6 +792,10 @@ class _LevelScreenState extends State<LevelScreen>
   }
 
   Future<void> _buyHint() async {
+    Cloud.instance.log('hint_buy', levelId: widget.level.id, data: {
+      'coins': Progress.instance.coins,
+      'ok': Progress.instance.coins >= Progress.kHintCost,
+    });
     final l = L.instance;
     if (!Progress.instance.buyHint(widget.level.id)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -805,7 +879,7 @@ class _LevelScreenState extends State<LevelScreen>
         child: CodeEditor(
           key: _editorKey,
           initial: _savedCode,
-          onChanged: (_) => _persist(),
+          onChanged: _onCodeChanged,
         ),
       );
     }
@@ -877,7 +951,7 @@ class _LevelScreenState extends State<LevelScreen>
                         ? CodeEditor(
                             key: _editorKey,
                             initial: _savedCode,
-                            onChanged: (_) => _persist(),
+                            onChanged: _onCodeChanged,
                           )
                         : Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
