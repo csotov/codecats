@@ -5,6 +5,7 @@ import '../data/cats.dart';
 import '../data/complexity.dart';
 import '../l10n.dart';
 import '../services/cloud.dart';
+import 'coach_admin.dart';
 import 'keyboard_scroll.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -92,7 +93,26 @@ class _AdminScreenState extends State<AdminScreen> {
   Widget build(BuildContext context) {
     final l = L.instance;
     return Scaffold(
-      appBar: AppBar(title: Text(l.pick('Panel de admin', 'Admin panel'))),
+      appBar: AppBar(
+        title: Text(l.pick('Panel de admin', 'Admin panel')),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Tooltip(
+              message: l.pick('Subir problemas propios o links de Codeforces',
+                  'Upload own problems or Codeforces links'),
+              child: FilledButton.tonalIcon(
+                onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const CoachAdminScreen())),
+                icon: const Icon(Icons.upload_file, size: 18),
+                label: Text(l.pick('Problemas', 'Problems')),
+              ),
+            ),
+          ),
+        ],
+      ),
       body: _error != null
           ? Center(child: Text(_error!))
           : KeyboardScroll(
