@@ -18,6 +18,7 @@ class Cloud extends ChangeNotifier {
 
   SupabaseClient? _c;
   bool get ready => _c != null;
+  SupabaseClient? get client => _c;
   User? get user => _c?.auth.currentUser;
   bool get signedIn => user != null;
   bool isAdmin = false;

@@ -160,6 +160,15 @@ class Progress extends ChangeNotifier {
   /// spaced reviews feel like a treat, not homework.
   int bonusDay = 0;
 
+  /// The player's Codeforces handle, to verify linked coach problems.
+  String cfHandle = '';
+
+  void setCfHandle(String h) {
+    cfHandle = h.trim();
+    _save();
+    notifyListeners();
+  }
+
   /// Mock contest in progress: problem ids and end time (epoch ms), so an
   /// accidental exit never loses the run.
   List<String> contestIds = const [];
@@ -268,6 +277,7 @@ class Progress extends ChangeNotifier {
           ..clear()
           ..addAll((j['gc'] as List? ?? const []).map((e) => '$e'));
         bonusDay = (j['bd'] as num?)?.toInt() ?? 0;
+        cfHandle = j['cfh'] as String? ?? '';
         contestIds =
             List.unmodifiable((j['ct'] as List? ?? const []).map((e) => '$e'));
         contestEndMs = (j['cte'] as num?)?.toInt() ?? 0;
@@ -296,6 +306,7 @@ class Progress extends ChangeNotifier {
         'dy': days,
         'gc': goldenCards.toList(),
         'bd': bonusDay,
+        'cfh': cfHandle,
         'ct': contestIds,
         'cte': contestEndMs,
         'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
@@ -334,6 +345,7 @@ class Progress extends ChangeNotifier {
     _mergeMax(days, d['dy']);
     goldenCards.addAll(List<String>.from(d['gc'] ?? const []));
     bonusDay = math.max(bonusDay, (d['bd'] as num?)?.toInt() ?? 0);
+    if (cfHandle.isEmpty) cfHandle = d['cfh'] as String? ?? '';
     final lv = d['lv'];
     if (lv is Map) {
       lv.forEach((k, v) {
@@ -374,6 +386,7 @@ class Progress extends ChangeNotifier {
           'dy': days,
           'gc': goldenCards.toList(),
           'bd': bonusDay,
+          'cfh': cfHandle,
           'ct': contestIds,
           'cte': contestEndMs,
           'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
@@ -426,6 +439,7 @@ class Progress extends ChangeNotifier {
       .where((e) =>
           !e.key.startsWith('hw') &&
           !e.key.startsWith('cp') &&
+          !e.key.startsWith('cc') &&
           e.value.starMask & 4 != 0)
       .length;
 
@@ -848,7 +862,10 @@ class Progress extends ChangeNotifier {
 
   /// Campaign-only totals; Halloween event levels (hw*) count separately.
   Iterable<LevelProgress> get _campaign => levels.entries
-      .where((e) => !e.key.startsWith('hw') && !e.key.startsWith('cp'))
+      .where((e) =>
+          !e.key.startsWith('hw') &&
+          !e.key.startsWith('cp') &&
+          !e.key.startsWith('cc'))
       .map((e) => e.value);
 
   int get totalStars => _campaign.fold(0, (s, p) => s + p.stars);
