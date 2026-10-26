@@ -156,6 +156,37 @@ class Progress extends ChangeNotifier {
   final Set<String> goldenCards = {};
   static const kTrophyPieces = 5;
 
+  /// Badges owned (bought in the shop or earned by goals) and the one
+  /// shown next to the player's name ('' = none).
+  final Set<String> badges = {};
+  String equippedBadge = '';
+
+  /// Pay [price] for badge [id]. False (nothing charged) if too poor.
+  bool buyBadge(String id, int price) {
+    if (badges.contains(id) || coins < price) return false;
+    coins -= price;
+    badges.add(id);
+    _save();
+    notifyListeners();
+    return true;
+  }
+
+  /// Grant goal badges; returns the ones that are new.
+  List<String> awardBadges(Iterable<String> ids) {
+    final fresh = ids.where(badges.add).toList();
+    if (fresh.isNotEmpty) {
+      _save();
+      notifyListeners();
+    }
+    return fresh;
+  }
+
+  void equipBadge(String id) {
+    equippedBadge = equippedBadge == id ? '' : id;
+    _save();
+    notifyListeners();
+  }
+
   /// Epoch day of the last Bonus level won: at most one Bonus per day so
   /// spaced reviews feel like a treat, not homework.
   int bonusDay = 0;
@@ -372,6 +403,8 @@ class Progress extends ChangeNotifier {
     ghostStartDay = 0;
     levels.clear();
     unlockedCats.clear();
+    badges.clear();
+    equippedBadge = '';
     final raw = prefs.getString(_keyFor(active!.id));
     if (raw != null) {
       try {
@@ -403,6 +436,10 @@ class Progress extends ChangeNotifier {
           ..clear()
           ..addAll((j['gc'] as List? ?? const []).map((e) => '$e'));
         bonusDay = (j['bd'] as num?)?.toInt() ?? 0;
+        badges
+          ..clear()
+          ..addAll((j['bdg'] as List? ?? const []).map((e) => '$e'));
+        equippedBadge = j['bde'] as String? ?? '';
         cfHandle = j['cfh'] as String? ?? '';
         atcoderUser = j['acu'] as String? ?? '';
         scores
@@ -456,6 +493,8 @@ class Progress extends ChangeNotifier {
         'dy': days,
         'gc': goldenCards.toList(),
         'bd': bonusDay,
+        'bdg': badges.toList(),
+        'bde': equippedBadge,
         'cfh': cfHandle,
         'acu': atcoderUser,
         'sc': scores,
@@ -507,6 +546,8 @@ class Progress extends ChangeNotifier {
     _mergeMax(days, d['dy']);
     goldenCards.addAll(List<String>.from(d['gc'] ?? const []));
     bonusDay = math.max(bonusDay, (d['bd'] as num?)?.toInt() ?? 0);
+    badges.addAll(List<String>.from(d['bdg'] ?? const []));
+    if (equippedBadge.isEmpty) equippedBadge = d['bde'] as String? ?? '';
     if (cfHandle.isEmpty) cfHandle = d['cfh'] as String? ?? '';
     if (atcoderUser.isEmpty) atcoderUser = d['acu'] as String? ?? '';
     ((d['sc'] as Map?) ?? const {}).forEach((k, v) {
@@ -558,6 +599,8 @@ class Progress extends ChangeNotifier {
           'dy': days,
           'gc': goldenCards.toList(),
           'bd': bonusDay,
+          'bdg': badges.toList(),
+          'bde': equippedBadge,
           'cfh': cfHandle,
         'acu': atcoderUser,
           'sc': scores,
@@ -1083,6 +1126,8 @@ class Progress extends ChangeNotifier {
     quiz.clear();
     days.clear();
     goldenCards.clear();
+    badges.clear();
+    equippedBadge = '';
     bonusDay = 0;
     contestIds = const [];
     contestEndMs = 0;

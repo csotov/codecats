@@ -35,6 +35,9 @@ import 'trace_screen.dart';
 import '../data/challenges.dart';
 import 'theme.dart';
 import 'widgets.dart';
+import 'badge_shop.dart';
+import '../data/badges.dart';
+import 'dart:async';
 
 /// World map: the campaign path. Linear unlock — each level opens
 /// when the previous one is solved.
@@ -47,9 +50,27 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   final _scroll = ScrollController();
+  Timer? _badgeTick;
+  bool _badgePopup = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Goal badges pop up as soon as the player is back on the map.
+    _badgeTick = Timer.periodic(const Duration(seconds: 2), (_) async {
+      if (_badgePopup || !mounted) return;
+      if (ModalRoute.of(context)?.isCurrent != true) return;
+      final fresh = checkGoalBadges(Progress.instance);
+      if (fresh.isEmpty) return;
+      _badgePopup = true;
+      await showNewBadges(context, fresh);
+      _badgePopup = false;
+    });
+  }
 
   @override
   void dispose() {
+    _badgeTick?.cancel();
     _scroll.dispose();
     super.dispose();
   }
@@ -110,6 +131,11 @@ class _MapScreenState extends State<MapScreen> {
                     context,
                     MaterialPageRoute(builder: (_) => const CollectionScreen()),
                   ),
+                ),
+                IconButton(
+                  tooltip: l.pick('Tienda de insignias', 'Badge shop'),
+                  icon: const Icon(Icons.storefront_outlined),
+                  onPressed: _openShop,
                 ),
                 IconButton(
                   tooltip: l.t('tip_practice'),
@@ -617,6 +643,8 @@ class _MapScreenState extends State<MapScreen> {
                 MaterialPageRoute(builder: (_) => const CollectionScreen()));
           case 'practice':
             _openPractice();
+          case 'shop':
+            _openShop();
           case 'coach':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const CoachScreen()));
@@ -658,6 +686,8 @@ class _MapScreenState extends State<MapScreen> {
       itemBuilder: (c) => [
         item('contest', Icons.emoji_events_outlined, l.t('tip_contest')),
         item('collection', Icons.catching_pokemon, l.t('tip_collection')),
+        item('shop', Icons.storefront_outlined,
+            l.pick('Tienda de insignias', 'Badge shop')),
         item('practice', Icons.fitness_center, l.t('tip_practice')),
         if (CoachStore.instance.problems.isNotEmpty)
           item('coach', Icons.assignment_outlined,
@@ -719,8 +749,12 @@ class _MapScreenState extends State<MapScreen> {
     if (ok == true) await Progress.instance.reset();
   }
 
+  void _openShop() => Navigator.push(
+      context, MaterialPageRoute(builder: (_) => const BadgeShopScreen()));
+
   Widget _profileChip() {
     final p = Progress.instance.active;
+    final worn = badgeById(Progress.instance.equippedBadge);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Tooltip(
@@ -739,6 +773,10 @@ class _MapScreenState extends State<MapScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(p?.emoji ?? '🐯', style: const TextStyle(fontSize: 16)),
+                if (worn != null) ...[
+                  const SizedBox(width: 4),
+                  BadgeArt(worn, size: 22),
+                ],
                 const SizedBox(width: 6),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 90),
