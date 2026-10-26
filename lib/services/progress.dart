@@ -530,6 +530,13 @@ class Progress extends ChangeNotifier {
           e.value.starMask & 4 != 0)
       .length;
 
+  static bool _countsForChallenge(String id) =>
+      !id.startsWith('hw') &&
+      !id.startsWith('cp') &&
+      !id.startsWith('cc') &&
+      !id.startsWith('tr') &&
+      !_offCampaign(id);
+
   /// Returns earned XP for this solve (first solve gives full XP).
   /// Also pays Miaudólares (see [coinsForSolve]) into [lastCoinsEarned].
   int recordSolve(String levelId, int levelXp, int stars,
@@ -537,7 +544,9 @@ class Progress extends ChangeNotifier {
     final p = of(levelId);
     var earned = 0;
     lastChallengeBonus = 0;
-    if (mask & 4 != 0 && p.starMask & 4 == 0) {
+    // Only campaign levels count toward the challenge purse; side tracks
+    // are excluded from [challengeStars], so they would re-trigger it.
+    if (mask & 4 != 0 && p.starMask & 4 == 0 && _countsForChallenge(levelId)) {
       // Every 10 challenge stars pay a bonus purse.
       if ((challengeStars + 1) % 10 == 0) {
         lastChallengeBonus = kChallengeBonus;

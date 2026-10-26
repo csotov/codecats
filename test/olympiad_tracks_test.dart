@@ -102,6 +102,17 @@ void main() {
     expect(p.nextBlitzCard(['x', 'y']), 'y');
   });
 
+  test('side-track challenge stars never pay the 10-star purse', () {
+    final p = Progress.instance;
+    for (var i = 1; i <= 9; i++) {
+      p.of('w1l$i').starMask = 4;
+    }
+    p.recordSolve('fx1a', 60, 3, mask: 7);
+    expect(p.lastChallengeBonus, 0);
+    p.recordSolve('fx1b', 60, 3, mask: 7);
+    expect(p.lastChallengeBonus, 0);
+  });
+
   test('Subtask model is constructible', () {
     const s = Subtask(points: 10, labelEs: 'a', labelEn: 'a', tests: [0]);
     expect(s.points, 10);
