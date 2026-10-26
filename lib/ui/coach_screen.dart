@@ -107,7 +107,8 @@ class _CoachScreenState extends State<CoachScreen> {
   }
 
   Future<void> _editHandle(L l, Progress p) async {
-    final ctl = TextEditingController(text: p.cfHandle);
+    final ctl = TextEditingController(
+        text: p.cfHandle.isEmpty ? Progress.kDefaultHandle : p.cfHandle);
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
