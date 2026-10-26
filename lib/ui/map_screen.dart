@@ -20,6 +20,7 @@ import 'keyboard_scroll.dart';
 import 'level_screen.dart';
 import 'profiles.dart';
 import 'review_screen.dart';
+import 'bonus_variant.dart';
 import '../data/challenges.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -294,8 +295,7 @@ class _MapScreenState extends State<MapScreen> {
                 l.pick(bonus.titleEs, bonus.titleEn),
                 () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => LevelScreen(level: bonus, bonus: true)),
+                  bonusRoute(bonus),
                 ),
               ),
             ),
