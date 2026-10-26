@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../data/cats.dart';
 import '../l10n.dart';
 import '../services/progress.dart';
+import '../services/sfx.dart';
 import 'keyboard_scroll.dart';
 import 'meme_player.dart';
 import 'theme.dart';
@@ -22,7 +23,14 @@ class _CollectionScreenState extends State<CollectionScreen> {
   final _scroll = ScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    Sfx.cozy();
+  }
+
+  @override
   void dispose() {
+    Sfx.menu();
     _scroll.dispose();
     super.dispose();
   }

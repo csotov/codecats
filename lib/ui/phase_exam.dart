@@ -8,6 +8,7 @@ import '../l10n.dart';
 import '../models.dart';
 import '../services/cloud.dart';
 import '../services/progress.dart';
+import '../services/sfx.dart';
 import 'keyboard_scroll.dart';
 import 'level_screen.dart';
 import 'professor.dart';
@@ -35,6 +36,7 @@ class _PhaseExamScreenState extends State<PhaseExamScreen> {
   @override
   void initState() {
     super.initState();
+    Sfx.focus();
     final p = Progress.instance;
     if (p.examActive && p.examPhase == widget.phase.n) {
       _problems = [for (final id in p.examIds) levelById(id)]
@@ -56,6 +58,7 @@ class _PhaseExamScreenState extends State<PhaseExamScreen> {
 
   @override
   void dispose() {
+    Sfx.menu();
     _timer.cancel();
     _scroll.dispose();
     super.dispose();

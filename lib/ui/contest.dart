@@ -8,6 +8,7 @@ import '../data/worlds.dart';
 import '../l10n.dart';
 import '../models.dart';
 import '../services/progress.dart';
+import '../services/sfx.dart';
 import 'keyboard_scroll.dart';
 import 'level_screen.dart';
 import 'theme.dart';
@@ -113,6 +114,7 @@ class _ContestScreenState extends State<ContestScreen> {
   @override
   void initState() {
     super.initState();
+    Sfx.focus();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted || _ended) return;
       setState(() => _left = _remaining());
@@ -125,6 +127,7 @@ class _ContestScreenState extends State<ContestScreen> {
 
   @override
   void dispose() {
+    Sfx.menu();
     _timer.cancel();
     _scroll.dispose();
     super.dispose();
