@@ -257,6 +257,23 @@ class L {
       'en': 'Try this level again'
     },
     'my_week': {'es': 'Mi semana', 'en': 'My week'},
+    'golden_card': {'es': '¡Carta dorada!', 'en': 'Golden card!'},
+    'trophy_pieces': {
+      'es': 'Piezas del trofeo dorado:',
+      'en': 'Golden trophy pieces:'
+    },
+    'trophy_complete': {
+      'es': '¡Trofeo dorado completo! Empieza uno nuevo.',
+      'en': 'Golden trophy complete! A new one begins.'
+    },
+    'bonus_level': {'es': 'Nivel Bonus dorado', 'en': 'Golden Bonus level'},
+    'tip_bonus': {
+      'es':
+          'Un nivel que ya ganaste vuelve como bonus: ganalo y llevate una carta dorada para tu trofeo',
+      'en':
+          'A level you already beat comes back as a bonus: win it for a golden card toward your trophy'
+    },
+    'golden_cards': {'es': 'Cartas doradas', 'en': 'Golden cards'},
     'no_coins': {
       'es': '¡Te faltan Miaudólares! Gana o repasa niveles para conseguir más.',
       'en': 'Not enough Meowdollars! Win or replay levels to earn more.'

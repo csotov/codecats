@@ -30,6 +30,30 @@ void main() {
     expect(pr.dayStats(DateTime.now()), [3, 1, 0, 0]);
   });
 
+  test('golden bonus: only levels beaten once, due today, one per day',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final pr = Progress.instance;
+    await pr.ensureLoaded();
+    await pr.reset();
+    pr.recordFail('w1l3');
+    expect(pr.bonusLevelId, isNull); // fresh fails are not bonus material
+    expect(pr.unsolvedFails, ['w1l3']);
+    pr.recordSolve('w1l3', 100, 3);
+    expect(pr.bonusLevelId, isNull); // review is 3 days away
+    pr.of('w1l3').reviewDue -= 3; // pretend 3 days passed
+    expect(pr.bonusLevelId, 'w1l3');
+    final card = pr.awardGoldenCard(['a', 'b']);
+    expect(['a', 'b'], contains(card));
+    expect(pr.goldenCards, {card});
+    expect(pr.bonusLevelId, isNull); // one bonus per day
+    expect(pr.trophyPieces, 1);
+    expect(pr.trophies, 0);
+    final snap = pr.toSnapshot();
+    expect(snap['gc'], [card]);
+    expect(snap['bd'], greaterThan(0));
+  });
+
   test('notebook fields and day stats survive save/load and cloud merge',
       () async {
     final lp = LevelProgress(failDay: 20000, reviewStage: 2, reviewDue: 20010);

@@ -236,7 +236,7 @@ class _AdminScreenState extends State<AdminScreen> {
   Map<String, num> _window(DateTime from, DateTime to) {
     final sessions = <Object?>{};
     num secs = 0, fights = 0, wins = 0, hints = 0, quiz = 0, quizOk = 0;
-    num reviews = 0, talks = 0, compile = 0;
+    num reviews = 0, talks = 0, compile = 0, bonus = 0;
     for (final e in _events) {
       final ts = _ts(e);
       if (ts == null || ts.isBefore(from) || !ts.isBefore(to)) continue;
@@ -257,6 +257,8 @@ class _AdminScreenState extends State<AdminScreen> {
           if (d['right'] == true) quizOk++;
         case 'review_done':
           reviews++;
+        case 'bonus_done':
+          bonus++;
         case 'mental_talk':
           talks++;
       }
@@ -272,6 +274,7 @@ class _AdminScreenState extends State<AdminScreen> {
       'quizOk': quizOk,
       'reviews': reviews,
       'talks': talks,
+      'bonus': bonus,
     };
   }
 
@@ -320,6 +323,11 @@ class _AdminScreenState extends State<AdminScreen> {
         l.pick('Repasos del cuaderno', 'Notebook reviews'),
         '${cur['reviews']}',
         '${prev['reviews']}'
+      ],
+      [
+        l.pick('Bonus dorados ganados', 'Golden Bonus won'),
+        '${cur['bonus']}',
+        '${prev['bonus']}'
       ],
       [
         l.pick('Charlas de mentalidad', 'Mindset talks'),
@@ -473,6 +481,10 @@ class _AdminScreenState extends State<AdminScreen> {
                   fontWeight: FontWeight.w800, color: AppTheme.textLo)),
           row(l.pick('Repasos abiertos / ganados', 'Reviews opened / won'),
               '$reviewOpen / $reviewDone'),
+          row(
+              l.pick('Bonus dorados abiertos / ganados',
+                  'Golden Bonus opened / won'),
+              '${_of('bonus_open').length} / ${_of('bonus_done').length}'),
           const SizedBox(height: 8),
           Text(l.pick('Charlas de mentalidad', 'Mindset talks'),
               style: const TextStyle(

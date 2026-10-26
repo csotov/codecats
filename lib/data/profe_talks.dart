@@ -28,7 +28,14 @@ class ProfeQuiz {
 }
 
 /// Moments that trigger a short mental-strength talk.
-enum MentalEvent { threeFails, leaveUnsolved, winAfterFails, streak, review }
+enum MentalEvent {
+  threeFails,
+  leaveUnsolved,
+  winAfterFails,
+  streak,
+  review,
+  bonus
+}
 
 const kBigOVariants = <String, List<BigOVariant>>{
   'c1': [
@@ -537,6 +544,20 @@ const kMentalTalks = <MentalEvent, List<List<String>>>{
     [
       'Secreto de los equipos campeones: entrenan corto y seguido, y revisan los errores viejos antes de hacer problemas nuevos. Tu cuaderno de errores está en el mapa.',
       'Secret of champion teams: they train short and often, and review old mistakes before doing new problems. Your error notebook is on the map.',
+    ],
+  ],
+  MentalEvent.bonus: [
+    [
+      '¡Nivel Bonus dorado! Este ya lo ganaste una vez; hoy vale una carta dorada para tu trofeo.\nTruco de campeón: antes de escribir, decí en una frase cuál era la idea. Si la recordás, esto es pan comido.',
+      'Golden Bonus level! You already beat this one once; today it is worth a golden card for your trophy.\nChampion trick: before writing, say the idea in one sentence. If you remember it, this is a piece of cake.',
+    ],
+    [
+      'Bonus dorado: un problema conocido, cerebro descansado. Los mejores del mundo repasan así, corto y con premio.\nProbá resolverlo más rápido o más corto que la primera vez.',
+      'Golden Bonus: a known problem, a rested brain. The best in the world review like this, short and with a prize.\nTry to solve it faster or shorter than the first time.',
+    ],
+    [
+      'Carta dorada en juego. Esto no es repetir: es comprobar que la idea quedó guardada para siempre.\nSi te trabás, mirá los ejemplos de nuevo; la memoria vuelve sola.',
+      'Golden card at stake. This is not repeating: it is checking that the idea is stored forever.\nIf you get stuck, look at the samples again; memory comes back on its own.',
     ],
   ],
   MentalEvent.review: [

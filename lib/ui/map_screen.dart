@@ -91,8 +91,10 @@ class _MapScreenState extends State<MapScreen> {
               IconButton(
                 tooltip: l.t('tip_notebook'),
                 icon: Badge(
-                  isLabelVisible: Progress.instance.dueReviews.isNotEmpty,
-                  label: Text('${Progress.instance.dueReviews.length}'),
+                  isLabelVisible: Progress.instance.bonusLevelId != null ||
+                      Progress.instance.unsolvedFails.isNotEmpty,
+                  label: Text(
+                      '${Progress.instance.unsolvedFails.length + (Progress.instance.bonusLevelId == null ? 0 : 1)}'),
                   child: const Icon(Icons.menu_book_outlined),
                 ),
                 onPressed: () => Navigator.push(
@@ -215,6 +217,8 @@ class _MapScreenState extends State<MapScreen> {
     final daily = dailyChallengeLevel();
     final rec = recommendedLevel();
     final pending = p.pendingIds;
+    final bonusId = p.bonusLevelId;
+    final bonus = bonusId == null ? null : levelById(bonusId);
     final ghost = p.ghostSolved;
     final you = p.solvedCount;
     final losing = ghost > you;
@@ -272,11 +276,25 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ],
-          if (p.dueReviews.isNotEmpty) ...[
+          if (bonus != null) ...[
+            const SizedBox(height: 6),
+            Tooltip(
+              message: l.t('tip_bonus'),
+              child: _missionRow(
+                '🏆 ${l.t('bonus_level')}',
+                l.pick(bonus.titleEs, bonus.titleEn),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => LevelScreen(level: bonus, bonus: true)),
+                ),
+              ),
+            ),
+          ] else if (p.unsolvedFails.isNotEmpty) ...[
             const SizedBox(height: 6),
             _missionRow(
               '📓 ${l.t('notebook')}',
-              '${p.dueReviews.length} ${l.pick('para repasar hoy', 'to review today')}',
+              '${p.unsolvedFails.length} ${l.pick('para volver a intentar', 'to try again')}',
               () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const ReviewScreen()),

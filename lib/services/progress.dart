@@ -138,6 +138,15 @@ class Progress extends ChangeNotifier {
   /// Per-day activity, yyyy-mm-dd -> [solves, fails, seconds, reviews].
   final Map<String, List<int>> days = {};
 
+  /// Golden cat cards (cat ids) won in Bonus levels; every [kTrophyPieces]
+  /// cards complete a golden trophy.
+  final Set<String> goldenCards = {};
+  static const kTrophyPieces = 5;
+
+  /// Epoch day of the last Bonus level won: at most one Bonus per day so
+  /// spaced reviews feel like a treat, not homework.
+  int bonusDay = 0;
+
   /// Epoch-day of the first solve — anchors the ghost rival's
   /// steady advance (~1 level every 2 days).
   int ghostStartDay = 0;
@@ -220,6 +229,10 @@ class Progress extends ChangeNotifier {
         days
           ..clear()
           ..addAll(_intLists(j['dy']));
+        goldenCards
+          ..clear()
+          ..addAll((j['gc'] as List? ?? const []).map((e) => '$e'));
+        bonusDay = (j['bd'] as num?)?.toInt() ?? 0;
         unlockedCats
           ..clear()
           ..addAll((j['cats'] as List? ?? const []).map((e) => '$e'));
@@ -243,6 +256,8 @@ class Progress extends ChangeNotifier {
         'rot': rot,
         'qz': quiz,
         'dy': days,
+        'gc': goldenCards.toList(),
+        'bd': bonusDay,
         'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
       };
 
@@ -277,6 +292,8 @@ class Progress extends ChangeNotifier {
     });
     _mergeMax(quiz, d['qz']);
     _mergeMax(days, d['dy']);
+    goldenCards.addAll(List<String>.from(d['gc'] ?? const []));
+    bonusDay = math.max(bonusDay, (d['bd'] as num?)?.toInt() ?? 0);
     final lv = d['lv'];
     if (lv is Map) {
       lv.forEach((k, v) {
@@ -314,6 +331,8 @@ class Progress extends ChangeNotifier {
           'rot': rot,
           'qz': quiz,
           'dy': days,
+          'gc': goldenCards.toList(),
+          'bd': bonusDay,
           'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
         }));
   }
@@ -659,6 +678,52 @@ class Progress extends ChangeNotifier {
     ];
   }
 
+  /// Today's Bonus level: the longest-waiting spaced review of a level
+  /// already beaten once (fresh fails stay in the plain notebook list).
+  /// Null when there is none or today's Bonus was already won.
+  String? get bonusLevelId {
+    final today = _epochDay(DateTime.now());
+    if (bonusDay >= today) return null;
+    String? best;
+    var bestDue = 1 << 30;
+    for (final e in levels.entries) {
+      final p = e.value;
+      if (p.failDay > 0 &&
+          p.reviewStage >= 1 &&
+          p.reviewStage < 3 &&
+          today >= p.reviewDue &&
+          p.reviewDue < bestDue) {
+        best = e.key;
+        bestDue = p.reviewDue;
+      }
+    }
+    return best;
+  }
+
+  /// Fresh fails: in the notebook, not yet beaten.
+  List<String> get unsolvedFails => [
+        for (final e in levels.entries)
+          if (e.value.failDay > 0 && e.value.reviewStage == 0) e.key,
+      ];
+
+  /// Winning a Bonus pays a golden card of a cat not yet gilded.
+  /// Returns the cat id (null if every cat is already golden).
+  String? awardGoldenCard(List<String> catIds) {
+    bonusDay = _epochDay(DateTime.now());
+    final left = catIds.where((c) => !goldenCards.contains(c)).toList();
+    String? pick;
+    if (left.isNotEmpty) {
+      pick = left[math.Random().nextInt(left.length)];
+      goldenCards.add(pick);
+    }
+    _save();
+    notifyListeners();
+    return pick;
+  }
+
+  int get trophies => goldenCards.length ~/ kTrophyPieces;
+  int get trophyPieces => goldenCards.length % kTrophyPieces;
+
   int daysUntilReview(String levelId) =>
       of(levelId).reviewDue - _epochDay(DateTime.now());
 
@@ -737,6 +802,8 @@ class Progress extends ChangeNotifier {
     rot.clear();
     quiz.clear();
     days.clear();
+    goldenCards.clear();
+    bonusDay = 0;
     final prefs = await SharedPreferences.getInstance();
     if (active != null) {
       await prefs.remove(_keyFor(active!.id));

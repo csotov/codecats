@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../data/worlds.dart';
 import '../l10n.dart';
 import '../data/profe_talks.dart';
+import 'golden_card.dart';
 import '../models.dart';
 import '../services/progress.dart';
 import 'keyboard_scroll.dart';
@@ -223,6 +224,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   '${p.dayStreak} ${l.pick('días seguidos', 'day streak')}'),
             ],
           ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Text('🏆 ${l.t('golden_cards')}: ${p.goldenCards.length}',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, color: GoldenCard.gold)),
+              const SizedBox(width: 10),
+              for (var i = 0; i < Progress.kTrophyPieces; i++)
+                Icon(Icons.star_rounded,
+                    size: 18,
+                    color:
+                        i < p.trophyPieces ? GoldenCard.gold : AppTheme.bgAlt),
+              if (p.trophies > 0) ...[
+                const SizedBox(width: 8),
+                Text('× ${p.trophies} 🏆',
+                    style: const TextStyle(fontSize: 12)),
+              ],
+            ],
+          ),
+          if (p.goldenCards.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 64,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  for (final id in p.goldenCards)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: GoldenCard(catId: id, size: 60),
+                    ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
           Text('🐱 ${l.pick(quote[0], quote[1])}',
               style: const TextStyle(
