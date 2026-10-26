@@ -7,8 +7,8 @@ import 'keyboard_scroll.dart';
 import 'theme.dart';
 import 'coin.dart';
 
-/// Round badge art: shop badges are a gradient medal with big text;
-/// goal badges are the meme cat with its phrase on a banner on top.
+/// Round badge art: a gradient medal with big text, or a cat photo with
+/// its phrase on a banner on top.
 class BadgeArt extends StatelessWidget {
   const BadgeArt(this.badge, {super.key, this.size = 96, this.locked = false});
 
@@ -34,7 +34,7 @@ class BadgeArt extends StatelessWidget {
             width: size / 32),
       ),
       clipBehavior: Clip.antiAlias,
-      child: b.isShop
+      child: !b.isPhoto
           ? Center(
               child: Padding(
                 padding: EdgeInsets.all(size / 9),
@@ -54,7 +54,7 @@ class BadgeArt extends StatelessWidget {
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => const Center(child: Text('🐱'))),
     );
-    final art = b.isShop || size < 40
+    final art = !b.isPhoto || size < 40
         ? medal
         : Stack(
             clipBehavior: Clip.none,
@@ -140,13 +140,14 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
             bottom: TabBar(tabs: [
               Tab(
                   child: Tooltip(
-                      message: l.pick('Insignias para comprar con Miaudólares',
-                          'Badges to buy with Miaudólares'),
+                      message: l.pick(
+                          'Fotos de gatos famosos para comprar y ponerte',
+                          'Famous cat photos to buy and wear'),
                       child: Text(l.pick('Tienda', 'Shop')))),
               Tab(
                   child: Tooltip(
-                      message: l.pick('Insignias meme que se ganan con metas',
-                          'Meme badges earned with goals'),
+                      message: l.pick('Medallas de C++ que se ganan con metas',
+                          'C++ medals earned with goals'),
                       child: Text(
                           '${l.pick('Logros', 'Goals')} ${kGoalBadges.where((b) => p.badges.contains(b.id)).length}/${kGoalBadges.length}'))),
             ]),
