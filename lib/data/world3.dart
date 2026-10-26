@@ -23,10 +23,10 @@ final world3 = World(
       samples: [['4', '1\n2\n3\n4'], ['1', '1']],
       tests: [['3', '1\n2\n3'], ['6', '1\n2\n3\n4\n5\n6']],
       hEs: [
-        'for (int i = 1; i <= n; i++) { cout << i << "\n"; }',
+        'for (int i = 1; i <= n; i++) { cout << i << "\\n"; }',
       ],
       hEn: [
-        'for (int i = 1; i <= n; i++) { cout << i << "\n"; }',
+        'for (int i = 1; i <= n; i++) { cout << i << "\\n"; }',
       ],
       mode: EditorMode.hybrid,
       blocks: const [
