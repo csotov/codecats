@@ -440,6 +440,7 @@ class Progress extends ChangeNotifier {
           !e.key.startsWith('hw') &&
           !e.key.startsWith('cp') &&
           !e.key.startsWith('cc') &&
+          !e.key.startsWith('tr') &&
           e.value.starMask & 4 != 0)
       .length;
 
