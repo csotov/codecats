@@ -9,7 +9,7 @@ import 'music_out_io.dart' if (dart.library.js_interop) 'music_out_web.dart';
 /// Tiny synthesized sound effects & music — no audio assets needed.
 /// Everything is rendered to WAV in memory: a victory arpeggio plus
 /// two loopable chiptune tracks (menu: calm; battle: driving).
-enum _Track { menu, battle, boss, spooky }
+enum _Track { menu, battle, boss, spooky, cozy, focus }
 
 class Sfx {
   Sfx._();
@@ -19,6 +19,8 @@ class Sfx {
   static Uint8List? _menuWav;
   static Uint8List? _battleWav;
   static Uint8List? _spookyWav;
+  static Uint8List? _cozyWav;
+  static Uint8List? _focusWav;
 
   static bool muted = false;
   static String _track = '';
@@ -107,6 +109,12 @@ class Sfx {
   /// Halloween event loop: Dm–Bb–Gm–A at 80 bpm, eerie square arps.
   static Future<void> spooky() => _play(_Track.spooky);
 
+  /// Gatoteca loop: C–Am–F–G at 72 bpm, soft lullaby.
+  static Future<void> cozy() => _play(_Track.cozy);
+
+  /// Contest/exam loop: Em–C–G–D at 108 bpm, steady focus.
+  static Future<void> focus() => _play(_Track.focus);
+
   static Future<void> _play(_Track t) async {
     if (_track == t.name) return;
     _track = t.name;
@@ -121,6 +129,8 @@ class Sfx {
           () => switch (t) {
                 _Track.menu => _menuWav ??= _synthMenu(),
                 _Track.spooky => _spookyWav ??= _synthSpooky(),
+                _Track.cozy => _cozyWav ??= _synthCozy(),
+                _Track.focus => _focusWav ??= _synthFocus(),
                 _ => _battleWav ??= _synthBattle(),
               });
       if (_holds > 0) _music.pause();
@@ -187,6 +197,36 @@ class Sfx {
         ],
         arpGain: 0.14,
         bassGain: 0.26,
+        hats: true,
+      );
+
+  static Uint8List _synthCozy() => _synthLoop(
+        bpm: 72,
+        chords: const [
+          [60, 64, 67], // C
+          [57, 60, 64], // Am
+          [53, 57, 60], // F
+          [55, 59, 62], // G
+          [60, 64, 67], // C
+          [52, 55, 59], // Em
+          [53, 57, 60], // F
+          [55, 59, 62], // G
+        ],
+        arpGain: 0.13,
+        bassGain: 0.16,
+        hats: false,
+      );
+
+  static Uint8List _synthFocus() => _synthLoop(
+        bpm: 108,
+        chords: const [
+          [52, 55, 59], // Em
+          [48, 52, 55], // C
+          [55, 59, 62], // G
+          [50, 54, 57], // D
+        ],
+        arpGain: 0.12,
+        bassGain: 0.22,
         hats: true,
       );
 

@@ -1,15 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../data/cats.dart';
+import '../services/progress.dart';
 import '../services/sfx.dart';
 
 import 'map_screen.dart';
+import 'meme_player.dart';
 import 'theme.dart';
 
 /// Branded intro shown while the app finishes its first paint:
-/// logo fades+pulses in, then waits for a click or key press. Browsers
-/// only allow sound after a real click/key (touchpad scrolling does not
-/// count), so this tap is what starts the menu music.
+/// logo pulses in while the next cat videos download, then the map opens
+/// by itself (a click or key skips the wait). Music starts on the first
+/// click/key, the earliest moment browsers allow sound.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -27,7 +32,18 @@ class _SplashScreenState extends State<SplashScreen>
     _c = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 1400))
       ..forward();
+    // Fetch the next cat videos now, so they play without lag later.
+    final locked = kCats
+        .where((c) => !Progress.instance.unlockedCats.contains(c.id))
+        .take(5);
+    MemeBurst.warm([
+      ...locked,
+      ...kCats.where((c) => kCommonPool.contains(c.id)),
+    ]);
+    _auto = Timer(const Duration(milliseconds: 1800), _start);
   }
+
+  Timer? _auto;
 
   bool _leaving = false;
 
@@ -47,6 +63,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
+    _auto?.cancel();
     _c.dispose();
     super.dispose();
   }
@@ -112,19 +129,9 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                     const SizedBox(height: 36),
-                    Opacity(
-                      opacity: _c.value.clamp(0.0, 1.0),
-                      child: FilledButton.icon(
-                        onPressed: _start,
-                        icon: const Icon(Icons.volume_up),
-                        label: const Padding(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                          child: Text('¡Tocá para jugar!  (o cualquier tecla)',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w800)),
-                        ),
-                      ),
+                    const SizedBox(
+                      width: 140,
+                      child: LinearProgressIndicator(minHeight: 4),
                     ),
                   ],
                 );
