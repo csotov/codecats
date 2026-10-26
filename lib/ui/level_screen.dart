@@ -26,6 +26,7 @@ import 'level_intro.dart';
 import 'meme_player.dart';
 import '../data/complexity.dart';
 import '../data/profe_talks.dart';
+import '../data/challenges.dart';
 import 'golden_card.dart';
 import '../data/halloween.dart';
 import 'professor.dart';
@@ -166,6 +167,7 @@ class _LevelScreenState extends State<LevelScreen>
     _savedCode = widget.level.starterCode;
     _promotedToCode = widget.level.mode == EditorMode.code;
     _hintsShown = Progress.instance.of(widget.level.id).hintsBought;
+    _hintsAtStart = _hintsShown;
     _tabController = TabController(length: _hybrid ? 2 : 1, vsync: this);
   }
 
@@ -463,14 +465,29 @@ class _LevelScreenState extends State<LevelScreen>
       if (!mounted) return;
     }
 
-    // Hints are paid in Miaudólares now, so they no longer cost stars.
-    final stars = _attemptsThisSession <= 1 ? 3 : 2;
+    // Three visible stars: win, no hint bought this visit, level challenge.
+    final challenge = challengeMet(widget.level,
+        fights: _attemptsThisSession,
+        codeRank: bigORank(Complexity.analyze(_currentCode).notation));
+    final mask = kStarWin |
+        (_hintsShown <= _hintsAtStart ? kStarNoHint : 0) |
+        (challenge ? kStarChallenge : 0);
+    final stars = 1 +
+        (mask & kStarNoHint != 0 ? 1 : 0) +
+        (mask & kStarChallenge != 0 ? 1 : 0);
+    if (!challenge) _challengeMisses++;
+    Cloud.instance.log('stars', levelId: widget.level.id, data: {
+      'mask': mask,
+      'challenge': challengeOf(widget.level).name,
+    });
     // Replaying a won level gives no cat, only rarely (1 in 8) one.
     final replay = Progress.instance.of(widget.level.id).solved;
     final rewardCat = !replay || math.Random().nextInt(8) == 0;
     final earned = Progress.instance.recordSolve(
         widget.level.id, widget.level.xp, stars,
-        codeMode: !_usesBlocks || _promotedToCode, boss: widget.level.boss);
+        codeMode: !_usesBlocks || _promotedToCode,
+        boss: widget.level.boss,
+        mask: mask);
     final newCats =
         rewardCat ? Progress.instance.checkCatUnlocks() : const <CatMeme>[];
     if (wasReview) {
@@ -506,6 +523,18 @@ class _LevelScreenState extends State<LevelScreen>
         Navigator.pushReplacement(context, levelRoute(next!));
       },
     );
+    if (Progress.instance.lastChallengeBonus > 0 && mounted) {
+      await ProfessorDialog.show(context, [
+        L.instance.pick(
+            '¡10 estrellas de desafío! Te ganaste ${Progress.kChallengeBonus} Miaudólares extra por programar fino.',
+            '10 challenge stars! You earned ${Progress.kChallengeBonus} extra Meowdollars for sharp coding.')
+      ]);
+      if (!mounted) return;
+    }
+    if (!challenge && _challengeMisses == 2 && mounted && !widget.examMode) {
+      await ProfessorDialog.show(context, challengeHelp(widget.level));
+      if (!mounted) return;
+    }
     if (golden != null && mounted) {
       await GoldenCardDialog.show(context, golden);
       if (!mounted) return;
@@ -528,6 +557,35 @@ class _LevelScreenState extends State<LevelScreen>
   bool _failMemeShown = false;
   bool _tutorialShown = false;
   bool _leaveTalkShown = false;
+  int _hintsAtStart = 0;
+  int _challengeMisses = 0;
+  int _polyaForHint = -1;
+
+  /// The three star rules, visible before playing; earned ones lit.
+  Widget _starRules() {
+    final l = L.instance;
+    final m = Progress.instance.of(widget.level.id).starMask;
+    Widget rule(int bit, String text) => Padding(
+          padding: const EdgeInsets.only(right: 12, top: 4),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(m & bit != 0 ? Icons.star_rounded : Icons.star_outline_rounded,
+                size: 16,
+                color: m & bit != 0 ? AppTheme.accent2 : AppTheme.textLo),
+            const SizedBox(width: 3),
+            Text(text, style: const TextStyle(fontSize: 12)),
+          ]),
+        );
+    return Tooltip(
+      message: l.pick('Cómo se ganan las 3 estrellas de este nivel',
+          'How to earn the 3 stars of this level'),
+      child: Wrap(children: [
+        rule(kStarWin, l.pick('Ganar', 'Win')),
+        rule(kStarNoHint, l.pick('Sin comprar pista', 'No hint bought')),
+        rule(kStarChallenge,
+            '${l.pick('Desafío', 'Challenge')}: ${challengeText(widget.level)}'),
+      ]),
+    );
+  }
 
   /// Leaving after losing: the boss gloats, the professor sends you off
   /// with a short mindset talk (once per visit), then the level closes.
@@ -702,6 +760,7 @@ class _LevelScreenState extends State<LevelScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _bigOChip(),
+          if (!widget.examMode) _starRules(),
           const SizedBox(height: 6),
           Text(l.pick(lv.storyEs, lv.storyEn),
               style: const TextStyle(
@@ -940,6 +999,22 @@ class _LevelScreenState extends State<LevelScreen>
       'ok': Progress.instance.coins >= Progress.kHintCost,
     });
     final l = L.instance;
+    // Dose hints: before each one, the professor asks a guiding question;
+    // the hint is sold only on the next tap, after thinking.
+    if (_polyaForHint != _hintsShown && !widget.examMode) {
+      _polyaForHint = _hintsShown;
+      final q = kPolyaQuestions[
+          Progress.instance.nextRot('polya', kPolyaQuestions.length)];
+      await ProfessorDialog.show(context, [
+        l.pick('Antes de la pista, una pregunta de entrenador:',
+            'Before the hint, a coach question:'),
+        l.pick(q[0], q[1]),
+        l.pick(
+            'Pensalo un minuto. Si igual querés la pista, tocá "Comprar pista" otra vez.',
+            'Think about it for a minute. If you still want the hint, tap "Buy hint" again.'),
+      ]);
+      return;
+    }
     if (!Progress.instance.buyHint(widget.level.id)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l.t('no_coins'))),
@@ -1167,7 +1242,10 @@ class _LevelScreenState extends State<LevelScreen>
       child: SafeArea(
         child: Row(
           children: [
-            if (widget.level.mode == EditorMode.code || _promotedToCode) ...[
+            // The cloud g++ is slow: only from world 6 (sorting/searching)
+            // on, where real speed and the full STL start to matter.
+            if ((widget.level.mode == EditorMode.code || _promotedToCode) &&
+                worldNumberOf(widget.level) >= 6) ...[
               _judgeSwitch(),
               const SizedBox(width: 8),
             ],

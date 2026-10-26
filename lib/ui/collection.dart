@@ -90,11 +90,34 @@ class _CollectionScreenState extends State<CollectionScreen> {
                           errorBuilder: (_, __, ___) => const Center(
                               child:
                                   Text('🐱', style: TextStyle(fontSize: 34))))
-                      : Center(
-                          child: Text('🐈‍⬛',
-                              style: TextStyle(
-                                  fontSize: 34,
-                                  color: Colors.black.withOpacity(0.8))),
+                      // Locked: a static grey silhouette of the cat
+                      // (bright pixels become opaque, the dark backdrop
+                      // fades away), like a character still to unlock.
+                      : Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ColorFiltered(
+                              colorFilter: const ColorFilter.matrix([
+                                0, 0, 0, 0, 70, //
+                                0, 0, 0, 0, 62, //
+                                0, 0, 0, 0, 90, //
+                                1.2, 2.4, 0.5, 0, -90,
+                              ]),
+                              child: Image.asset('assets/memes/${cat.id}.jpg',
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const Center(
+                                      child: Text('🐈‍⬛',
+                                          style: TextStyle(fontSize: 34)))),
+                            ),
+                            const Align(
+                              alignment: Alignment.topRight,
+                              child: Padding(
+                                padding: EdgeInsets.all(6),
+                                child: Icon(Icons.lock_outline,
+                                    size: 16, color: AppTheme.textLo),
+                              ),
+                            ),
+                          ],
                         ),
                 ),
               ),
