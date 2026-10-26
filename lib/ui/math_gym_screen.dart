@@ -136,6 +136,60 @@ class _MathTopicScreenState extends State<MathTopicScreen> {
     });
   }
 
+  void _tap(String k) {
+    setState(() {
+      if (k == '⌫') {
+        if (_answer.text.isNotEmpty) {
+          _answer.text = _answer.text.substring(0, _answer.text.length - 1);
+        }
+      } else if (k == '-') {
+        _answer.text = _answer.text.startsWith('-')
+            ? _answer.text.substring(1)
+            : '-${_answer.text}';
+      } else {
+        _answer.text += k;
+      }
+    });
+  }
+
+  /// On-screen keypad so the phone keyboard never has to open.
+  Widget _keypad() {
+    const rows = [
+      ['7', '8', '9'],
+      ['4', '5', '6'],
+      ['1', '2', '3'],
+      ['-', '0', '⌫'],
+    ];
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 300),
+        child: Column(
+          children: [
+            for (final row in rows)
+              Row(
+                children: [
+                  for (final k in row)
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(3),
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              textStyle: const TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.w800)),
+                          onPressed: () => _tap(k),
+                          child: Text(k),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = L.instance;
@@ -166,12 +220,16 @@ class _MathTopicScreenState extends State<MathTopicScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: _answer,
-              keyboardType: TextInputType.number,
+              readOnly: true,
+              showCursor: false,
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
               onSubmitted: (_) => _check(),
               decoration: InputDecoration(
                   border: const OutlineInputBorder(),
                   labelText: l.pick('Tu respuesta', 'Your answer')),
             ),
+            const SizedBox(height: 8),
+            _keypad(),
             const SizedBox(height: 10),
             if (_feedback.isNotEmpty)
               Text(_feedback,
