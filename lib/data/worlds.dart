@@ -1,5 +1,6 @@
 import '../models.dart';
 import '../services/progress.dart';
+import 'coach_problems.dart';
 import 'contest_pool.dart';
 import 'halloween.dart';
 import 'world1.dart';
@@ -48,7 +49,7 @@ Level? levelById(String id) {
   for (final c in kContestPool) {
     if (c.level.id == id) return c.level;
   }
-  return null;
+  return CoachStore.instance.levelFor(id);
 }
 
 /// Index of a level inside its world.
