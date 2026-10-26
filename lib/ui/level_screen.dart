@@ -948,11 +948,23 @@ class _LevelScreenState extends State<LevelScreen>
     final l = L.instance;
     final bo = complexityOf(widget.level);
     final taught = Progress.instance.taughtBigO.contains(bo.id);
-    final color = taught ? AppTheme.accent2 : AppTheme.textLo;
+    // Highlight when this level's Big O differs from the previous one.
+    final prev = previousLevel(widget.level.id);
+    final before = prev == null ? null : complexityOf(prev);
+    final changed = before != null && before.id != bo.id;
+    final color = changed
+        ? AppTheme.bad
+        : taught
+            ? AppTheme.accent2
+            : AppTheme.textLo;
     return Align(
       alignment: Alignment.centerLeft,
       child: Tooltip(
-        message: l.t('tip_bigo'),
+        message: changed
+            ? l.pick(
+                '¡Cambió la complejidad! El nivel anterior era ${before.notation}, este es ${bo.notation}. Tocá para que el Profe te lo explique.',
+                'The complexity changed! The previous level was ${before.notation}, this one is ${bo.notation}. Tap and the professor will explain.')
+            : l.t('tip_bigo'),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () => _teachBigO(force: true),
@@ -960,7 +972,8 @@ class _LevelScreenState extends State<LevelScreen>
             duration: const Duration(milliseconds: 400),
             curve: Curves.easeOut,
             padding: EdgeInsets.symmetric(
-                horizontal: taught ? 12 : 8, vertical: taught ? 6 : 2),
+                horizontal: taught || changed ? 12 : 8,
+                vertical: taught || changed ? 6 : 2),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               color: taught
@@ -985,6 +998,23 @@ class _LevelScreenState extends State<LevelScreen>
                       ? 'Big O: ${bo.notation} · ${bo.name}'
                       : 'Big O: ${bo.notation}'),
                 ),
+                if (changed) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                        color: AppTheme.bad,
+                        borderRadius: BorderRadius.circular(8)),
+                    child: Text(
+                        l.pick('¡Cambió! antes ${before.notation}',
+                            'Changed! was ${before.notation}'),
+                        style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white)),
+                  ),
+                ],
               ],
             ),
           ),

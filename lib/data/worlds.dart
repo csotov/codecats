@@ -60,6 +60,14 @@ int levelIndexInWorld(Level level) {
   return -1;
 }
 
+/// The level right before [id] in the campaign, or null.
+Level? previousLevel(String id) {
+  final ids = orderedIds;
+  final i = ids.indexOf(id);
+  if (i <= 0) return null;
+  return levelById(ids[i - 1]);
+}
+
 /// The level that comes right after [id] in the campaign, or null.
 Level? nextLevel(String id) {
   final ids = orderedIds;
