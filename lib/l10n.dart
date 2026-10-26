@@ -246,6 +246,34 @@ class L {
           'Tap so the teacher explains it'
     },
     'bigo_lesson': {'es': 'Lección del profe', 'en': "Teacher's lesson"},
+    'tip_quiz_option': {'es': 'Elegí tu respuesta', 'en': 'Pick your answer'},
+    'notebook': {'es': 'Cuaderno de errores', 'en': 'Error notebook'},
+    'tip_notebook': {
+      'es': 'Cuaderno de errores: niveles perdidos que vuelven para repasar',
+      'en': 'Error notebook: lost levels that come back for review'
+    },
+    'tip_retry_level': {
+      'es': 'Volver a intentar este nivel',
+      'en': 'Try this level again'
+    },
+    'my_week': {'es': 'Mi semana', 'en': 'My week'},
+    'golden_card': {'es': '¡Carta dorada!', 'en': 'Golden card!'},
+    'trophy_pieces': {
+      'es': 'Piezas del trofeo dorado:',
+      'en': 'Golden trophy pieces:'
+    },
+    'trophy_complete': {
+      'es': '¡Trofeo dorado completo! Empieza uno nuevo.',
+      'en': 'Golden trophy complete! A new one begins.'
+    },
+    'bonus_level': {'es': 'Nivel Bonus dorado', 'en': 'Golden Bonus level'},
+    'tip_bonus': {
+      'es':
+          'Un nivel que ya ganaste vuelve como bonus: ganalo y llevate una carta dorada para tu trofeo',
+      'en':
+          'A level you already beat comes back as a bonus: win it for a golden card toward your trophy'
+    },
+    'golden_cards': {'es': 'Cartas doradas', 'en': 'Golden cards'},
     'no_coins': {
       'es': '¡Te faltan Miaudólares! Gana o repasa niveles para conseguir más.',
       'en': 'Not enough Meowdollars! Win or replay levels to earn more.'

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../data/contest_pool.dart';
 import '../data/worlds.dart';
 import '../l10n.dart';
 import '../models.dart';
@@ -30,15 +31,56 @@ List<Level> pickContestLevels() {
       (lp.attempts > 0 ? pending : fresh).add(l);
     }
   }
-  return [...pending, ...fresh, ...review.reversed].take(3).toList();
+  // World reached: the furthest world with a solved level (at least 1).
+  var reached = 1;
+  for (var i = 0; i < kWorlds.length; i++) {
+    if (kWorlds[i].levels.any((l) => p.of(l.id).solved)) reached = i + 1;
+  }
+  // AtCoder-style pool problems for those topics come first (hardest
+  // topic first), then one pending upsolve, then the usual fallbacks.
+  final pool = contestPoolFor(reached).where((l) => !p.of(l.id).solved).toList()
+    ..sort((a, b) => _poolWorld(b).compareTo(_poolWorld(a)));
+  return [
+    ...pool.take(2),
+    ...pending,
+    ...pool.skip(2),
+    ...fresh,
+    ...review.reversed
+  ].take(3).toList();
 }
+
+int _poolWorld(Level l) =>
+    kContestPool.firstWhere((c) => c.level.id == l.id).minWorld;
 
 /// Whether a contest can start (needs 3 playable levels).
 bool canStartContest() => pickContestLevels().length >= 3;
 
 class ContestScreen extends StatefulWidget {
-  const ContestScreen({super.key, required this.problems});
+  const ContestScreen({super.key, required this.problems, required this.endAt});
   final List<Level> problems;
+
+  /// Wall-clock end: the run is saved in [Progress], so leaving and coming
+  /// back resumes with the real remaining time.
+  final DateTime endAt;
+
+  /// Resume the saved run if there is one, otherwise start a new one.
+  static ContestScreen openOrResume() {
+    final p = Progress.instance;
+    if (p.contestActive) {
+      final saved = [for (final id in p.contestIds) levelById(id)]
+          .whereType<Level>()
+          .toList();
+      if (saved.isNotEmpty) {
+        return ContestScreen(
+            problems: saved,
+            endAt: DateTime.fromMillisecondsSinceEpoch(p.contestEndMs));
+      }
+    }
+    final picked = pickContestLevels();
+    p.startContest([for (final l in picked) l.id], kDuration);
+    return ContestScreen(
+        problems: picked, endAt: DateTime.now().add(kDuration));
+  }
 
   static const kDuration = Duration(minutes: 25);
 
@@ -47,7 +89,13 @@ class ContestScreen extends StatefulWidget {
 }
 
 class _ContestScreenState extends State<ContestScreen> {
-  late Duration _left = ContestScreen.kDuration;
+  late Duration _left = _remaining();
+
+  Duration _remaining() {
+    final d = widget.endAt.difference(DateTime.now());
+    return d.isNegative ? Duration.zero : d;
+  }
+
   late final Timer _timer;
   bool _ended = false;
   final _scroll = ScrollController();
@@ -60,7 +108,7 @@ class _ContestScreenState extends State<ContestScreen> {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted || _ended) return;
-      setState(() => _left -= const Duration(seconds: 1));
+      setState(() => _left = _remaining());
       if (_left <= Duration.zero) {
         _left = Duration.zero;
         _finish(timedOut: true);
@@ -78,6 +126,7 @@ class _ContestScreenState extends State<ContestScreen> {
   void _finish({required bool timedOut}) {
     if (_ended) return;
     _ended = true;
+    Progress.instance.endContest();
     final l = L.instance;
     showDialog<void>(
       context: context,
@@ -122,6 +171,12 @@ class _ContestScreenState extends State<ContestScreen> {
           appBar: AppBar(
             title: Text(l.t('contest')),
             actions: [
+              IconButton(
+                tooltip: l.pick(
+                    'Terminar el simulacro ahora', 'End the mock contest now'),
+                icon: const Icon(Icons.flag_outlined),
+                onPressed: () => _finish(timedOut: false),
+              ),
               Center(
                 child: Padding(
                   padding: const EdgeInsets.only(right: 16),
@@ -146,6 +201,13 @@ class _ContestScreenState extends State<ContestScreen> {
                 Text(l.t('contest_desc'),
                     style:
                         const TextStyle(color: AppTheme.textLo, fontSize: 13)),
+                const SizedBox(height: 6),
+                Text(
+                    l.pick(
+                        'Si te salís, la partida sigue guardada: volvé al trofeo del mapa para continuar donde ibas.',
+                        'If you leave, the run stays saved: come back via the trophy on the map to continue where you were.'),
+                    style:
+                        const TextStyle(color: AppTheme.accent2, fontSize: 12)),
                 const SizedBox(height: 14),
                 for (var i = 0; i < widget.problems.length; i++)
                   _problemTile(widget.problems[i], i),
