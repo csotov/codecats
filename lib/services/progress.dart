@@ -279,6 +279,23 @@ class Progress extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Memory gym lessons reuse [mathGym] under `mem_<deck>`:
+  /// [lessons finished, best first-try score].
+  List<int> memStats(String deck) => mathGym['mem_$deck'] ?? const [0, 0];
+
+  /// 1 Miaudólar per first-try answer, +5 for a perfect lesson.
+  int memLesson(String deck, int firstTry, int total) {
+    final m = [...memStats(deck)];
+    m[0]++;
+    m[1] = math.max(m[1], firstTry);
+    mathGym['mem_$deck'] = m;
+    final earned = firstTry + (firstTry == total ? 5 : 0);
+    coins += earned;
+    _save();
+    notifyListeners();
+    return earned;
+  }
+
   /// Questions asked so far; every 4th one is olympiad math.
   int blitzSeq = 0;
 

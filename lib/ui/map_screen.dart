@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../data/phases.dart';
 import 'phase_exam.dart';
 import 'math_gym_screen.dart';
+import 'memory_screen.dart';
 import 'atcoder_screen.dart';
 import 'cspj_screen.dart';
 import 'ioi_screen.dart';
@@ -400,6 +401,16 @@ class _MapScreenState extends State<MapScreen> {
               MaterialPageRoute(builder: (_) => const IoiScreen()),
             ),
           ),
+          const SizedBox(height: 6),
+          _missionRow(
+            '⚡ ${l.pick('Memoria rápida', 'Quick recall')}',
+            l.pick('lecciones cortas: contar casos, potencias de 2 y más',
+                'short lessons: counting, powers of 2 and more'),
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MemoryGymScreen()),
+            ),
+          ),
           if (mathTopicsFor(p).isNotEmpty) ...[
             const SizedBox(height: 6),
             _missionRow(
@@ -671,6 +682,9 @@ class _MapScreenState extends State<MapScreen> {
           case 'ioi':
             Navigator.push(
                 context, MaterialPageRoute(builder: (_) => const IoiScreen()));
+          case 'memory':
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const MemoryGymScreen()));
           case 'math':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const MathGymScreen()));
@@ -714,6 +728,7 @@ class _MapScreenState extends State<MapScreen> {
             l.pick('Problemas reales de AtCoder', 'Real AtCoder problems')),
         item('ioi', Icons.military_tech_outlined,
             l.pick('Problemas de olimpiada', 'Olympiad problems')),
+        item('memory', Icons.bolt, l.pick('Memoria rápida', 'Quick recall')),
         item('math', Icons.calculate_outlined,
             l.pick('Gimnasio de matemática', 'Math gym')),
         item('coder', Icons.build_outlined,
