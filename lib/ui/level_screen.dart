@@ -3,6 +3,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../data/olympiad_tracks.dart';
+import 'olympiad_screens.dart';
+
 import '../data/worlds.dart';
 import '../engine/blocks.dart';
 import '../engine/blocks_vm.dart';
@@ -461,6 +464,35 @@ class _LevelScreenState extends State<LevelScreen>
         levelId: widget.level.id,
         data: {'msg': report.compileError!.split('\n').first},
       );
+    }
+    final subtasks = kLabSubtasks[widget.level.id];
+    if (subtasks != null) {
+      final (score, ok) = subtaskScore(subtasks, report);
+      Progress.instance.recordScore(widget.level.id, score);
+      Cloud.instance.log(
+        'subtask_score',
+        levelId: widget.level.id,
+        data: {'score': score},
+      );
+      if (!report.allPassed) {
+        final l = L.instance;
+        await ProfessorDialog.show(context, [
+          l.pick(
+            'Puntaje de olimpiada: $score / 100',
+            'Olympiad score: $score / 100',
+          ),
+          [
+            for (var i = 0; i < subtasks.length; i++)
+              '${ok[i] ? '✅' : '❌'} ${l.pick('Subtarea', 'Subtask')} ${i + 1} (${subtasks[i].points}): ${l.pick(subtasks[i].labelEs, subtasks[i].labelEn)}',
+          ].join('\n'),
+          if (score > 0)
+            l.pick(
+              'En la olimpiada estos puntos ya cuentan. Ahora buscá la subtarea que falta.',
+              'At the olympiad these points already count. Now go for the missing subtask.',
+            ),
+        ]);
+        if (!mounted) return;
+      }
     }
     if (!report.allPassed) {
       Progress.instance.failBattle();
@@ -1040,6 +1072,20 @@ class _LevelScreenState extends State<LevelScreen>
                           const CoinPrice(Progress.kHintCost, size: 13),
                         ],
                       ),
+                    ),
+                  ),
+                if (kLeadIns.containsKey(widget.level.id) &&
+                    !widget.bonus &&
+                    !widget.examMode)
+                  Tooltip(
+                    message: l.pick(
+                      'Problemas más chicos que te llevan al truco',
+                      'Smaller problems that lead you to the trick',
+                    ),
+                    child: OutlinedButton.icon(
+                      onPressed: () => openLeadIn(context, widget.level),
+                      icon: const Icon(Icons.stairs_outlined, size: 16),
+                      label: Text(l.pick('No sé', 'I don\'t know')),
                     ),
                   ),
                 if (_failStreak >= 3 && !widget.examMode)

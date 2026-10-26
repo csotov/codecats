@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../data/olympiad_tracks.dart';
 
 import '../data/cats.dart';
 import '../data/halloween.dart';
@@ -118,6 +119,23 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
                   const SizedBox(height: 10),
                   for (var i = 0; i < kHalloweenLevels.length; i++)
                     _levelCard(context, l, i),
+                  const SizedBox(height: 18),
+                  Text(
+                      l.pick('🧪 Laboratorio del Profe (prueba)',
+                          '🧪 Profe\'s lab (trial)'),
+                      style: const TextStyle(
+                          color: _orange,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16)),
+                  const SizedBox(height: 4),
+                  Text(
+                      l.pick(
+                          'Problemas con puntaje de olimpiada: cada subtarea da puntos aunque no lo resuelvas entero. Si te trabás, el botón "No sé" te lleva por problemas más chicos.',
+                          'Problems with olympiad scoring: each subtask gives points even if you do not solve it all. If stuck, the "I don\'t know" button leads you through smaller problems.'),
+                      style:
+                          const TextStyle(color: Colors.white70, fontSize: 12)),
+                  const SizedBox(height: 8),
+                  for (final lv in kLabLevels) _labCard(context, l, lv),
                 ],
               ),
             ),
@@ -183,6 +201,30 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _labCard(BuildContext context, L l, Level lv) {
+    final best = Progress.instance.scores[lv.id];
+    return Card(
+      color: const Color(0xFF1E2A12),
+      child: ListTile(
+        leading: const Text('🧪', style: TextStyle(fontSize: 26)),
+        title: Text(l.pick(lv.titleEs, lv.titleEn),
+            style: const TextStyle(fontWeight: FontWeight.w800)),
+        subtitle: Text(
+            best == null
+                ? l.pick('Sin intentar', 'Not tried')
+                : l.pick(
+                    'Mejor puntaje: $best / 100', 'Best score: $best / 100'),
+            style: const TextStyle(fontSize: 12)),
+        trailing: Tooltip(
+          message: l.pick(
+              'Jugar este problema de prueba', 'Play this trial problem'),
+          child: const Icon(Icons.chevron_right),
+        ),
+        onTap: () => _play(context, lv),
       ),
     );
   }

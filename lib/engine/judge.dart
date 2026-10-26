@@ -35,6 +35,20 @@ class JudgeReport {
   bool get allPassed => results.isNotEmpty && passedCount == total;
 }
 
+/// Olympiad partial score: a subtask's points count only when every one
+/// of its tests passed. Tests the judge never ran count as failed.
+(int, List<bool>) subtaskScore(List<Subtask> subtasks, JudgeReport report) {
+  var score = 0;
+  final ok = <bool>[];
+  for (final s in subtasks) {
+    final pass = s.tests
+        .every((i) => i < report.results.length && report.results[i].passed);
+    ok.add(pass);
+    if (pass) score += s.points;
+  }
+  return (score, ok);
+}
+
 /// Whitespace-insensitive comparison (like real online judges):
 /// outputs are equal when their token sequences match.
 bool outputsMatch(String expected, String actual) {

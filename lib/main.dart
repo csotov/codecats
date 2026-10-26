@@ -1,3 +1,4 @@
+import 'ui/olympiad_screens.dart';
 import 'data/coach_problems.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +13,7 @@ Future<void> main() async {
   await Sfx.init();
   await Cloud.instance.init();
   CoachStore.instance.load();
+  BlitzClock.start();
   Cloud.instance.addListener(CoachStore.instance.load);
   await Progress.instance.ensureLoaded();
   runApp(const CodeCatsApp());

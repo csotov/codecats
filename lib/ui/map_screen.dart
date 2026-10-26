@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'olympiad_screens.dart';
+import '../data/olympiad_tracks.dart';
 
 import '../data/catalog.dart';
 import '../data/halloween.dart';
@@ -59,6 +61,13 @@ class _MapScreenState extends State<MapScreen> {
       animation:
           Listenable.merge([progress, Cloud.instance, CoachStore.instance]),
       builder: (context, _) {
+        if (progress.blitzMin >= Progress.kBlitzEvery) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
+              maybeRunBlitz(context);
+            }
+          });
+        }
         return Scaffold(
           appBar: AppBar(
             title: Column(
@@ -323,6 +332,29 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ],
+          for (final w in openClosings(p))
+            if (kClosing.any((c) => c.$1 == w && !p.of(c.$3.id).solved)) ...[
+              const SizedBox(height: 6),
+              _missionRow(
+                '🏁 ${l.pick('Cierre del Mundo $w', 'World $w closing')}',
+                '${kClosing.where((c) => c.$1 == w && !p.of(c.$3.id).solved).length} ${l.pick('problemas: parecidos, combinados y de olimpiada', 'problems: look-alikes, combined and olympiad')}',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => ClosingScreen(world: w)),
+                ),
+              ),
+            ],
+          if (coderTasksFor(p).any((t) => !p.of(t.levelId).solved)) ...[
+            const SizedBox(height: 6),
+            _missionRow(
+              '🛠️ ${l.pick('Ronda Coder', 'Coder round')}',
+              '${coderTasksFor(p).where((t) => !p.of(t.levelId).solved).length} ${l.pick('para arreglar, completar o romper', 'to fix, complete or break')}',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CoderListScreen()),
+              ),
+            ),
+          ],
           if (bonus != null) ...[
             const SizedBox(height: 6),
             Tooltip(
@@ -560,6 +592,9 @@ class _MapScreenState extends State<MapScreen> {
           case 'trace':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const TraceListScreen()));
+          case 'coder':
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const CoderListScreen()));
           case 'notebook':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const ReviewScreen()));
@@ -589,6 +624,8 @@ class _MapScreenState extends State<MapScreen> {
               l.pick('Problemas del entrenador', 'Coach problems')),
         item('trace', Icons.table_chart_outlined,
             l.pick('Sé la computadora', 'Be the computer')),
+        item('coder', Icons.build_outlined,
+            l.pick('Ronda Coder', 'Coder round')),
         item('notebook', Icons.menu_book_outlined,
             '${l.t('notebook')}${due > 0 ? ' ($due)' : ''}'),
         item('dashboard', Icons.leaderboard_outlined, l.t('tip_dashboard')),

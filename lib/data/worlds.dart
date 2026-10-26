@@ -1,3 +1,4 @@
+import 'olympiad_tracks.dart';
 import '../models.dart';
 import '../services/progress.dart';
 import 'coach_problems.dart';
@@ -44,6 +45,13 @@ Level? levelById(String id) {
     if (l.id == id) return l;
   }
   for (final l in kHalloweenLevels) {
+    if (l.id == id) return l;
+  }
+  for (final l in [
+    ...kLabLevels,
+    for (final v in kLeadIns.values) ...v,
+    for (final c in kClosing) c.$3,
+  ]) {
     if (l.id == id) return l;
   }
   for (final c in kContestPool) {

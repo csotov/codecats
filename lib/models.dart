@@ -20,6 +20,21 @@ class TestCase {
   final bool hidden;
 }
 
+/// A scored group of judge tests (olympiad partial points).
+class Subtask {
+  const Subtask({
+    required this.points,
+    required this.labelEs,
+    required this.labelEn,
+    required this.tests,
+  });
+  final int points;
+  final String labelEs, labelEn;
+
+  /// Indices into [Level.allTests].
+  final List<int> tests;
+}
+
 /// How the player edits the solution for a level.
 enum EditorMode {
   /// Only the visual block editor (generates C++).
@@ -87,7 +102,8 @@ class Level {
 
   /// All judge cases: visible samples first, then hidden tests.
   List<TestCase> get allTests => [
-        for (final s in samples) TestCase(input: s.input, output: s.output, hidden: false),
+        for (final s in samples)
+          TestCase(input: s.input, output: s.output, hidden: false),
         ...tests,
       ];
 }
