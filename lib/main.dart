@@ -1,3 +1,4 @@
+import 'data/coach_problems.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -10,6 +11,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Sfx.init();
   await Cloud.instance.init();
+  CoachStore.instance.load();
+  Cloud.instance.addListener(CoachStore.instance.load);
   await Progress.instance.ensureLoaded();
   runApp(const CodeCatsApp());
   Sfx.menu(); // fire-and-forget; browsers may delay audio until first tap

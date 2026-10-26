@@ -21,6 +21,9 @@ import 'level_screen.dart';
 import 'profiles.dart';
 import 'review_screen.dart';
 import 'bonus_variant.dart';
+import 'coach_screen.dart';
+import '../data/coach_problems.dart';
+import 'trace_screen.dart';
 import '../data/challenges.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -53,7 +56,8 @@ class _MapScreenState extends State<MapScreen> {
     final narrow = MediaQuery.sizeOf(context).width < 760;
 
     return AnimatedBuilder(
-      animation: Listenable.merge([progress, Cloud.instance]),
+      animation:
+          Listenable.merge([progress, Cloud.instance, CoachStore.instance]),
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(
@@ -97,6 +101,16 @@ class _MapScreenState extends State<MapScreen> {
                   icon: const Icon(Icons.fitness_center),
                   onPressed: _openPractice,
                 ),
+                if (CoachStore.instance.problems.isNotEmpty)
+                  IconButton(
+                    tooltip:
+                        l.pick('Problemas del entrenador', 'Coach problems'),
+                    icon: const Icon(Icons.assignment_outlined),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CoachScreen()),
+                    ),
+                  ),
                 IconButton(
                   tooltip: l.t('tip_notebook'),
                   icon: Badge(
@@ -283,6 +297,29 @@ class _MapScreenState extends State<MapScreen> {
               () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => LevelScreen(level: rec)),
+              ),
+            ),
+          ],
+          if (CoachStore.instance.problems
+              .any((c) => !p.of(c.levelId).solved)) ...[
+            const SizedBox(height: 6),
+            _missionRow(
+              '🧑‍🏫 ${l.pick('Del entrenador', 'From your coach')}',
+              '${CoachStore.instance.problems.where((c) => !p.of(c.levelId).solved).length} ${l.pick('problemas nuevos', 'new problems')}',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CoachScreen()),
+              ),
+            ),
+          ],
+          if (traceExercisesFor(p).any((t) => !p.of(t.levelId).solved)) ...[
+            const SizedBox(height: 6),
+            _missionRow(
+              '🧠 ${l.pick('Sé la computadora', 'Be the computer')}',
+              '${traceExercisesFor(p).where((t) => !p.of(t.levelId).solved).length} ${l.pick('tablas para completar', 'tables to fill')}',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TraceListScreen()),
               ),
             ),
           ],
@@ -517,6 +554,12 @@ class _MapScreenState extends State<MapScreen> {
                 MaterialPageRoute(builder: (_) => const CollectionScreen()));
           case 'practice':
             _openPractice();
+          case 'coach':
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const CoachScreen()));
+          case 'trace':
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const TraceListScreen()));
           case 'notebook':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const ReviewScreen()));
@@ -541,6 +584,11 @@ class _MapScreenState extends State<MapScreen> {
         item('contest', Icons.emoji_events_outlined, l.t('tip_contest')),
         item('collection', Icons.catching_pokemon, l.t('tip_collection')),
         item('practice', Icons.fitness_center, l.t('tip_practice')),
+        if (CoachStore.instance.problems.isNotEmpty)
+          item('coach', Icons.assignment_outlined,
+              l.pick('Problemas del entrenador', 'Coach problems')),
+        item('trace', Icons.table_chart_outlined,
+            l.pick('Sé la computadora', 'Be the computer')),
         item('notebook', Icons.menu_book_outlined,
             '${l.t('notebook')}${due > 0 ? ' ($due)' : ''}'),
         item('dashboard', Icons.leaderboard_outlined, l.t('tip_dashboard')),
