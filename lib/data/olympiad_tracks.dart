@@ -542,8 +542,8 @@ final List<(int, int, Level)> kClosing = [
           'The favorite bookcase has N shelves with N books each. Today k books were borrowed. (Inspired by the Gomel primary olympiad.)',
       dEs: 'Lee N y k. Imprimí cuántos libros quedan en la estantería.',
       dEn: 'Read N and k. Print how many books are left on the bookcase.',
-      iEs: 'Dos enteros N y k (1 ≤ N ≤ 30000, 0 ≤ k ≤ N × N).',
-      iEn: 'Two integers N and k (1 ≤ N ≤ 30000, 0 ≤ k ≤ N × N).',
+      iEs: 'Dos enteros N y k (1 ≤ N ≤ 100000, 0 ≤ k ≤ N × N).',
+      iEn: 'Two integers N and k (1 ≤ N ≤ 100000, 0 ≤ k ≤ N × N).',
       oEs: 'Un entero.',
       oEn: 'One integer.',
       samples: [
@@ -552,13 +552,18 @@ final List<(int, int, Level)> kClosing = [
       ],
       tests: [
         ['1 1', '0'],
-        ['30000 5', '899999995'],
-        ['100 10000', '0']
+        ['100000 5', '9999999995'],
+        ['100 10000', '0'],
+        ['70000 0', '4900000000']
       ],
       cEs: [],
       cEn: [],
-      hEs: ['Ojo: 30000 × 30000 no entra en int. Usá long long.'],
-      hEn: ['Careful: 30000 × 30000 does not fit in int. Use long long.'],
+      hEs: [
+        'Ojo: 100000 × 100000 = 10 000 000 000 no entra en int (llega a unos 2 100 millones). Usá long long.'
+      ],
+      hEn: [
+        'Careful: 100000 × 100000 = 10,000,000,000 does not fit in int (about 2.1 billion max). Use long long.'
+      ],
       xp: 60,
       concepts: ['*', 'long long'],
     )
