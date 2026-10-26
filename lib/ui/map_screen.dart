@@ -6,6 +6,7 @@ import 'phase_exam.dart';
 import 'math_gym_screen.dart';
 import 'atcoder_screen.dart';
 import 'cspj_screen.dart';
+import 'ioi_screen.dart';
 import 'olympiad_screens.dart';
 import '../data/olympiad_tracks.dart';
 
@@ -389,6 +390,16 @@ class _MapScreenState extends State<MapScreen> {
               MaterialPageRoute(builder: (_) => const CspjScreen()),
             ),
           ),
+          const SizedBox(height: 6),
+          _missionRow(
+            '🏅 ${l.pick('Problemas de olimpiada', 'Olympiad problems')}',
+            l.pick('problemas oficiales, de a una subtarea por vez',
+                'official problems, one subtask at a time'),
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const IoiScreen()),
+            ),
+          ),
           if (mathTopicsFor(p).isNotEmpty) ...[
             const SizedBox(height: 6),
             _missionRow(
@@ -657,6 +668,9 @@ class _MapScreenState extends State<MapScreen> {
           case 'cspj':
             Navigator.push(
                 context, MaterialPageRoute(builder: (_) => const CspjScreen()));
+          case 'ioi':
+            Navigator.push(
+                context, MaterialPageRoute(builder: (_) => const IoiScreen()));
           case 'math':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const MathGymScreen()));
@@ -698,6 +712,8 @@ class _MapScreenState extends State<MapScreen> {
             l.pick('El Camino del Bigote', 'The Whisker Path')),
         item('atcoder', Icons.public,
             l.pick('Problemas reales de AtCoder', 'Real AtCoder problems')),
+        item('ioi', Icons.military_tech_outlined,
+            l.pick('Problemas de olimpiada', 'Olympiad problems')),
         item('math', Icons.calculate_outlined,
             l.pick('Gimnasio de matemática', 'Math gym')),
         item('coder', Icons.build_outlined,

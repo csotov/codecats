@@ -258,29 +258,51 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
 /// Pop-up when a goal badge is earned.
 Future<void> showNewBadges(BuildContext context, List<CatBadge> fresh) async {
   final l = L.instance;
-  for (final b in fresh) {
-    if (!context.mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: Text(l.pick('¡Nueva insignia!', 'New badge!'),
-            textAlign: TextAlign.center),
-        content: Column(mainAxisSize: MainAxisSize.min, children: [
-          BadgeArt(b, size: 140),
-          const SizedBox(height: 12),
-          Text(l.pick(b.nameEs, b.nameEn),
-              style:
-                  const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
-          Text(l.pick(b.goalEs, b.goalEn),
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppTheme.textLo)),
-        ]),
-        actions: [
-          FilledButton(
-              onPressed: () => Navigator.pop(c),
-              child: Text(l.pick('¡Genial!', 'Great!'))),
-        ],
+  if (fresh.isEmpty || !context.mounted) return;
+  final one = fresh.length == 1;
+  await showDialog<void>(
+    context: context,
+    builder: (c) => AlertDialog(
+      title: Text(
+          one
+              ? l.pick('¡Nueva insignia!', 'New badge!')
+              : l.pick('¡${fresh.length} insignias nuevas!',
+                  '${fresh.length} new badges!'),
+          textAlign: TextAlign.center),
+      content: SizedBox(
+        width: one ? null : 460,
+        child: SingleChildScrollView(
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 14,
+            runSpacing: 12,
+            children: [
+              for (final b in fresh)
+                SizedBox(
+                  width: one ? 220 : 130,
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    BadgeArt(b, size: one ? 140 : 90),
+                    const SizedBox(height: 8),
+                    Text(l.pick(b.nameEs, b.nameEn),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: one ? 18 : 14)),
+                    Text(l.pick(b.goalEs, b.goalEn),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            color: AppTheme.textLo, fontSize: 12)),
+                  ]),
+                ),
+            ],
+          ),
+        ),
       ),
-    );
-  }
+      actions: [
+        FilledButton(
+            onPressed: () => Navigator.pop(c),
+            child: Text(l.pick('¡Genial!', 'Great!'))),
+      ],
+    ),
+  );
 }
