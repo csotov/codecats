@@ -5,6 +5,7 @@ import '../data/phases.dart';
 import 'phase_exam.dart';
 import 'math_gym_screen.dart';
 import 'atcoder_screen.dart';
+import 'cspj_screen.dart';
 import 'olympiad_screens.dart';
 import '../data/olympiad_tracks.dart';
 
@@ -352,6 +353,16 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ],
+          const SizedBox(height: 6),
+          _missionRow(
+            '🇨🇳 ${l.pick('Ruta CSP-J', 'CSP-J path')}',
+            l.pick('el orden que siguen los chicos chinos',
+                'the order Chinese kids follow'),
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CspjScreen()),
+            ),
+          ),
           if (mathTopicsFor(p).isNotEmpty) ...[
             const SizedBox(height: 6),
             _missionRow(
@@ -615,6 +626,9 @@ class _MapScreenState extends State<MapScreen> {
           case 'atcoder':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const AtcoderScreen()));
+          case 'cspj':
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const CspjScreen()));
           case 'math':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const MathGymScreen()));
@@ -650,6 +664,8 @@ class _MapScreenState extends State<MapScreen> {
               l.pick('Problemas del entrenador', 'Coach problems')),
         item('trace', Icons.table_chart_outlined,
             l.pick('Sé la computadora', 'Be the computer')),
+        item('cspj', Icons.route_outlined,
+            l.pick('Ruta CSP-J (China)', 'CSP-J path (China)')),
         item('atcoder', Icons.public,
             l.pick('Problemas reales de AtCoder', 'Real AtCoder problems')),
         item('math', Icons.calculate_outlined,
