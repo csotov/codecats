@@ -19,24 +19,47 @@ import 'world11.dart';
 import 'world12.dart';
 import 'world13.dart';
 import 'world14.dart';
+import 'world_more.dart';
 
 /// The full campaign in order.
 final List<World> kWorlds = [
-  world1,
-  world2,
-  world3,
-  world4,
-  world5,
-  world6,
-  world7,
-  world8,
-  world9,
-  world10,
-  world11,
-  world12,
-  world13,
-  world14,
+  for (final w in [
+    world1,
+    world2,
+    world3,
+    world4,
+    world5,
+    world6,
+    world7,
+    world8,
+    world9,
+    world10,
+    world11,
+    world12,
+    world13,
+    world14,
+  ])
+    _withMore(w),
 ];
+
+/// Inserts the extra practice levels of [kMoreLevels] right before the boss.
+World _withMore(World w) {
+  final more = kMoreLevels[w.id] ?? const <Level>[];
+  if (more.isEmpty) return w;
+  return World(
+    id: w.id,
+    titleEs: w.titleEs,
+    titleEn: w.titleEn,
+    descEs: w.descEs,
+    descEn: w.descEn,
+    icon: w.icon,
+    levels: [
+      ...w.levels.where((l) => !l.boss),
+      ...more,
+      ...w.levels.where((l) => l.boss),
+    ],
+  );
+}
 
 /// Flattened list of every level in campaign order.
 List<Level> get allLevels => [for (final w in kWorlds) ...w.levels];
