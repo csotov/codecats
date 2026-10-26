@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../data/contest_long.dart';
 import '../data/contest_pool.dart';
 import '../data/worlds.dart';
 import '../l10n.dart';
@@ -38,9 +39,15 @@ List<Level> pickContestLevels() {
   }
   // AtCoder-style pool problems for those topics come first (hardest
   // topic first), then one pending upsolve, then the usual fallbacks.
+  // Reading first: one long-statement, easy-answer problem when available.
+  final reading = [
+    for (final c in kContestLong)
+      if (c.minWorld <= reached && !p.of(c.level.id).solved) c.level
+  ];
   final pool = contestPoolFor(reached).where((l) => !p.of(l.id).solved).toList()
     ..sort((a, b) => _poolWorld(b).compareTo(_poolWorld(a)));
   return [
+    ...reading.take(1),
     ...pool.take(2),
     ...pending,
     ...pool.skip(2),
