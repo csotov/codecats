@@ -11,6 +11,7 @@ import '../engine/complexity.dart';
 import '../engine/cpp_runner.dart';
 import '../engine/judge.dart';
 import '../engine/runner.dart';
+import '../engine/runner_remote.dart';
 import '../l10n.dart';
 import '../models.dart';
 import '../data/cats.dart';
@@ -242,6 +243,7 @@ class _LevelScreenState extends State<LevelScreen>
     _tabController.dispose();
     _scroll.dispose();
     _runner.dispose();
+    _remote?.dispose();
     _openLevels--;
     if (_openLevels <= 0) {
       _openLevels = 0;
@@ -254,8 +256,37 @@ class _LevelScreenState extends State<LevelScreen>
   /// Engine for the current editor state: the block VM executes the
   /// block tree directly (instant, no compiler errors) until the
   /// player promotes to the real C++ editor.
-  CppRunner get _engine =>
-      (_usesBlocks && !_promotedToCode) ? BlocksRunner(_roots) : _runner;
+  CppRunner get _engine {
+    if (_usesBlocks && !_promotedToCode) return BlocksRunner(_roots);
+    if (_remoteJudge) return _remote ??= RemoteRunner();
+    return _runner;
+  }
+
+  /// "Juez real": compile with a real g++ in the cloud instead of the
+  /// in-browser interpreter (full STL, real speed, real TLE).
+  bool _remoteJudge = false;
+  RemoteRunner? _remote;
+
+  void _toggleRemoteJudge(bool on) {
+    setState(() => _remoteJudge = on);
+    if (on) (_remote ??= RemoteRunner()).warm();
+    Cloud.instance
+        .log('judge_mode', levelId: widget.level.id, data: {'remote': on});
+  }
+
+  Widget _judgeSwitch() {
+    final l = L.instance;
+    return Tooltip(
+      message: l.t('tip_remote_judge'),
+      child: FilterChip(
+        avatar: Icon(_remoteJudge ? Icons.cloud_done : Icons.cloud_outlined,
+            size: 16),
+        label: Text(l.t('remote_judge'), style: const TextStyle(fontSize: 12)),
+        selected: _remoteJudge,
+        onSelected: _toggleRemoteJudge,
+      ),
+    );
+  }
 
   /// The C++ source that will be executed right now.
   String get _currentCode {
@@ -335,6 +366,7 @@ class _LevelScreenState extends State<LevelScreen>
       'total': report.total,
       'attempt': _attemptsThisSession,
       'code_mode': !_usesBlocks || _promotedToCode,
+      'remote_judge': _remoteJudge,
       'compile_error': report.compileError != null,
     });
     if (report.compileError != null) {
@@ -1024,6 +1056,10 @@ class _LevelScreenState extends State<LevelScreen>
       child: SafeArea(
         child: Row(
           children: [
+            if (widget.level.mode == EditorMode.code || _promotedToCode) ...[
+              _judgeSwitch(),
+              const SizedBox(width: 8),
+            ],
             Expanded(
               child: Tooltip(
                 key: _runKey,
