@@ -150,10 +150,12 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
     _done = true;
     setState(() {});
     final lp = p.of(widget.level.id);
+    // Check eligibility before recordSolve: it advances the review ladder,
+    // which would hide today's bonus.
+    final eligible = p.bonusLevelId == widget.level.id;
     p.recordSolve(widget.level.id, widget.level.xp, lp.stars);
-    final card = p.bonusLevelId == null
-        ? null
-        : p.awardGoldenCard([for (final c in kCats) c.id]);
+    final card =
+        eligible ? p.awardGoldenCard([for (final c in kCats) c.id]) : null;
     Cloud.instance.log('bonus_done', levelId: widget.level.id, data: {
       'card': card,
       'variant': widget.variant.name,
