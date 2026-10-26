@@ -81,10 +81,15 @@ class _LevelScreenState extends State<LevelScreen>
   /// Title card covering the screen while the level opens.
   bool _showIntro = true;
 
-  /// "You can do it" cat when the player has been stuck a while.
-  Timer? _encourage;
-  static const _firstNudge = Duration(seconds: 90);
-  static const _nextNudge = Duration(minutes: 2);
+  /// "You can do it" cat when the player keeps working but stops
+  /// advancing: only active seconds (an edit or run in the last minute)
+  /// count, and passing more tests or the sample resets the clock.
+  static const _stuckLimit = 180;
+  static const _activeWindow = Duration(seconds: 60);
+  int _stuckSec = 0;
+  int _bestPassed = 0;
+  bool _sampleOk = false;
+  DateTime _lastActivity = DateTime.now();
   bool _won = false;
   int _nudges = 0;
   static const _nudgeCats = ['happy', 'oiia', 'chipi'];
@@ -117,6 +122,7 @@ class _LevelScreenState extends State<LevelScreen>
       }
     }
     _lastLen = code.length;
+    _markActive();
     _persist();
   }
 
@@ -149,6 +155,7 @@ class _LevelScreenState extends State<LevelScreen>
       },
     );
     _modeTick = Timer.periodic(const Duration(seconds: 5), (_) {
+      _tickStuck(5);
       if (_inCodeMode) {
         _codeSec += 5;
       } else {
@@ -239,22 +246,29 @@ class _LevelScreenState extends State<LevelScreen>
       final v = _cat('vibing');
       if (v != null && mounted) MemeBurst.show(context, v);
     }
-    _scheduleNudge(_firstNudge);
+    _lastActivity = DateTime.now();
   }
 
-  void _scheduleNudge(Duration after) {
-    _encourage?.cancel();
-    if (widget.examMode || _won) return;
-    _encourage = Timer(after, _nudge);
+  void _markActive() => _lastActivity = DateTime.now();
+
+  void _advanced() => _stuckSec = 0;
+
+  void _tickStuck(int sec) {
+    if (widget.examMode || _won || _showIntro || !mounted) return;
+    if (DateTime.now().difference(_lastActivity) > _activeWindow) return;
+    _stuckSec += sec;
+    // Never interrupt a run, a dialog or another screen: wait for later.
+    if (_stuckSec < _stuckLimit ||
+        _busy ||
+        ModalRoute.of(context)?.isCurrent != true) {
+      return;
+    }
+    _stuckSec = 0;
+    _nudge();
   }
 
   Future<void> _nudge() async {
     if (!mounted || _won) return;
-    // Never interrupt a run, a dialog or another screen: try again soon.
-    if (_busy || ModalRoute.of(context)?.isCurrent != true) {
-      _scheduleNudge(const Duration(seconds: 10));
-      return;
-    }
     final id = _nudgeCats[_nudges++ % _nudgeCats.length];
     // Only owned or starter cats: watching a nudge must not award a cat.
     final cat = _cat(id) ?? _cat('happy')!;
@@ -265,7 +279,6 @@ class _LevelScreenState extends State<LevelScreen>
       captionEn: L.instance.t('you_can_do_it'),
       minDuration: const Duration(milliseconds: 3500),
     );
-    _scheduleNudge(_nextNudge);
   }
 
   /// Wipe the editors back to the level's starting point.
@@ -308,7 +321,6 @@ class _LevelScreenState extends State<LevelScreen>
     Progress.instance.addLevelSeconds(
       DateTime.now().difference(_enteredAt).inSeconds,
     );
-    _encourage?.cancel();
     _tabController.dispose();
     _scroll.dispose();
     _runner.dispose();
@@ -396,6 +408,14 @@ class _LevelScreenState extends State<LevelScreen>
       maxOps: widget.level.maxOps,
     );
     if (!mounted) return;
+    _markActive();
+    if (!_sampleOk &&
+        res.ok &&
+        sample != null &&
+        outputsMatch(res.output, sample.output)) {
+      _sampleOk = true;
+      _advanced();
+    }
     setState(() {
       _busy = false;
       if (res.ok) {
@@ -444,6 +464,11 @@ class _LevelScreenState extends State<LevelScreen>
     );
     if (!mounted) return;
     setState(() => _busy = false);
+    _markActive();
+    if (report.passedCount > _bestPassed) {
+      _bestPassed = report.passedCount;
+      _advanced();
+    }
     _flushTyping();
     Cloud.instance.log(
       'fight',
@@ -558,7 +583,6 @@ class _LevelScreenState extends State<LevelScreen>
         Progress.instance.dueReviews.contains(widget.level.id);
     _failStreak = 0;
     _won = true;
-    _encourage?.cancel();
     if (widget.level.boss) {
       await ProfessorDialog.show(
         context,
@@ -1374,7 +1398,10 @@ class _LevelScreenState extends State<LevelScreen>
           key: ValueKey(_editorGen),
           allowed: widget.level.allowedBlocks,
           roots: _roots,
-          onChanged: () => _persist(),
+          onChanged: () {
+            _markActive();
+            _persist();
+          },
         ),
       );
     }
@@ -1422,6 +1449,7 @@ class _LevelScreenState extends State<LevelScreen>
                       roots: _roots,
                       preview: !_promotedToCode,
                       onChanged: () {
+                        _markActive();
                         _persist();
                         if (_promotedToCode) {
                           // blocks no longer feed the code once promoted
