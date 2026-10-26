@@ -37,11 +37,12 @@ import 'widgets.dart';
 
 /// The battle screen: mission briefing + editor + run/judge.
 class LevelScreen extends StatefulWidget {
-  const LevelScreen(
-      {super.key,
-      required this.level,
-      this.examMode = false,
-      this.bonus = false});
+  const LevelScreen({
+    super.key,
+    required this.level,
+    this.examMode = false,
+    this.bonus = false,
+  });
   final Level level;
 
   /// Golden Bonus: a spaced review of a level already beaten, paid with
@@ -118,9 +119,11 @@ class _LevelScreenState extends State<LevelScreen>
 
   void _flushTyping() {
     if (_keys == 0 && _backspaces == 0) return;
-    Cloud.instance.log('typing',
-        levelId: widget.level.id,
-        data: {'keys': _keys, 'backspaces': _backspaces});
+    Cloud.instance.log(
+      'typing',
+      levelId: widget.level.id,
+      data: {'keys': _keys, 'backspaces': _backspaces},
+    );
     _keys = 0;
     _backspaces = 0;
   }
@@ -133,11 +136,15 @@ class _LevelScreenState extends State<LevelScreen>
     super.initState();
     _runner = createRunner();
     _openLevels++;
-    Cloud.instance.log('level_open', levelId: widget.level.id, data: {
-      'mode': widget.level.mode.name,
-      'boss': widget.level.boss,
-      'solved_before': Progress.instance.of(widget.level.id).solved,
-    });
+    Cloud.instance.log(
+      'level_open',
+      levelId: widget.level.id,
+      data: {
+        'mode': widget.level.mode.name,
+        'boss': widget.level.boss,
+        'solved_before': Progress.instance.of(widget.level.id).solved,
+      },
+    );
     _modeTick = Timer.periodic(const Duration(seconds: 5), (_) {
       if (_inCodeMode) {
         _codeSec += 5;
@@ -147,13 +154,22 @@ class _LevelScreenState extends State<LevelScreen>
     });
     // Clips this level may show: welcome, fail, victory, encouragement,
     // plus the next unseen cats. Fetched now so they play without lag.
-    MemeBurst.warm(kCats
-        .where((c) =>
-            kCommonPool.contains(c.id) ||
-            const ['vibing', 'banana', 'chipi', 'nyan', 'oiia']
-                .contains(c.id) ||
-            !Progress.instance.unlockedCats.contains(c.id))
-        .take(14));
+    MemeBurst.warm(
+      kCats
+          .where(
+            (c) =>
+                kCommonPool.contains(c.id) ||
+                const [
+                  'vibing',
+                  'banana',
+                  'chipi',
+                  'nyan',
+                  'oiia',
+                ].contains(c.id) ||
+                !Progress.instance.unlockedCats.contains(c.id),
+          )
+          .take(14),
+    );
     if (Halloween.isEventLevel(widget.level.id)) {
       Sfx.spooky();
     } else if (widget.level.boss) {
@@ -182,8 +198,12 @@ class _LevelScreenState extends State<LevelScreen>
     if (!mounted) return;
     if (widget.level.boss && !_welcomeShown) {
       _welcomeShown = true; // the boss taunt replaces the welcome meme
-      await ProfessorDialog.show(context, Boss.introLines(),
-          speaker: Speaker.boss, lastLabel: Boss.replyLabel());
+      await ProfessorDialog.show(
+        context,
+        Boss.introLines(),
+        speaker: Speaker.boss,
+        lastLabel: Boss.replyLabel(),
+      );
       if (!mounted) return;
     }
     await _teachBigO();
@@ -191,8 +211,11 @@ class _LevelScreenState extends State<LevelScreen>
     final lp = Progress.instance.of(widget.level.id);
     if (!_welcomeShown && widget.bonus) {
       _welcomeShown = true; // the golden intro replaces the welcome meme
-      Cloud.instance.log('bonus_open',
-          levelId: widget.level.id, data: {'stage': lp.reviewStage});
+      Cloud.instance.log(
+        'bonus_open',
+        levelId: widget.level.id,
+        data: {'stage': lp.reviewStage},
+      );
       await ProfessorDialog.show(context, mentalTalk(MentalEvent.bonus));
       if (!mounted) return;
     } else if (!_welcomeShown &&
@@ -200,8 +223,11 @@ class _LevelScreenState extends State<LevelScreen>
         lp.failDay > 0 &&
         lp.reviewStage == 0) {
       _welcomeShown = true; // error-notebook visit: the talk is the welcome
-      Cloud.instance.log('review_open',
-          levelId: widget.level.id, data: {'stage': lp.reviewStage});
+      Cloud.instance.log(
+        'review_open',
+        levelId: widget.level.id,
+        data: {'stage': lp.reviewStage},
+      );
       await ProfessorDialog.show(context, mentalTalk(MentalEvent.review));
       if (!mounted) return;
     }
@@ -229,10 +255,13 @@ class _LevelScreenState extends State<LevelScreen>
     final id = _nudgeCats[_nudges++ % _nudgeCats.length];
     // Only owned or starter cats: watching a nudge must not award a cat.
     final cat = _cat(id) ?? _cat('happy')!;
-    await MemeBurst.show(context, cat,
-        captionEs: L.instance.t('you_can_do_it'),
-        captionEn: L.instance.t('you_can_do_it'),
-        minDuration: const Duration(milliseconds: 3500));
+    await MemeBurst.show(
+      context,
+      cat,
+      captionEs: L.instance.t('you_can_do_it'),
+      captionEn: L.instance.t('you_can_do_it'),
+      minDuration: const Duration(milliseconds: 3500),
+    );
     _scheduleNudge(_nextNudge);
   }
 
@@ -250,8 +279,9 @@ class _LevelScreenState extends State<LevelScreen>
     _persist();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-          content: Text(L.instance.t('restart_done')),
-          duration: const Duration(seconds: 2)),
+        content: Text(L.instance.t('restart_done')),
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 
@@ -259,17 +289,22 @@ class _LevelScreenState extends State<LevelScreen>
   void dispose() {
     _modeTick?.cancel();
     _flushTyping();
-    Cloud.instance.log('level_leave', levelId: widget.level.id, data: {
-      'seconds': DateTime.now().difference(_enteredAt).inSeconds,
-      'code': _codeSec,
-      'blocks': _blocksSec,
-      'won': _won,
-      'attempts': _attemptsThisSession,
-      'promoted': _promotedToCode,
-    });
+    Cloud.instance.log(
+      'level_leave',
+      levelId: widget.level.id,
+      data: {
+        'seconds': DateTime.now().difference(_enteredAt).inSeconds,
+        'code': _codeSec,
+        'blocks': _blocksSec,
+        'won': _won,
+        'attempts': _attemptsThisSession,
+        'promoted': _promotedToCode,
+      },
+    );
     Cloud.instance.flush();
-    Progress.instance
-        .addLevelSeconds(DateTime.now().difference(_enteredAt).inSeconds);
+    Progress.instance.addLevelSeconds(
+      DateTime.now().difference(_enteredAt).inSeconds,
+    );
     _encourage?.cancel();
     _tabController.dispose();
     _scroll.dispose();
@@ -301,8 +336,11 @@ class _LevelScreenState extends State<LevelScreen>
   void _toggleRemoteJudge(bool on) {
     setState(() => _remoteJudge = on);
     if (on) (_remote ??= RemoteRunner()).warm();
-    Cloud.instance
-        .log('judge_mode', levelId: widget.level.id, data: {'remote': on});
+    Cloud.instance.log(
+      'judge_mode',
+      levelId: widget.level.id,
+      data: {'remote': on},
+    );
   }
 
   Widget _judgeSwitch() {
@@ -310,8 +348,10 @@ class _LevelScreenState extends State<LevelScreen>
     return Tooltip(
       message: l.t('tip_remote_judge'),
       child: FilterChip(
-        avatar: Icon(_remoteJudge ? Icons.cloud_done : Icons.cloud_outlined,
-            size: 16),
+        avatar: Icon(
+          _remoteJudge ? Icons.cloud_done : Icons.cloud_outlined,
+          size: 16,
+        ),
         label: Text(l.t('remote_judge'), style: const TextStyle(fontSize: 12)),
         selected: _remoteJudge,
         onSelected: _toggleRemoteJudge,
@@ -344,10 +384,14 @@ class _LevelScreenState extends State<LevelScreen>
       _console = '';
     });
     _persist();
-    final sample =
-        widget.level.samples.isNotEmpty ? widget.level.samples.first : null;
-    final res = await _engine.run(_currentCode, sample?.input ?? '',
-        maxOps: widget.level.maxOps);
+    final sample = widget.level.samples.isNotEmpty
+        ? widget.level.samples.first
+        : null;
+    final res = await _engine.run(
+      _currentCode,
+      sample?.input ?? '',
+      maxOps: widget.level.maxOps,
+    );
     if (!mounted) return;
     setState(() {
       _busy = false;
@@ -355,7 +399,7 @@ class _LevelScreenState extends State<LevelScreen>
         _consoleError = false;
         _console = res.output.isEmpty
             ? '(programa terminó sin salida / program ended with no output)\n'
-                'exit: ${res.exitCode}'
+                  'exit: ${res.exitCode}'
             : '${res.output}\n— exit: ${res.exitCode}';
       } else {
         _consoleError = true;
@@ -366,8 +410,11 @@ class _LevelScreenState extends State<LevelScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final ctx = _consoleKey.currentContext;
       if (ctx != null) {
-        Scrollable.ensureVisible(ctx,
-            alignment: 0.5, duration: const Duration(milliseconds: 300));
+        Scrollable.ensureVisible(
+          ctx,
+          alignment: 0.5,
+          duration: const Duration(milliseconds: 300),
+        );
       }
     });
   }
@@ -382,44 +429,61 @@ class _LevelScreenState extends State<LevelScreen>
     _attemptsThisSession++;
     Progress.instance.recordAttempt(widget.level.id);
 
-    final report = await judge(_engine, widget.level, _currentCode,
-        onProgress: (done, total) {
-      if (mounted) {
-        setState(() => _busyLabel = '$done/$total');
-      }
-    });
+    final report = await judge(
+      _engine,
+      widget.level,
+      _currentCode,
+      onProgress: (done, total) {
+        if (mounted) {
+          setState(() => _busyLabel = '$done/$total');
+        }
+      },
+    );
     if (!mounted) return;
     setState(() => _busy = false);
     _flushTyping();
-    Cloud.instance.log('fight', levelId: widget.level.id, data: {
-      'won': report.allPassed,
-      'passed': report.passedCount,
-      'total': report.total,
-      'attempt': _attemptsThisSession,
-      'code_mode': !_usesBlocks || _promotedToCode,
-      'remote_judge': _remoteJudge,
-      'compile_error': report.compileError != null,
-    });
+    Cloud.instance.log(
+      'fight',
+      levelId: widget.level.id,
+      data: {
+        'won': report.allPassed,
+        'passed': report.passedCount,
+        'total': report.total,
+        'attempt': _attemptsThisSession,
+        'code_mode': !_usesBlocks || _promotedToCode,
+        'remote_judge': _remoteJudge,
+        'compile_error': report.compileError != null,
+      },
+    );
     if (report.compileError != null) {
-      Cloud.instance.log('compile_error',
-          levelId: widget.level.id,
-          data: {'msg': report.compileError!.split('\n').first});
+      Cloud.instance.log(
+        'compile_error',
+        levelId: widget.level.id,
+        data: {'msg': report.compileError!.split('\n').first},
+      );
     }
     if (!report.allPassed) {
       Progress.instance.failBattle();
       // Third try on the same level unlocks the Dramatic Cat.
       for (final c in Progress.instance.checkCatUnlocks()) {
         if (!mounted) return;
-        await MemeBurst.show(context, c,
-            captionEs: '¡Gato nuevo en tu Gatoteca!',
-            captionEn: 'New cat in your Cat-dex!');
+        await MemeBurst.show(
+          context,
+          c,
+          captionEs: '¡Gato nuevo en tu Gatoteca!',
+          captionEn: 'New cat in your Cat-dex!',
+        );
       }
       if (!mounted) return;
       // Banana cat cries with you on the first fail of the session —
       // funny, not punishing; detailed results still show after.
       if (widget.level.boss) {
-        await ProfessorDialog.show(context, [Boss.failTaunt(_failStreak)],
-            speaker: Speaker.boss, lastLabel: Boss.replyLabel());
+        await ProfessorDialog.show(
+          context,
+          [Boss.failTaunt(_failStreak)],
+          speaker: Speaker.boss,
+          lastLabel: Boss.replyLabel(),
+        );
         if (!mounted) return;
       }
 
@@ -439,8 +503,11 @@ class _LevelScreenState extends State<LevelScreen>
       _lastTip = tip;
       await ResultsSheet.show(context, report, coach: tip);
       if (mounted && !widget.examMode && _failStreak % 3 == 0) {
-        Cloud.instance.log('mental_talk',
-            levelId: widget.level.id, data: {'ev': 'threeFails'});
+        Cloud.instance.log(
+          'mental_talk',
+          levelId: widget.level.id,
+          data: {'ev': 'threeFails'},
+        );
         await ProfessorDialog.show(context, mentalTalk(MentalEvent.threeFails));
         if (!mounted) return;
       }
@@ -453,56 +520,78 @@ class _LevelScreenState extends State<LevelScreen>
     }
     final hadFails = _failStreak >= 2;
     final lpWin = Progress.instance.of(widget.level.id);
-    final wasReview = lpWin.reviewStage >= 1 &&
+    final wasReview =
+        lpWin.reviewStage >= 1 &&
         Progress.instance.dueReviews.contains(widget.level.id);
     _failStreak = 0;
     _won = true;
     _encourage?.cancel();
     if (widget.level.boss) {
-      await ProfessorDialog.show(context, [Boss.defeatLine()],
-          speaker: Speaker.boss,
-          lastLabel: L.instance.pick('¡Gané!', 'I won!'));
+      await ProfessorDialog.show(
+        context,
+        [Boss.defeatLine()],
+        speaker: Speaker.boss,
+        lastLabel: L.instance.pick('¡Gané!', 'I won!'),
+      );
       if (!mounted) return;
     }
 
     // Three visible stars: win, no hint bought this visit, level challenge.
-    final challenge = challengeMet(widget.level,
-        fights: _attemptsThisSession,
-        codeRank: bigORank(Complexity.analyze(_currentCode).notation));
-    final mask = kStarWin |
+    final challenge = challengeMet(
+      widget.level,
+      fights: _attemptsThisSession,
+      codeRank: bigORank(Complexity.analyze(_currentCode).notation),
+    );
+    final mask =
+        kStarWin |
         (_hintsShown <= _hintsAtStart ? kStarNoHint : 0) |
         (challenge ? kStarChallenge : 0);
-    final stars = 1 +
+    final stars =
+        1 +
         (mask & kStarNoHint != 0 ? 1 : 0) +
         (mask & kStarChallenge != 0 ? 1 : 0);
     if (!challenge) _challengeMisses++;
-    Cloud.instance.log('stars', levelId: widget.level.id, data: {
-      'mask': mask,
-      'challenge': challengeOf(widget.level).name,
-    });
+    Cloud.instance.log(
+      'stars',
+      levelId: widget.level.id,
+      data: {'mask': mask, 'challenge': challengeOf(widget.level).name},
+    );
     // Replaying a won level gives no cat, only rarely (1 in 8) one.
     final replay = Progress.instance.of(widget.level.id).solved;
+    // Before recordSolve, which advances the review ladder and hides
+    // today's bonus.
+    final bonusEligible =
+        widget.bonus && Progress.instance.bonusLevelId == widget.level.id;
     final rewardCat = !replay || math.Random().nextInt(8) == 0;
     final earned = Progress.instance.recordSolve(
-        widget.level.id, widget.level.xp, stars,
-        codeMode: !_usesBlocks || _promotedToCode,
-        boss: widget.level.boss,
-        mask: mask);
-    final newCats =
-        rewardCat ? Progress.instance.checkCatUnlocks() : const <CatMeme>[];
+      widget.level.id,
+      widget.level.xp,
+      stars,
+      codeMode: !_usesBlocks || _promotedToCode,
+      boss: widget.level.boss,
+      mask: mask,
+    );
+    final newCats = rewardCat
+        ? Progress.instance.checkCatUnlocks()
+        : const <CatMeme>[];
     if (wasReview) {
-      Cloud.instance.log('review_done',
-          levelId: widget.level.id, data: {'stage': lpWin.reviewStage});
+      Cloud.instance.log(
+        'review_done',
+        levelId: widget.level.id,
+        data: {'stage': lpWin.reviewStage},
+      );
     }
     // One golden card per day: a replayed Fight inside the same bonus
     // visit (bonusLevelId is null once today's card was paid) earns none.
-    final golden =
-        widget.bonus && Progress.instance.bonusLevelId == widget.level.id
-            ? Progress.instance.awardGoldenCard([for (final c in kCats) c.id])
-            : null;
+    final golden = bonusEligible
+        ? Progress.instance.awardGoldenCard([for (final c in kCats) c.id])
+        : null;
     if (golden != null) {
-      Cloud.instance
-          .log('bonus_done', levelId: widget.level.id, data: {'card': golden});
+      Cloud.instance.log(
+        'bonus_done',
+        levelId: widget.level.id,
+        data: {'card': golden},
+      );
     }
 
     if (!mounted) return;
@@ -526,8 +615,9 @@ class _LevelScreenState extends State<LevelScreen>
     if (Progress.instance.lastChallengeBonus > 0 && mounted) {
       await ProfessorDialog.show(context, [
         L.instance.pick(
-            '¡10 estrellas de desafío! Te ganaste ${Progress.kChallengeBonus} Miaudólares extra por programar fino.',
-            '10 challenge stars! You earned ${Progress.kChallengeBonus} extra Meowdollars for sharp coding.')
+          '¡10 estrellas de desafío! Te ganaste ${Progress.kChallengeBonus} Miaudólares extra por programar fino.',
+          '10 challenge stars! You earned ${Progress.kChallengeBonus} extra Meowdollars for sharp coding.',
+        ),
       ]);
       if (!mounted) return;
     }
@@ -540,17 +630,25 @@ class _LevelScreenState extends State<LevelScreen>
       if (!mounted) return;
     }
     if (hadFails && mounted && !widget.examMode) {
-      Cloud.instance.log('mental_talk',
-          levelId: widget.level.id, data: {'ev': 'winAfterFails'});
+      Cloud.instance.log(
+        'mental_talk',
+        levelId: widget.level.id,
+        data: {'ev': 'winAfterFails'},
+      );
       await ProfessorDialog.show(
-          context, mentalTalk(MentalEvent.winAfterFails));
+        context,
+        mentalTalk(MentalEvent.winAfterFails),
+      );
     }
     // Celebrar gatos nuevos DESPUÉS de la victoria — uno por uno.
     for (final c in newCats) {
       if (!mounted) return;
-      await MemeBurst.show(context, c,
-          captionEs: '¡Gato nuevo en tu Gatoteca!',
-          captionEn: 'New cat in your Cat-dex!');
+      await MemeBurst.show(
+        context,
+        c,
+        captionEs: '¡Gato nuevo en tu Gatoteca!',
+        captionEn: 'New cat in your Cat-dex!',
+      );
     }
   }
 
@@ -566,24 +664,35 @@ class _LevelScreenState extends State<LevelScreen>
     final l = L.instance;
     final m = Progress.instance.of(widget.level.id).starMask;
     Widget rule(int bit, String text) => Padding(
-          padding: const EdgeInsets.only(right: 12, top: 4),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(m & bit != 0 ? Icons.star_rounded : Icons.star_outline_rounded,
-                size: 16,
-                color: m & bit != 0 ? AppTheme.accent2 : AppTheme.textLo),
-            const SizedBox(width: 3),
-            Text(text, style: const TextStyle(fontSize: 12)),
-          ]),
-        );
+      padding: const EdgeInsets.only(right: 12, top: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            m & bit != 0 ? Icons.star_rounded : Icons.star_outline_rounded,
+            size: 16,
+            color: m & bit != 0 ? AppTheme.accent2 : AppTheme.textLo,
+          ),
+          const SizedBox(width: 3),
+          Text(text, style: const TextStyle(fontSize: 12)),
+        ],
+      ),
+    );
     return Tooltip(
-      message: l.pick('Cómo se ganan las 3 estrellas de este nivel',
-          'How to earn the 3 stars of this level'),
-      child: Wrap(children: [
-        rule(kStarWin, l.pick('Ganar', 'Win')),
-        rule(kStarNoHint, l.pick('Sin comprar pista', 'No hint bought')),
-        rule(kStarChallenge,
-            '${l.pick('Desafío', 'Challenge')}: ${challengeText(widget.level)}'),
-      ]),
+      message: l.pick(
+        'Cómo se ganan las 3 estrellas de este nivel',
+        'How to earn the 3 stars of this level',
+      ),
+      child: Wrap(
+        children: [
+          rule(kStarWin, l.pick('Ganar', 'Win')),
+          rule(kStarNoHint, l.pick('Sin comprar pista', 'No hint bought')),
+          rule(
+            kStarChallenge,
+            '${l.pick('Desafío', 'Challenge')}: ${challengeText(widget.level)}',
+          ),
+        ],
+      ),
     );
   }
 
@@ -598,15 +707,24 @@ class _LevelScreenState extends State<LevelScreen>
         !widget.examMode &&
         !_busy) {
       _leaveTalkShown = true;
-      Cloud.instance.log('mental_talk',
-          levelId: widget.level.id, data: {'ev': 'leaveUnsolved'});
+      Cloud.instance.log(
+        'mental_talk',
+        levelId: widget.level.id,
+        data: {'ev': 'leaveUnsolved'},
+      );
       if (widget.level.boss) {
-        await ProfessorDialog.show(context, [Boss.fleeLine()],
-            speaker: Speaker.boss, lastLabel: Boss.replyLabel());
+        await ProfessorDialog.show(
+          context,
+          [Boss.fleeLine()],
+          speaker: Speaker.boss,
+          lastLabel: Boss.replyLabel(),
+        );
         if (!mounted) return;
       }
       await ProfessorDialog.show(
-          context, mentalTalk(MentalEvent.leaveUnsolved));
+        context,
+        mentalTalk(MentalEvent.leaveUnsolved),
+      );
       if (!mounted) return;
     }
     nav.pop();
@@ -645,7 +763,8 @@ class _LevelScreenState extends State<LevelScreen>
   CatMeme? _cat(String id) {
     for (final c in kCats) {
       if (c.id != id) continue;
-      final ok = Progress.instance.unlockedCats.contains(id) ||
+      final ok =
+          Progress.instance.unlockedCats.contains(id) ||
           c.trigger == CatTrigger.always;
       return ok ? c : null;
     }
@@ -684,8 +803,11 @@ class _LevelScreenState extends State<LevelScreen>
               if (lv.boss)
                 const Padding(
                   padding: EdgeInsets.only(right: 6),
-                  child: Icon(Icons.local_fire_department,
-                      color: AppTheme.bad, size: 20),
+                  child: Icon(
+                    Icons.local_fire_department,
+                    color: AppTheme.bad,
+                    size: 20,
+                  ),
                 ),
               Expanded(
                 child: Column(
@@ -695,15 +817,18 @@ class _LevelScreenState extends State<LevelScreen>
                       Halloween.isEventLevel(lv.id)
                           ? '🎃 Halloween · ${lv.boss ? l.t('boss') : '${l.t('level')} ${kHalloweenLevels.indexWhere((e) => e.id == lv.id) + 1}'}'
                           : '${l.t('world')} ${w == null ? '' : kWorlds.indexOf(w) + 1}'
-                              ' · ${lv.boss ? l.t('boss') : '${l.t('level')} ${levelIndexInWorld(lv) + 1}'}',
+                                ' · ${lv.boss ? l.t('boss') : '${l.t('level')} ${levelIndexInWorld(lv) + 1}'}',
                       style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          color: color),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: color,
+                      ),
                     ),
-                    Text(l.pick(lv.titleEs, lv.titleEn),
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 16)),
+                    Text(
+                      l.pick(lv.titleEs, lv.titleEn),
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 16),
+                    ),
                   ],
                 ),
               ),
@@ -762,26 +887,36 @@ class _LevelScreenState extends State<LevelScreen>
           _bigOChip(),
           if (!widget.examMode) _starRules(),
           const SizedBox(height: 6),
-          Text(l.pick(lv.storyEs, lv.storyEn),
-              style: const TextStyle(
-                  fontStyle: FontStyle.italic,
-                  color: AppTheme.textLo,
-                  fontSize: 13)),
+          Text(
+            l.pick(lv.storyEs, lv.storyEn),
+            style: const TextStyle(
+              fontStyle: FontStyle.italic,
+              color: AppTheme.textLo,
+              fontSize: 13,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text(l.pick(lv.statementEs, lv.statementEn),
-              style: const TextStyle(fontSize: 14, height: 1.4)),
+          Text(
+            l.pick(lv.statementEs, lv.statementEn),
+            style: const TextStyle(fontSize: 14, height: 1.4),
+          ),
           const SizedBox(height: 10),
           _specRow(l.t('input_spec'), l.pick(lv.inputEs, lv.inputEn)),
           _specRow(l.t('output_spec'), l.pick(lv.outputEs, lv.outputEn)),
           if (l.pickList(lv.constraintsEs, lv.constraintsEn).isNotEmpty)
-            _specRow(l.t('constraints'),
-                l.pickList(lv.constraintsEs, lv.constraintsEn).join('\n')),
+            _specRow(
+              l.t('constraints'),
+              l.pickList(lv.constraintsEs, lv.constraintsEn).join('\n'),
+            ),
           const SizedBox(height: 10),
-          Text(l.t('samples'),
-              style: const TextStyle(
-                  color: AppTheme.accent,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold)),
+          Text(
+            l.t('samples'),
+            style: const TextStyle(
+              color: AppTheme.accent,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 6),
           for (var i = 0; i < lv.samples.length; i++) _sampleBox(i),
         ],
@@ -797,12 +932,12 @@ class _LevelScreenState extends State<LevelScreen>
         children: [
           SizedBox(
             width: 70,
-            child: Text(label,
-                style: const TextStyle(color: AppTheme.accent2, fontSize: 12)),
+            child: Text(
+              label,
+              style: const TextStyle(color: AppTheme.accent2, fontSize: 12),
+            ),
           ),
-          Expanded(
-            child: Text(value, style: const TextStyle(fontSize: 12.5)),
-          ),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 12.5))),
         ],
       ),
     );
@@ -819,9 +954,10 @@ class _LevelScreenState extends State<LevelScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${L.instance.t('stdin_label')} ${i + 1}',
-                    style:
-                        const TextStyle(color: AppTheme.textLo, fontSize: 10)),
+                Text(
+                  '${L.instance.t('stdin_label')} ${i + 1}',
+                  style: const TextStyle(color: AppTheme.textLo, fontSize: 10),
+                ),
                 const SizedBox(height: 2),
                 MonoBox(text: s.input.isEmpty ? '(vacío)' : s.input),
               ],
@@ -832,9 +968,10 @@ class _LevelScreenState extends State<LevelScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${L.instance.t('stdout_label')} ${i + 1}',
-                    style:
-                        const TextStyle(color: AppTheme.textLo, fontSize: 10)),
+                Text(
+                  '${L.instance.t('stdout_label')} ${i + 1}',
+                  style: const TextStyle(color: AppTheme.textLo, fontSize: 10),
+                ),
                 const SizedBox(height: 2),
                 MonoBox(text: s.output, color: AppTheme.good),
               ],
@@ -855,7 +992,8 @@ class _LevelScreenState extends State<LevelScreen>
             '¿Te trabaste? Te vendo una pista por ${Progress.kHintCost} '
                 'Miaudólares. ¡Palabra de gato!',
             'Stuck? I will sell you a hint for ${Progress.kHintCost} '
-                'Meowdollars. Cat\'s honor!')
+                'Meowdollars. Cat\'s honor!',
+          )
         : hints[shown - 1];
     return SectionCard(
       title: l.t('hints'),
@@ -869,8 +1007,11 @@ class _LevelScreenState extends State<LevelScreen>
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.lightbulb_outline,
-                      size: 16, color: AppTheme.accent2),
+                  const Icon(
+                    Icons.lightbulb_outline,
+                    size: 16,
+                    color: AppTheme.accent2,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(hints[i], style: const TextStyle(fontSize: 13)),
@@ -894,7 +1035,8 @@ class _LevelScreenState extends State<LevelScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                              '${l.t('buy_hint')} (${shown + 1}/${hints.length})  '),
+                            '${l.t('buy_hint')} (${shown + 1}/${hints.length})  ',
+                          ),
                           const CoinPrice(Progress.kHintCost, size: 13),
                         ],
                       ),
@@ -929,15 +1071,20 @@ class _LevelScreenState extends State<LevelScreen>
         final right = await ProfessorQuizDialog.show(context, q);
         if (!mounted || right == null) return;
         Progress.instance.recordQuiz(bo.id, right);
-        Cloud.instance.log('bigo_quiz',
-            levelId: widget.level.id, data: {'bo': bo.id, 'right': right});
+        Cloud.instance.log(
+          'bigo_quiz',
+          levelId: widget.level.id,
+          data: {'bo': bo.id, 'right': right},
+        );
         await ProfessorDialog.show(context, bigORecap(bo, right: right));
         if (mounted) setState(() {});
         return;
       }
     }
     await ProfessorDialog.show(
-        context, bigOLesson(bo, lines: bigOVariantLines(bo)));
+      context,
+      bigOLesson(bo, lines: bigOVariantLines(bo)),
+    );
     if (!mounted) return;
     Progress.instance.markBigOTaught(bo.id);
     setState(() {});
@@ -955,15 +1102,16 @@ class _LevelScreenState extends State<LevelScreen>
     final color = changed
         ? AppTheme.bad
         : taught
-            ? AppTheme.accent2
-            : AppTheme.textLo;
+        ? AppTheme.accent2
+        : AppTheme.textLo;
     return Align(
       alignment: Alignment.centerLeft,
       child: Tooltip(
         message: changed
             ? l.pick(
                 '¡Cambió la complejidad! El nivel anterior era ${before.notation}, este es ${bo.notation}. Tocá para que el Profe te lo explique.',
-                'The complexity changed! The previous level was ${before.notation}, this one is ${bo.notation}. Tap and the professor will explain.')
+                'The complexity changed! The previous level was ${before.notation}, this one is ${bo.notation}. Tap and the professor will explain.',
+              )
             : l.t('tip_bigo'),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
@@ -972,16 +1120,18 @@ class _LevelScreenState extends State<LevelScreen>
             duration: const Duration(milliseconds: 400),
             curve: Curves.easeOut,
             padding: EdgeInsets.symmetric(
-                horizontal: taught || changed ? 12 : 8,
-                vertical: taught || changed ? 6 : 2),
+              horizontal: taught || changed ? 12 : 8,
+              vertical: taught || changed ? 6 : 2,
+            ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               color: taught
                   ? AppTheme.accent2.withValues(alpha: 0.12)
                   : Colors.transparent,
               border: Border.all(
-                  color: color.withValues(alpha: taught ? 0.9 : 0.45),
-                  width: taught ? 1.5 : 1),
+                color: color.withValues(alpha: taught ? 0.9 : 0.45),
+                width: taught ? 1.5 : 1,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -991,28 +1141,38 @@ class _LevelScreenState extends State<LevelScreen>
                 AnimatedDefaultTextStyle(
                   duration: const Duration(milliseconds: 400),
                   style: TextStyle(
-                      fontSize: taught ? 14 : 10.5,
-                      fontWeight: taught ? FontWeight.w800 : FontWeight.w600,
-                      color: color),
-                  child: Text(taught
-                      ? 'Big O: ${bo.notation} · ${bo.name}'
-                      : 'Big O: ${bo.notation}'),
+                    fontSize: taught ? 14 : 10.5,
+                    fontWeight: taught ? FontWeight.w800 : FontWeight.w600,
+                    color: color,
+                  ),
+                  child: Text(
+                    taught
+                        ? 'Big O: ${bo.notation} · ${bo.name}'
+                        : 'Big O: ${bo.notation}',
+                  ),
                 ),
                 if (changed) ...[
                   const SizedBox(width: 8),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 1,
+                    ),
                     decoration: BoxDecoration(
-                        color: AppTheme.bad,
-                        borderRadius: BorderRadius.circular(8)),
+                      color: AppTheme.bad,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     child: Text(
-                        l.pick('¡Cambió! antes ${before.notation}',
-                            'Changed! was ${before.notation}'),
-                        style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white)),
+                      l.pick(
+                        '¡Cambió! antes ${before.notation}',
+                        'Changed! was ${before.notation}',
+                      ),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ],
               ],
@@ -1024,39 +1184,51 @@ class _LevelScreenState extends State<LevelScreen>
   }
 
   Future<void> _buyHint() async {
-    Cloud.instance.log('hint_buy', levelId: widget.level.id, data: {
-      'coins': Progress.instance.coins,
-      'ok': Progress.instance.coins >= Progress.kHintCost,
-    });
+    Cloud.instance.log(
+      'hint_buy',
+      levelId: widget.level.id,
+      data: {
+        'coins': Progress.instance.coins,
+        'ok': Progress.instance.coins >= Progress.kHintCost,
+      },
+    );
     final l = L.instance;
     // Dose hints: before each one, the professor asks a guiding question;
     // the hint is sold only on the next tap, after thinking.
     if (_polyaForHint != _hintsShown && !widget.examMode) {
       _polyaForHint = _hintsShown;
-      final q = kPolyaQuestions[
-          Progress.instance.nextRot('polya', kPolyaQuestions.length)];
+      final q =
+          kPolyaQuestions[Progress.instance.nextRot(
+            'polya',
+            kPolyaQuestions.length,
+          )];
       await ProfessorDialog.show(context, [
-        l.pick('Antes de la pista, una pregunta de entrenador:',
-            'Before the hint, a coach question:'),
+        l.pick(
+          'Antes de la pista, una pregunta de entrenador:',
+          'Before the hint, a coach question:',
+        ),
         l.pick(q[0], q[1]),
         l.pick(
-            'Pensalo un minuto. Si igual querés la pista, tocá "Comprar pista" otra vez.',
-            'Think about it for a minute. If you still want the hint, tap "Buy hint" again.'),
+          'Pensalo un minuto. Si igual querés la pista, tocá "Comprar pista" otra vez.',
+          'Think about it for a minute. If you still want the hint, tap "Buy hint" again.',
+        ),
       ]);
       return;
     }
     if (!Progress.instance.buyHint(widget.level.id)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.t('no_coins'))),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l.t('no_coins'))));
       return;
     }
     setState(() => _hintsShown++);
     for (final c in Progress.instance.checkCatUnlocks()) {
       if (!mounted) return;
-      await MemeBurst.show(context, c,
-          captionEs: '¡Gato nuevo en tu Gatoteca!',
-          captionEn: 'New cat in your Cat-dex!');
+      await MemeBurst.show(
+        context,
+        c,
+        captionEs: '¡Gato nuevo en tu Gatoteca!',
+        captionEn: 'New cat in your Cat-dex!',
+      );
     }
   }
 
@@ -1075,47 +1247,64 @@ class _LevelScreenState extends State<LevelScreen>
     final tip = _lastTip;
     await SpotlightTutorial.show(context, [
       TutorialStep(
-          _missionKey,
-          l.pick(
-              'Paso 1: respiremos y releamos la misión. Te piden: '
-                  '"${lv.statementEs}". Mirá los ejemplos: lo que entra y lo '
-                  'que tiene que salir, letra por letra.',
-              'Step 1: deep breath, let\'s reread the mission: '
-                  '"${lv.statementEn}". Check the examples: what goes in and '
-                  'exactly what must come out.')),
+        _missionKey,
+        l.pick(
+          'Paso 1: respiremos y releamos la misión. Te piden: '
+              '"${lv.statementEs}". Mirá los ejemplos: lo que entra y lo '
+              'que tiene que salir, letra por letra.',
+          'Step 1: deep breath, let\'s reread the mission: '
+              '"${lv.statementEn}". Check the examples: what goes in and '
+              'exactly what must come out.',
+        ),
+      ),
       TutorialStep(
-          _hintsKey,
-          gift != null
-              ? l.pick('Paso 2: esta pista va por mi cuenta, gratis: "$gift"',
-                  'Step 2: this hint is on me, free: "$gift"')
-              : l.pick(
-                  'Paso 2: ya tenés todas mis pistas. Leelas de nuevo con '
-                      'calma, ahí está la clave.',
-                  'Step 2: you already have all my hints. Read them again '
-                      'calmly, the key is there.')),
+        _hintsKey,
+        gift != null
+            ? l.pick(
+                'Paso 2: esta pista va por mi cuenta, gratis: "$gift"',
+                'Step 2: this hint is on me, free: "$gift"',
+              )
+            : l.pick(
+                'Paso 2: ya tenés todas mis pistas. Leelas de nuevo con '
+                    'calma, ahí está la clave.',
+                'Step 2: you already have all my hints. Read them again '
+                    'calmly, the key is there.',
+              ),
+      ),
       TutorialStep(
-          _programKey,
-          l.pick('Paso 3: acá armás tu programa. ',
-                  'Step 3: build your program here. ') +
-              (tip != null
-                  ? l.pick('Lo que falló la última vez: ${tip.es}',
-                      'What failed last time: ${tip.en}')
-                  : l.pick('Cambiá una cosa por vez.',
-                      'Change one thing at a time.'))),
+        _programKey,
+        l.pick(
+              'Paso 3: acá armás tu programa. ',
+              'Step 3: build your program here. ',
+            ) +
+            (tip != null
+                ? l.pick(
+                    'Lo que falló la última vez: ${tip.es}',
+                    'What failed last time: ${tip.en}',
+                  )
+                : l.pick(
+                    'Cambiá una cosa por vez.',
+                    'Change one thing at a time.',
+                  )),
+      ),
       TutorialStep(
-          _runKey,
-          l.pick(
-              'Paso 4: tocá Ejecutar para probar con el ejemplo. No gasta '
-                  'intentos y vas a ver la salida en la consola.',
-              'Step 4: press Run to try the example. It costs no attempts '
-                  'and shows the output in the console.')),
+        _runKey,
+        l.pick(
+          'Paso 4: tocá Ejecutar para probar con el ejemplo. No gasta '
+              'intentos y vas a ver la salida en la consola.',
+          'Step 4: press Run to try the example. It costs no attempts '
+              'and shows the output in the console.',
+        ),
+      ),
       TutorialStep(
-          _fightKey,
-          l.pick(
-              'Paso 5: cuando la salida sea igualita a la esperada, tocá '
-                  '¡Combatir! ¡Vos podés, miau!',
-              'Step 5: when the output matches exactly, press Fight! '
-                  'You can do it, meow!')),
+        _fightKey,
+        l.pick(
+          'Paso 5: cuando la salida sea igualita a la esperada, tocá '
+              '¡Combatir! ¡Vos podés, miau!',
+          'Step 5: when the output matches exactly, press Fight! '
+              'You can do it, meow!',
+        ),
+      ),
     ]);
   }
 
@@ -1151,13 +1340,17 @@ class _LevelScreenState extends State<LevelScreen>
             controller: _tabController,
             tabs: [
               Tab(
-                  child: Tooltip(
-                      message: l.t('tip_tab_blocks'),
-                      child: Text(l.t('editor_blocks')))),
+                child: Tooltip(
+                  message: l.t('tip_tab_blocks'),
+                  child: Text(l.t('editor_blocks')),
+                ),
+              ),
               Tab(
-                  child: Tooltip(
-                      message: l.t('tip_tab_code'),
-                      child: Text(l.t('editor_code')))),
+                child: Tooltip(
+                  message: l.t('tip_tab_code'),
+                  child: Text(l.t('editor_code')),
+                ),
+              ),
             ],
             labelColor: AppTheme.accent,
             unselectedLabelColor: AppTheme.textLo,
@@ -1234,7 +1427,9 @@ class _LevelScreenState extends State<LevelScreen>
         content: Text(l.t('code_from_blocks_warning')),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(c), child: Text(l.t('cancel'))),
+            onPressed: () => Navigator.pop(c),
+            child: Text(l.t('cancel')),
+          ),
           FilledButton(
             onPressed: () {
               setState(() {
@@ -1308,10 +1503,14 @@ class _LevelScreenState extends State<LevelScreen>
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Icon(Icons.flash_on, size: 20),
                   label: Text(
-                      _busy ? '${l.t('running')} $_busyLabel' : l.t('submit')),
+                    _busy ? '${l.t('running')} $_busyLabel' : l.t('submit'),
+                  ),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.accent2,
                     foregroundColor: AppTheme.bg,

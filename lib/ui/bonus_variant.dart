@@ -19,16 +19,16 @@ enum BonusVariant { findBug, reorder, predict }
 
 /// Body lines worth playing with (no includes/braces/blank lines).
 List<int> _bodyLines(List<String> lines) => [
-      for (var i = 0; i < lines.length; i++)
-        if (lines[i].trim().isNotEmpty &&
-            !lines[i].trim().startsWith('#') &&
-            !lines[i].contains('using namespace') &&
-            !lines[i].contains('int main') &&
-            lines[i].trim() != '{' &&
-            lines[i].trim() != '}' &&
-            !lines[i].trim().startsWith('return'))
-          i,
-    ];
+  for (var i = 0; i < lines.length; i++)
+    if (lines[i].trim().isNotEmpty &&
+        !lines[i].trim().startsWith('#') &&
+        !lines[i].contains('using namespace') &&
+        !lines[i].contains('int main') &&
+        lines[i].trim() != '{' &&
+        lines[i].trim() != '}' &&
+        !lines[i].trim().startsWith('return'))
+      i,
+];
 
 /// Swap one operator in one line: returns (line index, mutated code).
 (int, String)? mutateCode(String code, math.Random rnd) {
@@ -71,17 +71,22 @@ Route<void> bonusRoute(Level level) {
   ];
   if (variants.isEmpty) {
     return MaterialPageRoute(
-        builder: (_) => LevelScreen(level: level, bonus: true));
+      builder: (_) => LevelScreen(level: level, bonus: true),
+    );
   }
   final v =
       variants[Progress.instance.nextRot('bonus_variant', 3) % variants.length];
   return MaterialPageRoute(
-      builder: (_) => BonusVariantScreen(level: level, variant: v));
+    builder: (_) => BonusVariantScreen(level: level, variant: v),
+  );
 }
 
 class BonusVariantScreen extends StatefulWidget {
-  const BonusVariantScreen(
-      {super.key, required this.level, required this.variant});
+  const BonusVariantScreen({
+    super.key,
+    required this.level,
+    required this.variant,
+  });
   final Level level;
   final BonusVariant variant;
 
@@ -101,8 +106,9 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
   late List<int> _order = [..._body]..shuffle(_rnd);
   // predict
   final _answer = TextEditingController();
-  late final SampleIO? _sample =
-      widget.level.samples.isEmpty ? null : widget.level.samples.first;
+  late final SampleIO? _sample = widget.level.samples.isEmpty
+      ? null
+      : widget.level.samples.first;
   int _tries = 0;
   bool _done = false;
 
@@ -116,8 +122,9 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
       if (!mounted) return;
       ProfessorDialog.show(context, [
         L.instance.pick(
-            '¡Nivel Bonus dorado! Hoy no lo resolvés de cero: es una variante con TU código ganador.',
-            'Golden Bonus level! Today you do not solve it from scratch: it is a variant with YOUR winning code.'),
+          '¡Nivel Bonus dorado! Hoy no lo resolvés de cero: es una variante con TU código ganador.',
+          'Golden Bonus level! Today you do not solve it from scratch: it is a variant with YOUR winning code.',
+        ),
         _instructions(),
       ]);
     });
@@ -134,14 +141,17 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
     final l = L.instance;
     return switch (widget.variant) {
       BonusVariant.findBug => l.pick(
-          'Un gato travieso cambió UNA cosa en tu código. Tocá la línea que tiene el error.',
-          'A naughty cat changed ONE thing in your code. Tap the line with the bug.'),
+        'Un gato travieso cambió UNA cosa en tu código. Tocá la línea que tiene el error.',
+        'A naughty cat changed ONE thing in your code. Tap the line with the bug.',
+      ),
       BonusVariant.reorder => l.pick(
-          'Las líneas de tu solución se mezclaron. Ordenalas con las flechas.',
-          'The lines of your solution got mixed up. Put them in order with the arrows.'),
+        'Las líneas de tu solución se mezclaron. Ordenalas con las flechas.',
+        'The lines of your solution got mixed up. Put them in order with the arrows.',
+      ),
       BonusVariant.predict => l.pick(
-          'Sin ejecutar: ¿qué imprime tu programa con esta entrada?',
-          'Without running it: what does your program print for this input?'),
+        'Sin ejecutar: ¿qué imprime tu programa con esta entrada?',
+        'Without running it: what does your program print for this input?',
+      ),
     };
   }
 
@@ -154,34 +164,44 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
     // which would hide today's bonus.
     final eligible = p.bonusLevelId == widget.level.id;
     p.recordSolve(widget.level.id, widget.level.xp, lp.stars);
-    final card =
-        eligible ? p.awardGoldenCard([for (final c in kCats) c.id]) : null;
-    Cloud.instance.log('bonus_done', levelId: widget.level.id, data: {
-      'card': card,
-      'variant': widget.variant.name,
-      'tries': _tries,
-    });
+    final card = eligible
+        ? p.awardGoldenCard([for (final c in kCats) c.id])
+        : null;
+    Cloud.instance.log(
+      'bonus_done',
+      levelId: widget.level.id,
+      data: {'card': card, 'variant': widget.variant.name, 'tries': _tries},
+    );
     if (card != null && mounted) await GoldenCardDialog.show(context, card);
     if (mounted) Navigator.pop(context);
   }
 
   Future<void> _miss(String explain) async {
-    Cloud.instance.log('bonus_try',
-        levelId: widget.level.id,
-        data: {'variant': widget.variant.name, 'try': _tries});
+    Cloud.instance.log(
+      'bonus_try',
+      levelId: widget.level.id,
+      data: {'variant': widget.variant.name, 'try': _tries},
+    );
     final l = L.instance;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
         content: Text(
-            l.pick('Todavía no. ¡Probá de nuevo!', 'Not yet. Try again!'))));
+          l.pick('Todavía no. ¡Probá de nuevo!', 'Not yet. Try again!'),
+        ),
+      ),
+    );
     if (_tries >= 2) await ProfessorDialog.show(context, [explain]);
   }
 
-  Widget _mono(String s, {Color? color, bool bold = false}) => Text(s,
-      style: TextStyle(
-          fontFamily: 'monospace',
-          fontSize: 14,
-          color: color,
-          fontWeight: bold ? FontWeight.w800 : FontWeight.w400));
+  Widget _mono(String s, {Color? color, bool bold = false}) => Text(
+    s,
+    style: TextStyle(
+      fontFamily: 'monospace',
+      fontSize: 14,
+      color: color,
+      fontWeight: bold ? FontWeight.w800 : FontWeight.w400,
+    ),
+  );
 
   Widget _findBug(L l) {
     final bug = _bug!;
@@ -198,9 +218,12 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
                     if (i == bug.$1) {
                       _win();
                     } else {
-                      _miss(l.pick(
+                      _miss(
+                        l.pick(
                           'Pista: el cambio está en una cuenta o una comparación. Leé cada signo (+, -, <, <=) y preguntate si es el que vos usaste.',
-                          'Hint: the change is in a calculation or a comparison. Read every sign (+, -, <, <=) and ask whether it is the one you used.'));
+                          'Hint: the change is in a calculation or a comparison. Read every sign (+, -, <, <=) and ask whether it is the one you used.',
+                        ),
+                      );
                     }
                   },
             child: Padding(
@@ -216,29 +239,33 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
     return Column(
       children: [
         for (var k = 0; k < _order.length; k++)
-          Row(children: [
-            Expanded(child: _mono(_lines[_order[k]].trim())),
-            IconButton(
+          Row(
+            children: [
+              Expanded(child: _mono(_lines[_order[k]].trim())),
+              IconButton(
                 tooltip: l.pick('Subir', 'Move up'),
                 onPressed: k == 0 || _done
                     ? null
                     : () => setState(() {
-                          final t = _order[k - 1];
-                          _order[k - 1] = _order[k];
-                          _order[k] = t;
-                        }),
-                icon: const Icon(Icons.arrow_upward)),
-            IconButton(
+                        final t = _order[k - 1];
+                        _order[k - 1] = _order[k];
+                        _order[k] = t;
+                      }),
+                icon: const Icon(Icons.arrow_upward),
+              ),
+              IconButton(
                 tooltip: l.pick('Bajar', 'Move down'),
                 onPressed: k == _order.length - 1 || _done
                     ? null
                     : () => setState(() {
-                          final t = _order[k + 1];
-                          _order[k + 1] = _order[k];
-                          _order[k] = t;
-                        }),
-                icon: const Icon(Icons.arrow_downward)),
-          ]),
+                        final t = _order[k + 1];
+                        _order[k + 1] = _order[k];
+                        _order[k] = t;
+                      }),
+                icon: const Icon(Icons.arrow_downward),
+              ),
+            ],
+          ),
         const SizedBox(height: 10),
         Align(
           alignment: Alignment.centerRight,
@@ -247,15 +274,18 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
                 ? null
                 : () {
                     _tries++;
-                    final ok = [for (final i in _order) _lines[i].trim()]
-                            .join('\n') ==
+                    final ok =
+                        [for (final i in _order) _lines[i].trim()].join('\n') ==
                         [for (final i in _body) _lines[i].trim()].join('\n');
                     if (ok) {
                       _win();
                     } else {
-                      _miss(l.pick(
+                      _miss(
+                        l.pick(
                           'Pista: una variable tiene que existir y tener valor antes de usarse. Primero se lee (cin), después se calcula, al final se imprime.',
-                          'Hint: a variable must exist and have a value before it is used. First read (cin), then calculate, print last.'));
+                          'Hint: a variable must exist and have a value before it is used. First read (cin), then calculate, print last.',
+                        ),
+                      );
                     }
                   },
             child: Text(l.pick('Comprobar', 'Check')),
@@ -272,10 +302,14 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
       children: [
         _mono(_code),
         const SizedBox(height: 12),
-        Text(l.pick('Entrada:', 'Input:'),
-            style: const TextStyle(fontWeight: FontWeight.w700)),
-        _mono(s.input.isEmpty ? l.pick('(nada)', '(nothing)') : s.input,
-            color: AppTheme.accent2),
+        Text(
+          l.pick('Entrada:', 'Input:'),
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        _mono(
+          s.input.isEmpty ? l.pick('(nada)', '(nothing)') : s.input,
+          color: AppTheme.accent2,
+        ),
         const SizedBox(height: 10),
         TextField(
           controller: _answer,
@@ -284,8 +318,9 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
           enabled: !_done,
           style: const TextStyle(fontFamily: 'monospace'),
           decoration: InputDecoration(
-              labelText: l.pick('¿Qué imprime?', 'What does it print?'),
-              border: const OutlineInputBorder()),
+            labelText: l.pick('¿Qué imprime?', 'What does it print?'),
+            border: const OutlineInputBorder(),
+          ),
         ),
         const SizedBox(height: 10),
         Align(
@@ -303,9 +338,12 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
                     if (norm(_answer.text) == norm(s.output)) {
                       _win();
                     } else {
-                      _miss(l.pick(
+                      _miss(
+                        l.pick(
                           'Seguí el programa línea por línea con la entrada, como en "Sé la computadora", y anotá cada valor.',
-                          'Follow the program line by line with the input, like in "Be the computer", and write down each value.'));
+                          'Follow the program line by line with the input, like in "Be the computer", and write down each value.',
+                        ),
+                      );
                     }
                   },
             child: Text(l.pick('Comprobar', 'Check')),
@@ -331,12 +369,15 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
           controller: _scroll,
           padding: const EdgeInsets.all(14),
           children: [
-            Text(l.pick(widget.level.titleEs, widget.level.titleEn),
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+            Text(
+              l.pick(widget.level.titleEs, widget.level.titleEn),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+            ),
             const SizedBox(height: 4),
-            Text(_instructions(),
-                style: const TextStyle(color: AppTheme.textLo)),
+            Text(
+              _instructions(),
+              style: const TextStyle(color: AppTheme.textLo),
+            ),
             const SizedBox(height: 12),
             SectionCard(
               title: title,
