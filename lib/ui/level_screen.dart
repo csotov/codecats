@@ -550,6 +550,7 @@ class _LevelScreenState extends State<LevelScreen>
       }
       return;
     }
+    if (widget.examMode) Progress.instance.markExamSolved(widget.level.id);
     final hadFails = _failStreak >= 2;
     final lpWin = Progress.instance.of(widget.level.id);
     final wasReview =
