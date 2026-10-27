@@ -219,6 +219,7 @@ class _LevelScreenState extends State<LevelScreen>
   void initState() {
     super.initState();
     _runner = createRunner();
+    if (_remoteJudge) (_remote ??= RemoteRunner()).warm();
     _openLevels++;
     Cloud.instance.log(
       'level_open',
@@ -420,7 +421,7 @@ class _LevelScreenState extends State<LevelScreen>
 
   /// "Juez real": compile with a real g++ in the cloud instead of the
   /// in-browser interpreter (full STL, real speed, real TLE).
-  bool _remoteJudge = false;
+  late bool _remoteJudge = autoRemoteJudge(widget.level);
   RemoteRunner? _remote;
 
   void _toggleRemoteJudge(bool on) {
@@ -1669,4 +1670,12 @@ class _LevelScreenState extends State<LevelScreen>
       ),
     );
   }
+}
+
+/// From world 6 on (and in the toolbox world) code levels use the real g++:
+/// vector, string, sort, set, map and struct need it.
+bool autoRemoteJudge(Level level) {
+  if (level.mode != EditorMode.code) return false;
+  final m = RegExp(r'^w(\d+)l').firstMatch(level.id);
+  return m != null && int.parse(m.group(1)!) >= 6;
 }

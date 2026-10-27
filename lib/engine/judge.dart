@@ -1,5 +1,6 @@
 import '../models.dart';
 import 'runner.dart';
+import 'runner_remote.dart';
 
 /// Outcome of a single judge test.
 enum TcStatus { pass, fail, tle, runtimeError, parseError, engineError }
@@ -77,15 +78,20 @@ Future<JudgeReport> judge(
 }) async {
   final tests = level.allTests;
   final results = <TestResult>[];
+  final batch = runner is RemoteRunner
+      ? await runner.runBatch(code, [for (final t in tests) t.input])
+      : null;
 
   for (var i = 0; i < tests.length; i++) {
     final tc = tests[i];
-    final r = await runner.run(
-      code,
-      tc.input,
-      maxOps: level.maxOps,
-      timeout: perTestTimeout,
-    );
+    final r = batch != null
+        ? batch[i]
+        : await runner.run(
+            code,
+            tc.input,
+            maxOps: level.maxOps,
+            timeout: perTestTimeout,
+          );
 
     TestResult tr;
     if (r.ok) {

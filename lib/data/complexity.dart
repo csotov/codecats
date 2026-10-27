@@ -220,6 +220,7 @@ const _byWorld = <String, String>{
   'w12': 'logn',
   'w13': 'n',
   'w14': 'n',
+  'w15': 'nlogn',
 };
 
 const _byLevel = <String, String>{

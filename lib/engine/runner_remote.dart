@@ -112,6 +112,118 @@ class RemoteRunner implements CppRunner {
     return RunOutput(ok: true, output: out, exitCode: 0);
   }
 
+  /// Runs [code] on every input in ONE cloud request (Wandbox rate-limits
+  /// quick bursts). A driver forks the program once per input, so globals
+  /// start fresh each time, and reports signal, exit code and time.
+  Future<List<RunOutput>> runBatch(
+    String code,
+    List<String> inputs, {
+    Duration timeout = const Duration(seconds: 2),
+  }) async {
+    final secs = (timeout.inMilliseconds / 1000).ceil().clamp(1, 5);
+    final stdin = StringBuffer('${inputs.length}');
+    for (final s in inputs) {
+      stdin.write(' ${utf8.encode(s).length}');
+    }
+    stdin.write('\n');
+    for (final s in inputs) {
+      stdin.write(s);
+    }
+    final j = await _post('$code\n${_driver(secs)}', stdin.toString());
+    if (j == null) {
+      return [
+        for (final _ in inputs)
+          const RunOutput(
+              ok: false,
+              error: RunError.engine,
+              detail: 'No se pudo contactar al juez (sin internet?)'),
+      ];
+    }
+    final compErr = (j['compiler_error'] as String? ?? '');
+    if (compErr.contains('error:')) {
+      return [
+        for (final _ in inputs)
+          RunOutput(ok: false, error: RunError.parse, detail: compErr),
+      ];
+    }
+    final out = j['program_output'] as String? ?? '';
+    final marker = RegExp(r'\n@@CC (\d+) (\d+) (-?\d+) (\d+)@@\n');
+    final res = <RunOutput>[];
+    var start = 0;
+    for (final m in marker.allMatches(out)) {
+      final text = out.substring(start, m.start);
+      start = m.end;
+      final sig = int.parse(m.group(2)!);
+      final exit = int.parse(m.group(3)!);
+      final ms = int.parse(m.group(4)!);
+      if (sig == 14 || ms > secs * 1000) {
+        res.add(RunOutput(
+            ok: false,
+            output: text,
+            error: RunError.tle,
+            detail: 'Tiempo excedido (más de $secs s)'));
+      } else if (sig != 0 || exit != 0) {
+        res.add(RunOutput(
+            ok: false,
+            exitCode: exit,
+            output: text,
+            error: RunError.runtime,
+            detail: sig != 0 ? 'Señal $sig' : 'Salida $exit'));
+      } else {
+        res.add(RunOutput(ok: true, output: text, exitCode: 0));
+      }
+    }
+    while (res.length < inputs.length) {
+      res.add(const RunOutput(
+          ok: false,
+          error: RunError.tle,
+          detail: 'El juez cortó el programa (demasiado tiempo en total)'));
+    }
+    return res.sublist(0, inputs.length);
+  }
+
+  String _driver(int secs) => '''
+#include <unistd.h>
+#include <sys/wait.h>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <string>
+#include <vector>
+__attribute__((constructor)) static void __cc_batch() {
+  std::string all; char buf[65536]; ssize_t r;
+  while ((r = ::read(0, buf, sizeof buf)) > 0) all.append(buf, r);
+  size_t pos = 0; int t = (int)std::strtol(all.c_str(), nullptr, 10);
+  std::vector<long> len(t); const char* p = all.c_str();
+  char* e; std::strtol(p, &e, 10);
+  for (int i = 0; i < t; i++) len[i] = std::strtol(e, &e, 10);
+  pos = (e - p) + 1;
+  std::signal(SIGPIPE, SIG_IGN);
+  for (int i = 0; i < t; i++) {
+    std::fflush(stdout);
+    int fd[2]; if (::pipe(fd) != 0) std::_Exit(3);
+    timespec a, b; clock_gettime(CLOCK_MONOTONIC, &a);
+    pid_t c = ::fork();
+    if (c == 0) {
+      ::close(fd[1]); ::dup2(fd[0], 0); ::close(fd[0]);
+      std::clearerr(stdin); ::alarm($secs);
+      return;
+    }
+    ::close(fd[0]);
+    long o = 0;
+    while (o < len[i]) { ssize_t w = ::write(fd[1], all.data() + pos + o, len[i] - o); if (w <= 0) break; o += w; }
+    ::close(fd[1]); pos += len[i];
+    int st = 0; ::waitpid(c, &st, 0); clock_gettime(CLOCK_MONOTONIC, &b);
+    long ms = (b.tv_sec - a.tv_sec) * 1000 + (b.tv_nsec - a.tv_nsec) / 1000000;
+    std::printf("\\n@@CC %d %d %d %ld@@\\n", i, WIFSIGNALED(st) ? WTERMSIG(st) : 0,
+                WIFEXITED(st) ? WEXITSTATUS(st) : -1, ms);
+  }
+  std::fflush(stdout);
+  std::_Exit(0);
+}
+''';
+
   @override
   void dispose() => _client.close();
 }
