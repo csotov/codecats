@@ -304,11 +304,19 @@ class _MemLessonScreenState extends State<MemLessonScreen> {
     return KeyEventResult.ignored;
   }
 
+  /// Phone held sideways: short and wide. Board goes left, tray right.
+  bool _landscape(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    return size.width > size.height && size.height < 560;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = L.instance;
+    final land = _landscape(context);
     return Scaffold(
-      appBar: AppBar(title: Text('⚡ ${widget.title}')),
+      appBar: AppBar(
+          toolbarHeight: land ? 40 : null, title: Text('⚡ ${widget.title}')),
       body: Focus(
         focusNode: _focus,
         autofocus: true,
@@ -321,10 +329,10 @@ class _MemLessonScreenState extends State<MemLessonScreen> {
             thickness: 12,
             child: SingleChildScrollView(
               controller: _scroll,
-              padding: const EdgeInsets.all(14),
+              padding: EdgeInsets.all(land ? 8 : 14),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 620),
+                  constraints: BoxConstraints(maxWidth: land ? 1100 : 620),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -339,7 +347,7 @@ class _MemLessonScreenState extends State<MemLessonScreen> {
                               style:
                                   const TextStyle(fontWeight: FontWeight.w800)),
                         ]),
-                        const SizedBox(height: 14),
+                        SizedBox(height: land ? 6 : 14),
                       ],
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
@@ -360,7 +368,7 @@ class _MemLessonScreenState extends State<MemLessonScreen> {
                               ? _introCard(l)
                               : _earned != null
                                   ? _summary(l)
-                                  : _board(l),
+                                  : _board(l, land),
                         ),
                       ),
                     ],
@@ -407,11 +415,51 @@ class _MemLessonScreenState extends State<MemLessonScreen> {
     );
   }
 
-  Widget _board(L l) {
+  Widget _board(L l, bool land) {
+    if (!land) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _boardPanel(l),
+          const SizedBox(height: 14),
+          _tray(),
+        ],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(flex: 3, child: _boardPanel(l)),
+        const SizedBox(width: 12),
+        Expanded(flex: 2, child: _tray()),
+      ],
+    );
+  }
+
+  Widget _tray() {
+    final q = _puzzle;
+    final used = _placed.values.toSet();
+    if (_solved) return const SizedBox.shrink();
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 250),
+      alignment: Alignment.topCenter,
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: [
+          for (var i = 0; i < q.tiles.length; i++)
+            if (!used.contains(i))
+              _Pop(
+                  key: ValueKey('t$i-$_shakeSeq'), child: _tile(i, _deck.code)),
+        ],
+      ),
+    );
+  }
+
+  Widget _boardPanel(L l) {
     final d = _deck;
     final q = _puzzle;
     final groups = _slotGroups;
-    final used = _placed.values.toSet();
     var slotIdx = 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -502,23 +550,6 @@ class _MemLessonScreenState extends State<MemLessonScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 14),
-        if (!_solved)
-          AnimatedSize(
-            duration: const Duration(milliseconds: 250),
-            alignment: Alignment.topCenter,
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                for (var i = 0; i < q.tiles.length; i++)
-                  if (!used.contains(i))
-                    _Pop(
-                        key: ValueKey('t$i-$_shakeSeq'),
-                        child: _tile(i, d.code)),
-              ],
-            ),
-          ),
         if (!_solved && _misses >= 2) ...[
           const SizedBox(height: 10),
           Text('💡 ${q.why}',
