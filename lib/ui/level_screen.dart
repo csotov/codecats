@@ -104,15 +104,43 @@ class _LevelScreenState extends State<LevelScreen>
   int _attemptsThisSession = 0;
 
   // Telemetry: time in level, time per editor mode, typing stats.
+  // Per-character diffs answer "what does he delete/add most",
+  // hesitation gaps measure doubt, and edits within [_postFailSecs]
+  // of a lost battle are counted apart (what he fixes after failing).
   final _enteredAt = DateTime.now();
   int _codeSec = 0, _blocksSec = 0, _keys = 0, _backspaces = 0;
   int _lastLen = -1;
+  String _prevCode = '';
+  final _added = <String, int>{}, _deleted = <String, int>{};
+  final _addedFail = <String, int>{}, _deletedFail = <String, int>{};
+  final _tokAdded = <String, int>{}, _tokAddedFail = <String, int>{};
+  int _hesit = 0, _maxGapMs = 0;
+  DateTime? _lastKeyAt, _lastFailAt;
+  static const _postFailSecs = 90;
+  static const _hesitMs = 2500;
   Timer? _modeTick;
   bool get _inCodeMode =>
       widget.level.mode == EditorMode.code ||
       (_promotedToCode && _tabController.index == 1);
 
+  static void _bump(Map<String, int> m, String k) {
+    if (k.isEmpty) return;
+    m[k] = (m[k] ?? 0) + 1;
+  }
+
   void _onCodeChanged(String code) {
+    final now = DateTime.now();
+    final last = _lastKeyAt;
+    if (last != null) {
+      final gap = now.difference(last).inMilliseconds;
+      if (gap > _hesitMs) {
+        _hesit++;
+        if (gap > _maxGapMs) _maxGapMs = gap;
+      }
+    }
+    _lastKeyAt = now;
+    final afterFail = _lastFailAt != null &&
+        now.difference(_lastFailAt!).inSeconds <= _postFailSecs;
     if (_lastLen >= 0) {
       final d = code.length - _lastLen;
       if (d < 0) {
@@ -120,8 +148,36 @@ class _LevelScreenState extends State<LevelScreen>
       } else {
         _keys += d;
       }
+      // Diff prev → new by common prefix/suffix.
+      final old = _prevCode;
+      var pre = 0;
+      while (pre < old.length && pre < code.length && old[pre] == code[pre]) {
+        pre++;
+      }
+      var suf = 0;
+      while (suf < old.length - pre &&
+          suf < code.length - pre &&
+          old[old.length - 1 - suf] == code[code.length - 1 - suf]) {
+        suf++;
+      }
+      final del = old.substring(pre, old.length - suf);
+      final ins = code.substring(pre, code.length - suf);
+      for (var i = 0; i < del.length; i++) {
+        _bump(_deleted, del[i]);
+        if (afterFail) _bump(_deletedFail, del[i]);
+      }
+      for (var i = 0; i < ins.length; i++) {
+        _bump(_added, ins[i]);
+        if (afterFail) _bump(_addedFail, ins[i]);
+      }
+      final tok = ins.trim();
+      if (tok.length >= 2 && tok.length <= 20 && !tok.contains('\n')) {
+        _bump(_tokAdded, tok);
+        if (afterFail) _bump(_tokAddedFail, tok);
+      }
     }
     _lastLen = code.length;
+    _prevCode = code;
     _markActive();
     _persist();
   }
@@ -131,10 +187,29 @@ class _LevelScreenState extends State<LevelScreen>
     Cloud.instance.log(
       'typing',
       levelId: widget.level.id,
-      data: {'keys': _keys, 'backspaces': _backspaces},
+      data: {
+        'keys': _keys,
+        'backspaces': _backspaces,
+        'add': _added,
+        'del': _deleted,
+        'addF': _addedFail,
+        'delF': _deletedFail,
+        'tok': _tokAdded,
+        'tokF': _tokAddedFail,
+        'hesit': _hesit,
+        'gap': _maxGapMs,
+      },
     );
     _keys = 0;
     _backspaces = 0;
+    _added.clear();
+    _deleted.clear();
+    _addedFail.clear();
+    _deletedFail.clear();
+    _tokAdded.clear();
+    _tokAddedFail.clear();
+    _hesit = 0;
+    _maxGapMs = 0;
   }
 
   bool get _usesBlocks => widget.level.mode != EditorMode.code;
@@ -399,9 +474,8 @@ class _LevelScreenState extends State<LevelScreen>
       _console = '';
     });
     _persist();
-    final sample = widget.level.samples.isNotEmpty
-        ? widget.level.samples.first
-        : null;
+    final sample =
+        widget.level.samples.isNotEmpty ? widget.level.samples.first : null;
     final res = await _engine.run(
       _currentCode,
       sample?.input ?? '',
@@ -422,7 +496,7 @@ class _LevelScreenState extends State<LevelScreen>
         _consoleError = false;
         _console = res.output.isEmpty
             ? '(programa terminó sin salida / program ended with no output)\n'
-                  'exit: ${res.exitCode}'
+                'exit: ${res.exitCode}'
             : '${res.output}\n— exit: ${res.exitCode}';
       } else {
         _consoleError = true;
@@ -520,6 +594,7 @@ class _LevelScreenState extends State<LevelScreen>
       }
     }
     if (!report.allPassed) {
+      _lastFailAt = DateTime.now();
       Progress.instance.failBattle();
       // Third try on the same level unlocks the Dramatic Cat.
       for (final c in Progress.instance.checkCatUnlocks()) {
@@ -578,8 +653,7 @@ class _LevelScreenState extends State<LevelScreen>
     if (widget.examMode) Progress.instance.markExamSolved(widget.level.id);
     final hadFails = _failStreak >= 2;
     final lpWin = Progress.instance.of(widget.level.id);
-    final wasReview =
-        lpWin.reviewStage >= 1 &&
+    final wasReview = lpWin.reviewStage >= 1 &&
         Progress.instance.dueReviews.contains(widget.level.id);
     _failStreak = 0;
     _won = true;
@@ -599,12 +673,10 @@ class _LevelScreenState extends State<LevelScreen>
       fights: _attemptsThisSession,
       codeRank: bigORank(Complexity.analyze(_currentCode).notation),
     );
-    final mask =
-        kStarWin |
+    final mask = kStarWin |
         (_hintsShown <= _hintsAtStart ? kStarNoHint : 0) |
         (challenge ? kStarChallenge : 0);
-    final stars =
-        1 +
+    final stars = 1 +
         (mask & kStarNoHint != 0 ? 1 : 0) +
         (mask & kStarChallenge != 0 ? 1 : 0);
     if (!challenge) _challengeMisses++;
@@ -628,9 +700,8 @@ class _LevelScreenState extends State<LevelScreen>
       boss: widget.level.boss,
       mask: mask,
     );
-    final newCats = rewardCat
-        ? Progress.instance.checkCatUnlocks()
-        : const <CatMeme>[];
+    final newCats =
+        rewardCat ? Progress.instance.checkCatUnlocks() : const <CatMeme>[];
     if (wasReview) {
       Cloud.instance.log(
         'review_done',
@@ -721,20 +792,20 @@ class _LevelScreenState extends State<LevelScreen>
     final l = L.instance;
     final m = Progress.instance.of(widget.level.id).starMask;
     Widget rule(int bit, String text) => Padding(
-      padding: const EdgeInsets.only(right: 12, top: 4),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            m & bit != 0 ? Icons.star_rounded : Icons.star_outline_rounded,
-            size: 16,
-            color: m & bit != 0 ? AppTheme.accent2 : AppTheme.textLo,
+          padding: const EdgeInsets.only(right: 12, top: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                m & bit != 0 ? Icons.star_rounded : Icons.star_outline_rounded,
+                size: 16,
+                color: m & bit != 0 ? AppTheme.accent2 : AppTheme.textLo,
+              ),
+              const SizedBox(width: 3),
+              Text(text, style: const TextStyle(fontSize: 12)),
+            ],
           ),
-          const SizedBox(width: 3),
-          Text(text, style: const TextStyle(fontSize: 12)),
-        ],
-      ),
-    );
+        );
     return Tooltip(
       message: l.pick(
         'Cómo se ganan las 3 estrellas de este nivel',
@@ -820,8 +891,7 @@ class _LevelScreenState extends State<LevelScreen>
   CatMeme? _cat(String id) {
     for (final c in kCats) {
       if (c.id != id) continue;
-      final ok =
-          Progress.instance.unlockedCats.contains(id) ||
+      final ok = Progress.instance.unlockedCats.contains(id) ||
           c.trigger == CatTrigger.always;
       return ok ? c : null;
     }
@@ -874,7 +944,7 @@ class _LevelScreenState extends State<LevelScreen>
                       Halloween.isEventLevel(lv.id)
                           ? '🎃 Halloween · ${lv.boss ? l.t('boss') : '${l.t('level')} ${kHalloweenLevels.indexWhere((e) => e.id == lv.id) + 1}'}'
                           : '${l.t('world')} ${w == null ? '' : kWorlds.indexOf(w) + 1}'
-                                ' · ${lv.boss ? l.t('boss') : '${l.t('level')} ${levelIndexInWorld(lv) + 1}'}',
+                              ' · ${lv.boss ? l.t('boss') : '${l.t('level')} ${levelIndexInWorld(lv) + 1}'}',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
@@ -1173,8 +1243,8 @@ class _LevelScreenState extends State<LevelScreen>
     final color = changed
         ? AppTheme.bad
         : taught
-        ? AppTheme.accent2
-        : AppTheme.textLo;
+            ? AppTheme.accent2
+            : AppTheme.textLo;
     return Align(
       alignment: Alignment.centerLeft,
       child: Tooltip(
@@ -1268,11 +1338,10 @@ class _LevelScreenState extends State<LevelScreen>
     // the hint is sold only on the next tap, after thinking.
     if (_polyaForHint != _hintsShown && !widget.examMode) {
       _polyaForHint = _hintsShown;
-      final q =
-          kPolyaQuestions[Progress.instance.nextRot(
-            'polya',
-            kPolyaQuestions.length,
-          )];
+      final q = kPolyaQuestions[Progress.instance.nextRot(
+        'polya',
+        kPolyaQuestions.length,
+      )];
       await ProfessorDialog.show(context, [
         l.pick(
           'Antes de la pista, una pregunta de entrenador:',

@@ -30,6 +30,12 @@ class Cloud extends ChangeNotifier {
 
   final List<Map<String, dynamic>> _queue = [];
 
+  DateTime _lastTouch = DateTime.now();
+
+  /// Any user interaction marks the app as actively used (heartbeats
+  /// count only while this is fresh).
+  void touch() => _lastTouch = DateTime.now();
+
   Future<void> init() async {
     if (!configured) return;
     try {
@@ -40,6 +46,13 @@ class Cloud extends ChangeNotifier {
       await _refreshProfile();
       log('session_start', data: {'platform': kIsWeb ? 'web' : 'app'});
       Timer.periodic(const Duration(seconds: 10), (_) => flush());
+      // Total time in game: a minute only counts while the player used
+      // the app recently (touch counts via [touch], keys poke Sfx).
+      Timer.periodic(const Duration(minutes: 1), (_) {
+        if (DateTime.now().difference(_lastTouch).inMinutes < 2) {
+          log('heartbeat', data: {'sec': 60});
+        }
+      });
     } catch (e) {
       debugPrint('Cloud init failed: $e');
     }

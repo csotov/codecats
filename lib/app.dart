@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'l10n.dart';
+import 'services/cloud.dart';
 import 'services/sfx.dart';
 import 'ui/keyboard_scroll.dart';
 import 'ui/splash.dart';
@@ -15,7 +16,10 @@ class CodeCatsApp extends StatelessWidget {
       valueListenable: L.instance.lang,
       // First user gesture unlocks audio on web (autoplay policy).
       builder: (context, lang, _) => Listener(
-        onPointerDown: (_) => Sfx.poke(),
+        onPointerDown: (_) {
+          Sfx.poke();
+          Cloud.instance.touch();
+        },
         child: MaterialApp(
           title: 'CodeCats',
           debugShowCheckedModeBanner: false,
