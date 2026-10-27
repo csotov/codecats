@@ -113,6 +113,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
   final _shopScroll = ScrollController();
   final _catScroll = ScrollController();
   final _goalScroll = ScrollController();
+  final _hatScroll = ScrollController();
 
   @override
   void initState() {
@@ -125,6 +126,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
     _shopScroll.dispose();
     _catScroll.dispose();
     _goalScroll.dispose();
+    _hatScroll.dispose();
     super.dispose();
   }
 
@@ -136,7 +138,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
     // assets/shopcats/ y _catsGrid/_catCard quedan listos para volver.
     const catsTab = false;
     return DefaultTabController(
-      length: catsTab ? 3 : 2,
+      length: catsTab ? 4 : 3,
       child: AnimatedBuilder(
         animation: p,
         builder: (context, _) => Scaffold(
@@ -164,12 +166,18 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
                           'C++ medals earned with goals'),
                       child: Text(
                           '${l.pick('Logros', 'Goals')} ${kGoalBadges.where((b) => p.badges.contains(b.id)).length}/${kGoalBadges.length}'))),
+              Tab(
+                  child: Tooltip(
+                      message: l.pick('Gorritos: 20 se canjean por uno mejor',
+                          'Caps: trade 20 for a better one'),
+                      child: Text('🧢 ${l.pick('Gorritos', 'Caps')}'))),
             ]),
           ),
           body: TabBarView(children: [
             _grid(_shopScroll, kShopBadges, p, l),
             if (catsTab) _catsGrid(p, l),
             _grid(_goalScroll, kGoalBadges, p, l),
+            _hatsTab(p, l),
           ]),
         ),
       ),
@@ -250,6 +258,129 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
                   style: const TextStyle(fontSize: 10, color: AppTheme.textLo)),
             const SizedBox(height: 6),
             action,
+          ],
+        ),
+      ),
+    );
+  }
+
+  static const _hatNames = [
+    ['Gorrito Gatuno', 'Cat cap'],
+    ['Gorrito feo', 'Ugly cap'],
+    ['Gorrito realista ultra HD', 'Ultra HD realistic cap'],
+    ['Gorrito plateado', 'Silver cap'],
+    ['Gorrito de agua', 'Water cap'],
+  ];
+  static const _hatJokes = [
+    ['3 estrellas en el primer combate.', '3 stars on the first battle.'],
+    [
+      'Tan feo que da ternura. Como un gato recién bañado.',
+      'So ugly it is cute. Like a freshly bathed cat.'
+    ],
+    [
+      '4K, 60 fps, cada pelito renderizado.',
+      '4K, 60 fps, every hair rendered.'
+    ],
+    [
+      'Brilla más que los ojos de un gato a las 3 a.m.',
+      'Shinier than cat eyes at 3 a.m.'
+    ],
+    [
+      'El gorrito que todo gato odia. Leyenda absoluta.',
+      'The cap every cat hates. Absolute legend.'
+    ],
+  ];
+
+  Widget _hatsTab(Progress p, L l) {
+    return KeyboardScroll(
+      controller: _hatScroll,
+      child: ListView(
+        controller: _hatScroll,
+        padding: const EdgeInsets.all(14),
+        children: [
+          Text(
+            l.pick(
+                'Cada ${Progress.kHatTrade} gorritos se canjean por 1 del siguiente nivel.',
+                'Every ${Progress.kHatTrade} caps trade for 1 of the next level.'),
+            style: const TextStyle(color: AppTheme.textLo),
+          ),
+          const SizedBox(height: 10),
+          for (var t = 0; t < 5; t++) _hatRow(t, p, l),
+        ],
+      ),
+    );
+  }
+
+  Widget _hatRow(int t, Progress p, L l) {
+    final have = p.hatsInHand(t).clamp(0, 1 << 30).toInt();
+    final ever = t == 0 ? p.hats > 0 : p.hatMade[t - 1] > 0;
+    Widget img = ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Image.asset('assets/badges/hat_$t.jpg',
+          width: 96, height: 96, fit: BoxFit.cover),
+    );
+    if (!ever) {
+      img = Opacity(
+        opacity: 0.35,
+        child: ColorFiltered(
+          colorFilter: const ColorFilter.matrix([
+            0.33, 0.33, 0.33, 0, 0, //
+            0.33, 0.33, 0.33, 0, 0, //
+            0.33, 0.33, 0.33, 0, 0, //
+            0, 0, 0, 1, 0,
+          ]),
+          child: img,
+        ),
+      );
+    }
+    final next = t < 4 ? l.pick(_hatNames[t + 1][0], _hatNames[t + 1][1]) : '';
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Row(
+          children: [
+            img,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('${l.pick(_hatNames[t][0], _hatNames[t][1])} × $have',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800, fontSize: 16)),
+                  Text(l.pick(_hatJokes[t][0], _hatJokes[t][1]),
+                      style: const TextStyle(
+                          fontSize: 12, color: AppTheme.textLo)),
+                  if (t < 4) ...[
+                    const SizedBox(height: 6),
+                    LinearProgressIndicator(
+                      minHeight: 6,
+                      backgroundColor: Colors.white12,
+                      color: const Color(0xFFFFC53D),
+                      value: (have / Progress.kHatTrade).clamp(0, 1).toDouble(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (t < 4) ...[
+              const SizedBox(width: 10),
+              Tooltip(
+                message: l.pick('Canjear ${Progress.kHatTrade} por 1 $next',
+                    'Trade ${Progress.kHatTrade} for 1 $next'),
+                child: FilledButton(
+                  onPressed: have >= Progress.kHatTrade
+                      ? () {
+                          p.tradeHats(t);
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text(l.pick(
+                                  '¡Nuevo: $next! 🎉', 'New: $next! 🎉'))));
+                        }
+                      : null,
+                  child: Text('${Progress.kHatTrade} → 1'),
+                ),
+              ),
+            ],
           ],
         ),
       ),

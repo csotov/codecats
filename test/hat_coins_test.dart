@@ -31,4 +31,19 @@ void main() {
     expect(pr.hats, 1);
     expect(pr.coins, before + Progress.kHatCoins);
   });
+
+  test('20 caps trade for one of the next tier', () async {
+    SharedPreferences.setMockInitialValues({});
+    final pr = Progress.instance;
+    await pr.ensureLoaded();
+    await pr.reset();
+    for (var i = 1; i <= 21; i++) {
+      pr.awardHat('w1l$i');
+    }
+    expect(pr.tradeHats(1), isFalse);
+    expect(pr.tradeHats(0), isTrue);
+    expect(pr.hatsInHand(0), 1);
+    expect(pr.hatsInHand(1), 1);
+    expect(pr.tradeHats(0), isFalse);
+  });
 }
