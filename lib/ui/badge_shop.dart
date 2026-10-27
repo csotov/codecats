@@ -168,8 +168,9 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
                           '${l.pick('Logros', 'Goals')} ${kGoalBadges.where((b) => p.badges.contains(b.id)).length}/${kGoalBadges.length}'))),
               Tab(
                   child: Tooltip(
-                      message: l.pick('Gorritos: 20 se canjean por uno mejor',
-                          'Caps: trade 20 for a better one'),
+                      message: l.pick(
+                          'Gorritos: juntalos y canjealos por una sorpresa',
+                          'Caps: collect and trade them for a surprise'),
                       child: Text('🧢 ${l.pick('Gorritos', 'Caps')}'))),
             ]),
           ),
@@ -270,6 +271,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
     ['Gorrito realista ultra HD', 'Ultra HD realistic cap'],
     ['Gorrito plateado', 'Silver cap'],
     ['Gorrito de agua', 'Water cap'],
+    ['El Gorrito Más Feo del Universo', 'The Ugliest Cap in the Universe'],
   ];
   static const _hatJokes = [
     ['3 estrellas en el primer combate.', '3 stars on the first battle.'],
@@ -289,6 +291,10 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
       'El gorrito que todo gato odia. Leyenda absoluta.',
       'The cap every cat hates. Absolute legend.'
     ],
+    [
+      'Tejido por un gato a las 3 a.m. con los ojos cerrados. Hasta la mosca se fue a vivir ahí. Nivel máximo de fealdad: desbloqueado.',
+      'Knitted by a cat at 3 a.m. with its eyes closed. Even the fly moved in. Max ugliness: unlocked.'
+    ],
   ];
 
   Widget _hatsTab(Progress p, L l) {
@@ -305,7 +311,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
           ),
           const SizedBox(height: 10),
           for (var t = 0; t <= _hatTop(p); t++) _hatRow(t, p, l),
-          if (_hatTop(p) < 4) _hatMystery(l),
+          if (_hatTop(p) < Progress.kHatTrade.length) _hatMystery(l),
         ],
       ),
     );
@@ -313,7 +319,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
 
   int _hatTop(Progress p) {
     var top = 0;
-    for (var t = 1; t < 5; t++) {
+    for (var t = 1; t <= Progress.kHatTrade.length; t++) {
       if (p.hatMade[t - 1] > 0) top = t;
     }
     return top;
@@ -365,7 +371,9 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
         ),
       );
     }
-    final next = t < 4 ? l.pick(_hatNames[t + 1][0], _hatNames[t + 1][1]) : '';
+    final next = t < Progress.kHatTrade.length
+        ? l.pick(_hatNames[t + 1][0], _hatNames[t + 1][1])
+        : '';
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(10),
@@ -383,7 +391,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
                   Text(l.pick(_hatJokes[t][0], _hatJokes[t][1]),
                       style: const TextStyle(
                           fontSize: 12, color: AppTheme.textLo)),
-                  if (t < 4) ...[
+                  if (t < Progress.kHatTrade.length) ...[
                     const SizedBox(height: 6),
                     LinearProgressIndicator(
                       minHeight: 6,
@@ -396,7 +404,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
                 ],
               ),
             ),
-            if (t < 4) ...[
+            if (t < Progress.kHatTrade.length) ...[
               const SizedBox(width: 10),
               Tooltip(
                 message: l.pick(
