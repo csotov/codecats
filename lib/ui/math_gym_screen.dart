@@ -174,7 +174,7 @@ class _MathTopicScreenState extends State<MathTopicScreen> {
                         padding: const EdgeInsets.all(3),
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
                               textStyle: const TextStyle(
                                   fontSize: 20, fontWeight: FontWeight.w800)),
                           onPressed: () => _tap(k),
@@ -196,57 +196,85 @@ class _MathTopicScreenState extends State<MathTopicScreen> {
     final t = widget.topic;
     final done = _idx >= t.questions.length;
     final q = t.questions[_idx % t.questions.length];
+    final size = MediaQuery.sizeOf(context);
+    final land = size.width > size.height && size.height < 560;
+    final header = [
+      Text(
+          done
+              ? l.pick('Repaso (vuelta ${_idx ~/ t.questions.length + 1})',
+                  'Review (lap ${_idx ~/ t.questions.length + 1})')
+              : '${l.pick('Pregunta', 'Question')} ${_idx + 1}/${t.questions.length}',
+          style: const TextStyle(color: AppTheme.textLo)),
+      const SizedBox(height: 6),
+      Text(l.pick(q.qEs, q.qEn),
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+      const SizedBox(height: 12),
+      TextField(
+        controller: _answer,
+        readOnly: true,
+        showCursor: false,
+        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+        onSubmitted: (_) => _check(),
+        decoration: InputDecoration(
+            border: const OutlineInputBorder(),
+            labelText: l.pick('Tu respuesta', 'Your answer')),
+      ),
+    ];
+    final footer = [
+      if (_feedback.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Text(_feedback,
+              style: TextStyle(
+                  color: _good ? AppTheme.good : AppTheme.bad,
+                  fontWeight: FontWeight.w700)),
+        ),
+      const SizedBox(height: 8),
+      Align(
+        alignment: Alignment.centerRight,
+        child: Tooltip(
+          message: l.pick('Revisar la respuesta', 'Check the answer'),
+          child: FilledButton.icon(
+              onPressed: _check,
+              icon: const Icon(Icons.check),
+              label: Text(l.pick('Comprobar', 'Check'))),
+        ),
+      ),
+    ];
     return Scaffold(
-      appBar: AppBar(title: Text(l.pick(t.titleEs, t.titleEn))),
+      appBar: AppBar(
+          toolbarHeight: land ? 40 : null,
+          title: Text(l.pick(t.titleEs, t.titleEn))),
       body: KeyboardScroll(
         controller: _scroll,
         child: ListView(
           controller: _scroll,
-          padding: const EdgeInsets.all(14),
+          padding: EdgeInsets.all(land ? 8 : 14),
           children: [
-            ProfessorSays(text: l.pick(t.ideaEs, t.ideaEn)),
-            const SizedBox(height: 12),
-            Text(
-                done
-                    ? l.pick(
-                        'Repaso (vuelta ${_idx ~/ t.questions.length + 1})',
-                        'Review (lap ${_idx ~/ t.questions.length + 1})')
-                    : '${l.pick('Pregunta', 'Question')} ${_idx + 1}/${t.questions.length}',
-                style: const TextStyle(color: AppTheme.textLo)),
-            const SizedBox(height: 6),
-            Text(l.pick(q.qEs, q.qEn),
-                style:
-                    const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _answer,
-              readOnly: true,
-              showCursor: false,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-              onSubmitted: (_) => _check(),
-              decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  labelText: l.pick('Tu respuesta', 'Your answer')),
-            ),
-            const SizedBox(height: 8),
-            _keypad(),
-            const SizedBox(height: 10),
-            if (_feedback.isNotEmpty)
-              Text(_feedback,
-                  style: TextStyle(
-                      color: _good ? AppTheme.good : AppTheme.bad,
-                      fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Tooltip(
-                message: l.pick('Revisar la respuesta', 'Check the answer'),
-                child: FilledButton.icon(
-                    onPressed: _check,
-                    icon: const Icon(Icons.check),
-                    label: Text(l.pick('Comprobar', 'Check'))),
-              ),
-            ),
+            if (land)
+              // Sideways phone: question + answer left, keypad right.
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [...header, ...footer],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(flex: 2, child: _keypad()),
+                ],
+              )
+            else ...[
+              ProfessorSays(text: l.pick(t.ideaEs, t.ideaEn)),
+              const SizedBox(height: 12),
+              ...header,
+              const SizedBox(height: 8),
+              _keypad(),
+              ...footer,
+            ],
           ],
         ),
       ),
