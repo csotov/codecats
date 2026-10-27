@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../data/math_gym.dart';
@@ -89,104 +91,218 @@ class MathTopicScreen extends StatefulWidget {
 }
 
 class _MathTopicScreenState extends State<MathTopicScreen> {
-  final _answer = TextEditingController();
   final _scroll = ScrollController();
   int _misses = 0;
   String _feedback = '';
   bool _good = false;
+  int? _placed;
+  int? _selected;
+  bool _flash = false;
 
   int get _idx => Progress.instance.mathGym[widget.topic.id]?[0] ?? 0;
+  MathQ get _q => widget.topic.questions[_idx % widget.topic.questions.length];
+
+  /// Four tiles: the answer plus 3 plausible wrong numbers. Seeded by the
+  /// question so the same question always shows the same tiles.
+  List<String> get _tiles {
+    final right = int.tryParse(_q.answer);
+    final r = Random(_q.qEs.hashCode ^ _idx);
+    final out = <String>{_q.answer};
+    if (right == null) {
+      while (out.length < 4) {
+        out.add('${r.nextInt(50) + 1}');
+      }
+    } else {
+      final cands = <int>[
+        right + 1,
+        right - 1,
+        right + 2,
+        right - 2,
+        right * 2,
+        right ~/ 2,
+        right + 10,
+        right - 10,
+        right + 5,
+        right * 10,
+      ]..shuffle(r);
+      for (final c in cands) {
+        if (out.length == 4) break;
+        if (c >= 0 || right < 0) out.add('$c');
+      }
+      var k = 3;
+      while (out.length < 4) {
+        out.add('${right + k++}');
+      }
+    }
+    final list = out.toList()..shuffle(Random(_q.qEs.hashCode));
+    return list;
+  }
 
   @override
   void dispose() {
-    _answer.dispose();
     _scroll.dispose();
     super.dispose();
   }
 
-  void _check() {
+  void _place(int tile) {
+    if (_flash) return;
+    setState(() {
+      _placed = tile;
+      _selected = null;
+    });
+    _check(_tiles[tile]);
+  }
+
+  void _check(String answer) {
     final t = widget.topic;
-    final q = t.questions[_idx % t.questions.length];
+    final q = _q;
     final l = L.instance;
-    final ok = _answer.text.trim() == q.answer;
+    final ok = answer == q.answer;
     Cloud.instance.log('math_gym',
         data: {'topic': t.id, 'q': _idx, 'ok': ok, 'miss': _misses});
     setState(() {
+      _good = ok;
       if (ok) {
         _feedback = '✅ ${l.pick(q.whyEs, q.whyEn)}  (+2 Miaudólares)';
-        _good = true;
-        _misses = 0;
-        _answer.clear();
-        Progress.instance.mathAnswered(t.id, true);
       } else {
         _misses++;
-        _good = false;
+        _flash = true;
         _feedback = _misses == 1
             ? '❌ ${l.pick('Pista', 'Hint')}: ${l.pick(q.hintEs, q.hintEn)}'
             : '❌ ${l.pick('La respuesta era', 'The answer was')} ${q.answer}. ${l.pick(q.whyEs, q.whyEn)}';
-        if (_misses >= 2) {
-          // Move on after the explanation; it comes back next lap.
-          _misses = 0;
-          _answer.clear();
-          Progress.instance.mathAnswered(t.id, false);
-          final m = Progress.instance.mathGym[t.id]!;
-          m[0]++;
-        }
       }
+    });
+    if (ok) return;
+    Future.delayed(const Duration(milliseconds: 900), () {
+      if (!mounted) return;
+      setState(() {
+        _flash = false;
+        _placed = null;
+      });
     });
   }
 
-  void _tap(String k) {
+  void _next() {
+    final t = widget.topic;
+    final wasGood = _good;
     setState(() {
-      if (k == '⌫') {
-        if (_answer.text.isNotEmpty) {
-          _answer.text = _answer.text.substring(0, _answer.text.length - 1);
-        }
-      } else if (k == '-') {
-        _answer.text = _answer.text.startsWith('-')
-            ? _answer.text.substring(1)
-            : '-${_answer.text}';
+      if (wasGood) {
+        Progress.instance.mathAnswered(t.id, true);
       } else {
-        _answer.text += k;
+        // Second miss: move on after the explanation; it comes back next lap.
+        Progress.instance.mathAnswered(t.id, false);
+        Progress.instance.mathGym[t.id]![0]++;
       }
+      _misses = 0;
+      _feedback = '';
+      _good = false;
+      _placed = null;
+      _selected = null;
     });
   }
 
-  /// On-screen keypad so the phone keyboard never has to open.
-  Widget _keypad() {
-    const rows = [
-      ['7', '8', '9'],
-      ['4', '5', '6'],
-      ['1', '2', '3'],
-      ['-', '0', '⌫'],
-    ];
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 300),
-        child: Column(
-          children: [
-            for (final row in rows)
-              Row(
-                children: [
-                  for (final k in row)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(3),
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              textStyle: const TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.w800)),
-                          onPressed: () => _tap(k),
-                          child: Text(k),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-          ],
-        ),
+  Widget _tileBox(String text, {Color? color, Color? edge}) {
+    final base = color ?? AppTheme.bgAlt;
+    return Container(
+      constraints: const BoxConstraints(minWidth: 64, minHeight: 56),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              base.withValues(alpha: 0.95),
+              base.withValues(alpha: 0.7)
+            ]),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: edge ?? AppTheme.accent3, width: 2),
+        boxShadow: const [
+          BoxShadow(color: Colors.black38, offset: Offset(0, 3), blurRadius: 4)
+        ],
       ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(right: 6),
+            child: Text('🐾', style: TextStyle(fontSize: 12)),
+          ),
+          Text(text,
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textHi)),
+        ],
+      ),
+    );
+  }
+
+  Widget _tile(int i) {
+    final l = L.instance;
+    final selected = _selected == i;
+    final box = _tileBox(_tiles[i],
+        color: selected ? AppTheme.accent.withValues(alpha: 0.35) : null,
+        edge: selected ? AppTheme.accent : null);
+    return Draggable<int>(
+      data: i,
+      feedback: Material(
+          color: Colors.transparent,
+          child: Transform.scale(scale: 1.1, child: box)),
+      childWhenDragging: Opacity(opacity: 0.3, child: box),
+      child: GestureDetector(
+        onTap: () => _place(i),
+        child: Tooltip(
+            message: l.pick(
+                'Arrastrá o tocá para responder', 'Drag or tap to answer'),
+            child: box),
+      ),
+    );
+  }
+
+  Widget _slot() {
+    final l = L.instance;
+    final t = _placed;
+    final answered = _feedback.isNotEmpty && (_good || _flash);
+    return DragTarget<int>(
+      onWillAcceptWithDetails: (_) => !_good && !_flash,
+      onAcceptWithDetails: (d) => _place(d.data),
+      builder: (context, cand, _) {
+        if (t != null && answered) {
+          return _tileBox(_tiles[t],
+              color:
+                  (_good ? AppTheme.good : AppTheme.bad).withValues(alpha: 0.3),
+              edge: _good ? AppTheme.good : AppTheme.bad);
+        }
+        final hover = cand.isNotEmpty;
+        return GestureDetector(
+          onTap: () {
+            final sel = _selected;
+            if (sel != null) _place(sel);
+          },
+          child: Tooltip(
+            message: l.pick('Soltá la respuesta acá', 'Drop the answer here'),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              width: 92,
+              height: 56,
+              decoration: BoxDecoration(
+                color: hover
+                    ? AppTheme.accent.withValues(alpha: 0.25)
+                    : AppTheme.bg,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                    color: hover ? AppTheme.accent : AppTheme.textLo, width: 2),
+              ),
+              child: const Center(
+                  child: Text('?',
+                      style: TextStyle(
+                          fontSize: 22,
+                          color: AppTheme.textLo,
+                          fontWeight: FontWeight.w800))),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -195,52 +311,79 @@ class _MathTopicScreenState extends State<MathTopicScreen> {
     final l = L.instance;
     final t = widget.topic;
     final done = _idx >= t.questions.length;
-    final q = t.questions[_idx % t.questions.length];
+    final q = _q;
     final size = MediaQuery.sizeOf(context);
     final land = size.width > size.height && size.height < 560;
-    final header = [
-      Text(
-          done
-              ? l.pick('Repaso (vuelta ${_idx ~/ t.questions.length + 1})',
-                  'Review (lap ${_idx ~/ t.questions.length + 1})')
-              : '${l.pick('Pregunta', 'Question')} ${_idx + 1}/${t.questions.length}',
-          style: const TextStyle(color: AppTheme.textLo)),
-      const SizedBox(height: 6),
-      Text(l.pick(q.qEs, q.qEn),
-          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-      const SizedBox(height: 12),
-      TextField(
-        controller: _answer,
-        readOnly: true,
-        showCursor: false,
-        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
-        onSubmitted: (_) => _check(),
-        decoration: InputDecoration(
-            border: const OutlineInputBorder(),
-            labelText: l.pick('Tu respuesta', 'Your answer')),
-      ),
-    ];
-    final footer = [
-      if (_feedback.isNotEmpty)
-        Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: Text(_feedback,
+    final showNext = _good || (_misses >= 2 && _feedback.isNotEmpty);
+    final question = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+            done
+                ? l.pick('Repaso (vuelta ${_idx ~/ t.questions.length + 1})',
+                    'Review (lap ${_idx ~/ t.questions.length + 1})')
+                : '${l.pick('Pregunta', 'Question')} ${_idx + 1}/${t.questions.length}',
+            style: const TextStyle(color: AppTheme.textLo)),
+        const SizedBox(height: 6),
+        Text(l.pick(q.qEs, q.qEn),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppTheme.card,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+                color: _good
+                    ? AppTheme.good
+                    : _flash
+                        ? AppTheme.bad
+                        : AppTheme.cardEdge,
+                width: 2),
+          ),
+          child: Row(
+            children: [
+              Text(l.pick('Respuesta', 'Answer'),
+                  style: const TextStyle(fontSize: 19, color: AppTheme.textHi)),
+              const SizedBox(width: 10),
+              const Text('=',
+                  style: TextStyle(fontSize: 19, color: AppTheme.textHi)),
+              const SizedBox(width: 10),
+              _slot(),
+            ],
+          ),
+        ),
+        if (_feedback.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(_feedback,
               style: TextStyle(
+                  fontSize: 16,
                   color: _good ? AppTheme.good : AppTheme.bad,
                   fontWeight: FontWeight.w700)),
-        ),
-      const SizedBox(height: 8),
-      Align(
-        alignment: Alignment.centerRight,
-        child: Tooltip(
-          message: l.pick('Revisar la respuesta', 'Check the answer'),
-          child: FilledButton.icon(
-              onPressed: _check,
-              icon: const Icon(Icons.check),
-              label: Text(l.pick('Comprobar', 'Check'))),
-        ),
-      ),
-    ];
+        ],
+        if (showNext) ...[
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Tooltip(
+              message: l.pick('Siguiente pregunta', 'Next question'),
+              child: FilledButton.icon(
+                  onPressed: _next,
+                  icon: const Icon(Icons.arrow_forward),
+                  label: Text(l.pick('Seguir', 'Continue'))),
+            ),
+          ),
+        ],
+      ],
+    );
+    final tray = Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        for (var i = 0; i < _tiles.length; i++)
+          if (i != _placed || !(_good || _flash)) _tile(i),
+      ],
+    );
     return Scaffold(
       appBar: AppBar(
           toolbarHeight: land ? 40 : null,
@@ -252,28 +395,20 @@ class _MathTopicScreenState extends State<MathTopicScreen> {
           padding: EdgeInsets.all(land ? 8 : 14),
           children: [
             if (land)
-              // Sideways phone: question + answer left, keypad right.
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [...header, ...footer],
-                    ),
-                  ),
+                  Expanded(flex: 3, child: question),
                   const SizedBox(width: 12),
-                  Expanded(flex: 2, child: _keypad()),
+                  Expanded(flex: 2, child: tray),
                 ],
               )
             else ...[
               ProfessorSays(text: l.pick(t.ideaEs, t.ideaEn)),
               const SizedBox(height: 12),
-              ...header,
-              const SizedBox(height: 8),
-              _keypad(),
-              ...footer,
+              question,
+              const SizedBox(height: 14),
+              tray,
             ],
           ],
         ),
