@@ -3,7 +3,9 @@ import '../data/olympiad_tracks.dart';
 
 import '../data/cats.dart';
 import '../data/halloween.dart';
+import '../data/juki_obi.dart';
 import '../data/obi_tasks.dart';
+import '../services/open_url.dart';
 import '../l10n.dart';
 import '../models.dart';
 import '../services/progress.dart';
@@ -287,6 +289,43 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
         card(t.emoji, t.title, t.meme, 'Resolver el problema oficial',
             ObiSimScreen(task: t),
             trailing: '${obiBest(t)}/100'),
+      head('4. Exámenes pasados en el juez real (Juki)'),
+      const Padding(
+        padding: EdgeInsets.only(bottom: 6),
+        child: Text(
+            'Se abren en judge.juki.app, el juez donde se practica la OBI. '
+            'Entrá con tu cuenta de Juki y enviá ahí: los puntos son de verdad.',
+            style: TextStyle(fontSize: 12)),
+      ),
+      for (final phase in {for (final p in kJukiObi) p.phase})
+        Card(
+          color: const Color(0xFF2B1238),
+          child: ExpansionTile(
+            initiallyExpanded: phase == 'Fase Departamental',
+            title: Text(
+                '$phase (${kJukiObi.where((p) => p.phase == phase).length})',
+                style: const TextStyle(fontWeight: FontWeight.w900)),
+            children: [
+              for (final p in kJukiObi.where((p) => p.phase == phase))
+                Tooltip(
+                  message: 'Abrir en Juki',
+                  child: ListTile(
+                    dense: true,
+                    leading: Text(p.year,
+                        style: const TextStyle(
+                            color: _orange, fontWeight: FontWeight.w900)),
+                    title: Text(p.name),
+                    subtitle: p.levels.isEmpty
+                        ? null
+                        : Text('Nivel ${p.levels}',
+                            style: const TextStyle(fontSize: 11)),
+                    trailing: const Icon(Icons.open_in_new, size: 18),
+                    onTap: () => openUrl(p.url),
+                  ),
+                ),
+            ],
+          ),
+        ),
     ];
   }
 
