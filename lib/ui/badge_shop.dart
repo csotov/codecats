@@ -300,16 +300,49 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
         children: [
           Text(
             l.pick(
-                'Cada ${Progress.kHatTrade} gorritos se canjean por 1 del siguiente nivel.',
-                'Every ${Progress.kHatTrade} caps trade for 1 of the next level.'),
+                'Cada ${Progress.kHatTrade} gorritos se canjean por... una sorpresa 🎁',
+                'Every ${Progress.kHatTrade} caps trade for... a surprise 🎁'),
             style: const TextStyle(color: AppTheme.textLo),
           ),
           const SizedBox(height: 10),
-          for (var t = 0; t < 5; t++) _hatRow(t, p, l),
+          for (var t = 0; t <= _hatTop(p); t++) _hatRow(t, p, l),
+          if (_hatTop(p) < 4) _hatMystery(l),
         ],
       ),
     );
   }
+
+  int _hatTop(Progress p) {
+    var top = 0;
+    for (var t = 1; t < 5; t++) {
+      if (p.hatMade[t - 1] > 0) top = t;
+    }
+    return top;
+  }
+
+  Widget _hatMystery(L l) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(children: [
+            Container(
+              width: 96,
+              height: 96,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(14)),
+              child: const Text('❓', style: TextStyle(fontSize: 44)),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                  l.pick('???  ¿Qué habrá acá?', '???  What could it be?'),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, fontSize: 16)),
+            ),
+          ]),
+        ),
+      );
 
   Widget _hatRow(int t, Progress p, L l) {
     final have = p.hatsInHand(t).clamp(0, 1 << 30).toInt();
@@ -366,8 +399,9 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
             if (t < 4) ...[
               const SizedBox(width: 10),
               Tooltip(
-                message: l.pick('Canjear ${Progress.kHatTrade} por 1 $next',
-                    'Trade ${Progress.kHatTrade} for 1 $next'),
+                message: l.pick(
+                    'Canjear ${Progress.kHatTrade} por una sorpresa',
+                    'Trade ${Progress.kHatTrade} for a surprise'),
                 child: FilledButton(
                   onPressed: have >= Progress.kHatTrade
                       ? () {
