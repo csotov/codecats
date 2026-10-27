@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'sound_panel.dart';
 import '../data/olympiad_tracks.dart';
 
 import '../data/cats.dart';
@@ -59,6 +61,7 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
         return Scaffold(
           backgroundColor: _night,
           appBar: AppBar(
+            actions: const [MusicButton()],
             backgroundColor: const Color(0xFF2A0E05),
             title: Text(
                 l.pick('🎃 Noche de Brujas Gatuna', '🎃 Cat Halloween Night'),

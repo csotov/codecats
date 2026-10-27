@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/trace_exercises.dart';
 import '../data/worlds.dart';
 import '../l10n.dart';
@@ -30,6 +32,7 @@ class TraceListScreen extends StatelessWidget {
     final l = L.instance;
     return Scaffold(
       appBar: AppBar(
+          actions: const [MusicButton()],
           title: Text('🧠 ${l.pick('Sé la computadora', 'Be the computer')}')),
       body: AnimatedBuilder(
         animation: Progress.instance,
@@ -144,7 +147,9 @@ class _TraceScreenState extends State<TraceScreen> {
     final l = L.instance;
     final t = widget.exercise;
     return Scaffold(
-      appBar: AppBar(title: Text(l.pick(t.titleEs, t.titleEn))),
+      appBar: AppBar(
+          actions: const [MusicButton()],
+          title: Text(l.pick(t.titleEs, t.titleEn))),
       body: KeyboardScroll(
         controller: _scroll,
         child: ListView(

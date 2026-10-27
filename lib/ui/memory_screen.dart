@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+
+import 'sound_panel.dart';
 import 'package:flutter/services.dart';
 
 import '../data/memory_drills.dart';
@@ -50,8 +52,9 @@ class _MemoryGymScreenState extends State<MemoryGymScreen> {
   Widget build(BuildContext context) {
     final l = L.instance;
     return Scaffold(
-      appBar:
-          AppBar(title: Text('⚡ ${l.pick('Memoria rápida', 'Quick recall')}')),
+      appBar: AppBar(
+          actions: const [MusicButton()],
+          title: Text('⚡ ${l.pick('Memoria rápida', 'Quick recall')}')),
       body: AnimatedBuilder(
         animation: Progress.instance,
         builder: (context, _) {
@@ -316,7 +319,9 @@ class _MemLessonScreenState extends State<MemLessonScreen> {
     final land = _landscape(context);
     return Scaffold(
       appBar: AppBar(
-          toolbarHeight: land ? 40 : null, title: Text('⚡ ${widget.title}')),
+          actions: const [MusicButton()],
+          toolbarHeight: land ? 40 : null,
+          title: Text('⚡ ${widget.title}')),
       body: Focus(
         focusNode: _focus,
         autofocus: true,

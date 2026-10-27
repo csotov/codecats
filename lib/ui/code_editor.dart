@@ -59,12 +59,12 @@ class CodeEditorState extends State<CodeEditor> {
       child: CodeTheme(
         data: const CodeThemeData(styles: atomOneDarkTheme),
         child: CodeField(
-        controller: _controller,
-        textStyle: const TextStyle(
-            fontFamily: 'monospace', fontSize: 13, height: 1.45),
-        expands: false,
-        wrap: false,
-        onChanged: widget.onChanged,
+          controller: _controller,
+          textStyle: const TextStyle(
+              fontFamily: 'monospace', fontSize: 13, height: 1.45),
+          expands: false,
+          wrap: false,
+          onChanged: widget.onChanged,
         ),
       ),
     );

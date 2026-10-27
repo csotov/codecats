@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../data/phases.dart';
@@ -29,6 +28,7 @@ import 'halloween_screen.dart';
 import 'keyboard_scroll.dart';
 import 'level_screen.dart';
 import 'profiles.dart';
+import 'sound_panel.dart';
 import 'review_screen.dart';
 import 'bonus_variant.dart';
 import 'coach_screen.dart';
@@ -204,11 +204,6 @@ class _MapScreenState extends State<MapScreen> {
                   onPressed: _soundPanel,
                 ),
                 _langButton(),
-                IconButton(
-                  tooltip: l.t('tip_reset'),
-                  icon: const Icon(Icons.restart_alt),
-                  onPressed: _confirmReset,
-                ),
               ],
             ],
           ),
@@ -580,59 +575,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _soundPanel() async {
-    final l = L.instance;
-    await showDialog<void>(
-      context: context,
-      builder: (c) => StatefulBuilder(
-        builder: (c, set) => AlertDialog(
-          title: Text(l.t('sound_title')),
-          content: SizedBox(
-            width: math.min(380, MediaQuery.sizeOf(c).width - 72),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SwitchListTile(
-                  title: Text(l.t('sound_music_on')),
-                  value: !Sfx.muted,
-                  onChanged: (_) async {
-                    await Sfx.toggleMute();
-                    set(() {});
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.music_note),
-                  title: Text(l.t('sound_music')),
-                  subtitle: Slider(
-                    value: Sfx.musicVolume,
-                    onChanged: Sfx.muted
-                        ? null
-                        : (v) {
-                            Sfx.setMusicVolume(v);
-                            set(() {});
-                          },
-                  ),
-                ),
-                ListTile(
-                  leading: const Text('🐱', style: TextStyle(fontSize: 22)),
-                  title: Text(l.t('sound_cats')),
-                  subtitle: Slider(
-                    value: Sfx.memeVolume,
-                    onChanged: (v) {
-                      Sfx.setMemeVolume(v);
-                      set(() {});
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(c), child: Text(l.t('close'))),
-          ],
-        ),
-      ),
-    );
+    await showSoundPanel(context);
     if (mounted) setState(() {});
   }
 
@@ -707,8 +650,6 @@ class _MapScreenState extends State<MapScreen> {
             _soundPanel();
           case 'lang':
             l.setLang(l.isEs ? 'en' : 'es');
-          case 'reset':
-            _confirmReset();
         }
       },
       itemBuilder: (c) => [
@@ -742,7 +683,6 @@ class _MapScreenState extends State<MapScreen> {
           item('admin', Icons.admin_panel_settings_outlined, l.t('tip_admin')),
         item('sound', Icons.music_note_outlined, l.t('sound_title')),
         item('lang', Icons.translate, l.isEs ? 'English' : 'Español'),
-        item('reset', Icons.restart_alt, l.t('tip_reset')),
       ],
     );
   }
@@ -758,26 +698,6 @@ class _MapScreenState extends State<MapScreen> {
         PopupMenuItem(value: 'en', child: Text('English')),
       ],
     );
-  }
-
-  Future<void> _confirmReset() async {
-    final l = L.instance;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: Text(l.t('reset_progress')),
-        content: Text(l.t('reset_confirm')),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(c, false),
-              child: Text(l.t('cancel'))),
-          FilledButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: Text(l.t('confirm'))),
-        ],
-      ),
-    );
-    if (ok == true) await Progress.instance.reset();
   }
 
   void _openShop() => Navigator.push(

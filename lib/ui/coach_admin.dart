@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/coach_problems.dart';
 import '../l10n.dart';
 import 'keyboard_scroll.dart';
@@ -33,7 +35,9 @@ class _CoachAdminScreenState extends State<CoachAdminScreen> {
   Widget build(BuildContext context) {
     final l = L.instance;
     return Scaffold(
-      appBar: AppBar(title: Text(l.pick('Subir problemas', 'Upload problems'))),
+      appBar: AppBar(
+          actions: const [MusicButton()],
+          title: Text(l.pick('Subir problemas', 'Upload problems'))),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _edit(null),
         icon: const Icon(Icons.add),
@@ -234,6 +238,7 @@ class _CoachProblemFormState extends State<_CoachProblemForm> {
             ? l.pick('Nuevo problema', 'New problem')
             : l.pick('Editar problema', 'Edit problem')),
         actions: [
+          const MusicButton(),
           Padding(
             padding: const EdgeInsets.only(right: 10),
             child: FilledButton(

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/contest_long.dart';
 import '../data/contest_pool.dart';
 import '../data/worlds.dart';
@@ -181,6 +183,7 @@ class _ContestScreenState extends State<ContestScreen> {
           appBar: AppBar(
             title: Text(l.t('contest')),
             actions: [
+              const MusicButton(),
               IconButton(
                 tooltip: l.pick(
                     'Terminar el simulacro ahora', 'End the mock contest now'),

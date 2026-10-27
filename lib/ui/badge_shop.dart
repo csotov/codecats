@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/badges.dart';
 import '../data/cats.dart';
 import '../data/shop_cats.dart';
@@ -143,7 +145,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
           appBar: AppBar(
             title: Text('🛍️ ${l.pick('Tienda de insignias', 'Badge shop')}',
                 style: const TextStyle(fontWeight: FontWeight.w800)),
-            actions: const [CoinBadge(), SizedBox(width: 10)],
+            actions: const [MusicButton(), CoinBadge(), SizedBox(width: 10)],
             bottom: TabBar(tabs: [
               Tab(
                   child: Tooltip(

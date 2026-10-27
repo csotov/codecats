@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/worlds.dart';
 import '../l10n.dart';
 import '../models.dart';
@@ -33,7 +35,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
   Widget build(BuildContext context) {
     final l = L.instance;
     return Scaffold(
-      appBar: AppBar(title: Text('📓 ${l.t('notebook')}')),
+      appBar: AppBar(
+          actions: const [MusicButton()], title: Text('📓 ${l.t('notebook')}')),
       body: AnimatedBuilder(
         animation: Progress.instance,
         builder: (context, _) {

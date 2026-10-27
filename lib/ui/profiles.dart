@@ -5,8 +5,22 @@ import '../services/progress.dart';
 import 'theme.dart';
 
 const kProfileEmojis = [
-  '🐯', '🦊', '🐸', '🐼', '🦁', '🐙', '🦄', '🐺',
-  '🐱', '🐶', '🦖', '🐧', '🤖', '👾', '🐝', '🐨',
+  '🐯',
+  '🦊',
+  '🐸',
+  '🐼',
+  '🦁',
+  '🐙',
+  '🦄',
+  '🐺',
+  '🐱',
+  '🐶',
+  '🦖',
+  '🐧',
+  '🤖',
+  '👾',
+  '🐝',
+  '🐨',
 ];
 
 /// Profile slots picker: each player gets independent progress.
@@ -131,9 +145,7 @@ class _ProfilePickerState extends State<ProfilePicker> {
                         : AppTheme.bgAlt,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: e == _emoji
-                          ? AppTheme.accent
-                          : AppTheme.cardEdge,
+                      color: e == _emoji ? AppTheme.accent : AppTheme.cardEdge,
                     ),
                   ),
                   child: Text(e, style: const TextStyle(fontSize: 20)),

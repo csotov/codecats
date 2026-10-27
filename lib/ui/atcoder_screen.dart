@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/atcoder_lists.dart';
 import '../l10n.dart';
 import '../services/cloud.dart';
@@ -89,6 +91,7 @@ class _AtcoderScreenState extends State<AtcoderScreen> {
         title: Text(
             '🌏 ${l.pick('Problemas reales de AtCoder', 'Real AtCoder problems')}'),
         actions: [
+          const MusicButton(),
           Tooltip(
             message:
                 l.pick('Cambiar usuario de AtCoder', 'Change AtCoder user'),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../l10n.dart';
 import '../services/cloud.dart';
 import '../services/progress.dart';
@@ -72,7 +74,9 @@ class _AccountScreenState extends State<AccountScreen> {
     final l = L.instance;
     final c = Cloud.instance;
     return Scaffold(
-      appBar: AppBar(title: Text(l.pick('Tu cuenta', 'Your account'))),
+      appBar: AppBar(
+          actions: const [MusicButton()],
+          title: Text(l.pick('Tu cuenta', 'Your account'))),
       body: AnimatedBuilder(
         animation: c,
         builder: (context, _) => Center(

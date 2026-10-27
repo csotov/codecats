@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/cats.dart';
 import '../l10n.dart';
 import '../services/progress.dart';
@@ -46,6 +48,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
           title: Text(l.t('collection'),
               style: const TextStyle(fontWeight: FontWeight.w800)),
           actions: [
+            const MusicButton(),
             Center(
               child: Padding(
                 padding: const EdgeInsets.only(right: 14),

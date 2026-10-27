@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/obi_models.dart';
 import '../engine/obi_judge.dart';
 import '../services/cloud.dart';
@@ -460,6 +462,7 @@ class _ObiSimScreenState extends State<ObiSimScreen>
             style:
                 const TextStyle(fontWeight: FontWeight.w900, color: _orange)),
         actions: [
+          const MusicButton(),
           Center(
             child: Padding(
               padding: const EdgeInsets.only(right: 14),

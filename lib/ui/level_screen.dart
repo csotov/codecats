@@ -3,6 +3,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/olympiad_tracks.dart';
 import 'olympiad_screens.dart';
 
@@ -963,6 +965,7 @@ class _LevelScreenState extends State<LevelScreen>
             ],
           ),
           actions: [
+            const MusicButton(),
             const CoinBadge(),
             IconButton(
               tooltip: l.t('tip_restart'),
