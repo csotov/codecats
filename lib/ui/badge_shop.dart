@@ -132,8 +132,11 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
   Widget build(BuildContext context) {
     final l = L.instance;
     final p = Progress.instance;
+    // Pestaña 'Gatos' pausada por ahora: kShopCats, los retratos en
+    // assets/shopcats/ y _catsGrid/_catCard quedan listos para volver.
+    const catsTab = false;
     return DefaultTabController(
-      length: 3,
+      length: catsTab ? 3 : 2,
       child: AnimatedBuilder(
         animation: p,
         builder: (context, _) => Scaffold(
@@ -148,12 +151,13 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
                           'Fotos de gatos famosos para comprar y ponerte',
                           'Famous cat photos to buy and wear'),
                       child: Text(l.pick('Insignias', 'Badges')))),
-              Tab(
-                  child: Tooltip(
-                      message: l.pick('Gatitos para adoptar con Miaudólares',
-                          'Kitties to adopt with Miaudólares'),
-                      child: Text(
-                          '🐱 ${l.pick('Gatos', 'Cats')} ${kShopCats.where((c) => p.badges.contains(c.id)).length}/${kShopCats.length}'))),
+              if (catsTab)
+                Tab(
+                    child: Tooltip(
+                        message: l.pick('Gatitos para adoptar con Miaudólares',
+                            'Kitties to adopt with Miaudólares'),
+                        child: Text(
+                            '🐱 ${l.pick('Gatos', 'Cats')} ${kShopCats.where((c) => p.badges.contains(c.id)).length}/${kShopCats.length}'))),
               Tab(
                   child: Tooltip(
                       message: l.pick('Medallas de C++ que se ganan con metas',
@@ -164,7 +168,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
           ),
           body: TabBarView(children: [
             _grid(_shopScroll, kShopBadges, p, l),
-            _catsGrid(p, l),
+            if (catsTab) _catsGrid(p, l),
             _grid(_goalScroll, kGoalBadges, p, l),
           ]),
         ),
