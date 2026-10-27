@@ -18,7 +18,7 @@ void main() {
 
   test('old saves keep their stars as flags', () {
     final old = LevelProgress.fromJson({'s': true, 'st': 2});
-    expect(old.starMask, kStarWin | kStarNoHint);
+    expect(old.starMask, kStarWin | kStarHabit);
     final full = LevelProgress.fromJson({'s': true, 'st': 3});
     expect(full.starMask, 7);
     expect(LevelProgress.fromJson({'s': false}).starMask, 0);

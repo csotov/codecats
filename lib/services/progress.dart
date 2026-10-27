@@ -854,6 +854,39 @@ class Progress extends ChangeNotifier {
   /// after two empty events in a row the next one always gives a cat.
   /// Starter ('always') cats are never granted here: they join the
   /// Gatoteca only when actually shown (see [markSeen]).
+  static const kHatCoins = 5;
+
+  /// Gorritos Gatunos earned (one per level at most).
+  int get hats => levels.values.where((p) => p.starMask & 8 != 0).length;
+
+  /// Gives the Gorrito Gatuno of [levelId] once; false if already owned.
+  bool awardHat(String levelId) {
+    final p = of(levelId);
+    if (p.starMask & 8 != 0) return false;
+    p.starMask |= 8;
+    coins += kHatCoins;
+    _save();
+    notifyListeners();
+    return true;
+  }
+
+  /// Coin cats are granted as soon as the purse is big enough, from any
+  /// screen, without the random draw.
+  List<CatMeme> checkCoinCats() {
+    final fresh = [
+      for (final c in kCats)
+        if (c.trigger == CatTrigger.coinsN &&
+            !unlockedCats.contains(c.id) &&
+            coins >= c.need)
+          c
+    ];
+    if (fresh.isEmpty) return fresh;
+    unlockedCats.addAll(fresh.map((c) => c.id));
+    _save();
+    notifyListeners();
+    return fresh;
+  }
+
   List<CatMeme> checkCatUnlocks() {
     final fresh = <CatMeme>[];
     int rank(CatMeme c) => c.trigger == CatTrigger.halloweenN
@@ -878,6 +911,7 @@ class Progress extends ChangeNotifier {
     if (eligible.isNotEmpty) fresh.add(eligible.first);
     if (fresh.isNotEmpty) {
       final give = rank(fresh.first) < 2 ||
+          fresh.first.trigger == CatTrigger.coinsN ||
           unlockedCats.isEmpty ||
           _dryChecks >= 2 ||
           _rng.nextDouble() < 0.5;

@@ -17,7 +17,20 @@ enum ChallengeKind {
 }
 
 /// Star flags kept per level (OR-ed across visits).
-const kStarWin = 1, kStarNoHint = 2, kStarChallenge = 4;
+const kStarWin = 1, kStarHabit = 2, kStarChallenge = 4, kStarHat = 8;
+
+/// The second star alternates per level: "explain it to the Profe"
+/// (predict the sample output) or "test before fighting".
+bool habitIsQuiz(Level level) =>
+    level.samples.isNotEmpty &&
+    level.id.codeUnits.fold<int>(0, (a, b) => a + b).isOdd;
+
+String habitText(Level level) => habitIsQuiz(level)
+    ? L.instance.pick('Explicáselo al Profe', 'Explain it to the Profe')
+    : L.instance.pick('Probar antes de combatir', 'Test before fighting');
+
+String hatText() => L.instance.pick('🧢 Plus: 3 estrellas en el primer combate',
+    '🧢 Bonus: 3 stars on the first battle');
 
 int worldNumberOf(Level level) {
   for (var i = 0; i < kWorlds.length; i++) {
@@ -95,8 +108,9 @@ String starsSummary(Level level, int mask) {
       '${mask & bit != 0 ? '⭐' : '☆'} ${l.pick(es, en)}';
   return [
     row(kStarWin, 'Ganar', 'Win'),
-    row(kStarNoHint, 'Sin comprar pista', 'No hint bought'),
+    '${mask & kStarHabit != 0 ? '⭐' : '☆'} ${habitText(level)}',
     '${mask & kStarChallenge != 0 ? '⭐' : '☆'} ${challengeText(level)}',
+    '${mask & kStarHat != 0 ? '✅' : '▫️'} ${hatText()}',
   ].join('\n');
 }
 
