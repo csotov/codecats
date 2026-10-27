@@ -23,10 +23,12 @@ void _engineWorker(SendPort handshake) {
       if (m['op'] == 'boot') {
         rt ??= getJavascriptRuntime(
             extraArgs: const {'stackSize': 8 * 1024 * 1024});
-        final r = rt!.evaluate('${m['jscpp']}\n${m['runner']}\n"ok";');
+        final r = rt!.evaluate(
+            '${m['jscpp']}\n${m['runner']}\n"ok";');
         reply.send({'ok': !r.isError, 'err': r.stringResult});
       } else if (m['op'] == 'run') {
-        final r = rt!.evaluate('codeArenaRun(${jsonEncode(m['code'])}, '
+        final r = rt!.evaluate(
+            'codeArenaRun(${jsonEncode(m['code'])}, '
             '${jsonEncode(m['input'])})');
         reply.send({'ok': !r.isError, 'res': r.stringResult});
       }
@@ -54,8 +56,10 @@ class IoCppRunner implements CppRunner {
     if (!_booted) {
       final jscpp =
           await rootBundle.loadString('assets/vendor/JSCPP.es5.min.js');
-      final wrapper = await rootBundle.loadString('assets/vendor/runner.js');
-      final res = await _rpc({'op': 'boot', 'jscpp': jscpp, 'runner': wrapper},
+      final wrapper =
+          await rootBundle.loadString('assets/vendor/runner.js');
+      final res = await _rpc(
+          {'op': 'boot', 'jscpp': jscpp, 'runner': wrapper},
           const Duration(seconds: 30));
       if (res['ok'] != true) {
         _kill();
@@ -90,15 +94,18 @@ class IoCppRunner implements CppRunner {
       return RunOutput(ok: false, error: RunError.engine, detail: '$e');
     }
     try {
-      final res =
-          await _rpc({'op': 'run', 'code': code, 'input': input}, timeout);
+      final res = await _rpc(
+          {'op': 'run', 'code': code, 'input': input}, timeout);
       if (res['ok'] != true) {
         return RunOutput(
-            ok: false, error: RunError.engine, detail: '${res['err']}');
+            ok: false,
+            error: RunError.engine,
+            detail: '${res['err']}');
       }
       final parsed = jsonDecode(res['res'] as String);
       if (parsed is Map<String, dynamic>) return RunOutput.fromJson(parsed);
-      return RunOutput(ok: false, error: RunError.engine, detail: 'bad result');
+      return RunOutput(
+          ok: false, error: RunError.engine, detail: 'bad result');
     } on TimeoutException {
       _kill();
       return const RunOutput(ok: false, error: RunError.timeout);

@@ -9,8 +9,8 @@ class Coach {
   static ({String es, String en})? analyze(JudgeReport report,
       {required int failStreak}) {
     if (report.allPassed) return null;
-    final r = report.results
-        .firstWhere((t) => !t.passed, orElse: () => report.results.first);
+    final r = report.results.firstWhere((t) => !t.passed,
+        orElse: () => report.results.first);
     final deep = failStreak >= 2; // third+ fail -> say it plainly
     return switch (r.status) {
       TcStatus.parseError => _parse(r, deep),
@@ -81,10 +81,12 @@ class Coach {
       );
 
   static ({String es, String en}) _engine(TestResult r) => (
-        es: 'Algo raro pasó en el motor. Prueba simplificar el programa y '
-            'volver a intentarlo.',
-        en: 'Something odd happened in the engine. Try simplifying the '
-            'program and retry.',
+        es:
+            'Algo raro pasó en el motor. Prueba simplificar el programa y '
+                'volver a intentarlo.',
+        en:
+            'Something odd happened in the engine. Try simplifying the '
+                'program and retry.',
       );
 
   static ({String es, String en}) _wrongAnswer(TestResult r, bool deep) {
@@ -162,13 +164,15 @@ class Coach {
 
     // Case-only difference — "par" vs "Par".
     if (eToks.length == aToks.length &&
-        List.generate(eToks.length, (i) => i)
-            .every((i) => eToks[i].toLowerCase() == aToks[i].toLowerCase())) {
+        List.generate(eToks.length, (i) => i).every(
+            (i) => eToks[i].toLowerCase() == aToks[i].toLowerCase())) {
       return (
-        es: '¡Casi perfecto! Solo cambian las mayúsculas/minúsculas. Escribe '
-            'el texto exactamente igual: «${r.expected.trim()}».',
-        en: 'Almost perfect! Only the upper/lowercase differs. Write the '
-            'text exactly the same: "${r.expected.trim()}".',
+        es:
+            '¡Casi perfecto! Solo cambian las mayúsculas/minúsculas. Escribe '
+                'el texto exactamente igual: «${r.expected.trim()}».',
+        en:
+            'Almost perfect! Only the upper/lowercase differs. Write the '
+                'text exactly the same: "${r.expected.trim()}".',
       );
     }
 
@@ -213,10 +217,12 @@ class Coach {
     }
 
     return (
-      es: 'Compara tu salida con la esperada palabra por palabra — el '
-          'detalle está en alguna diferencia pequeña.',
-      en: 'Compare your output with the expected one word by word — the '
-          'issue is a small difference.',
+      es:
+          'Compara tu salida con la esperada palabra por palabra — el '
+              'detalle está en alguna diferencia pequeña.',
+      en:
+          'Compare your output with the expected one word by word — the '
+              'issue is a small difference.',
     );
   }
 
@@ -224,5 +230,6 @@ class Coach {
       s.trim().split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
 
   static bool _alpha(String t) => RegExp(r'[a-zA-Z]').hasMatch(t);
-  static bool _numeric(String t) => RegExp(r'^-?\d+(\.\d+)?$').hasMatch(t);
+  static bool _numeric(String t) =>
+      RegExp(r'^-?\d+(\.\d+)?$').hasMatch(t);
 }

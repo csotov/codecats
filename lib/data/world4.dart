@@ -24,15 +24,9 @@ final world4 = World(
           'Print them in reverse order, separated by spaces.',
       iEs: 'Línea 1: n. Línea 2: n enteros.',
       iEn: 'Line 1: n. Line 2: n integers.',
-      samples: [
-        ['4\n1 2 3 4', '4 3 2 1'],
-        ['3\n9 8 7', '7 8 9']
-      ],
-      tests: [
-        ['1\n5', '5'],
-        ['5\n0 1 0 1 0', '0 1 0 1 0'],
-        ['6\n10 -3 8 8 -2 4', '4 -2 8 8 -3 10']
-      ],
+      samples: [['4\n1 2 3 4', '4 3 2 1'], ['3\n9 8 7', '7 8 9']],
+      tests: [['1\n5', '5'], ['5\n0 1 0 1 0', '0 1 0 1 0'],
+              ['6\n10 -3 8 8 -2 4', '4 -2 8 8 -3 10']],
       hEs: [
         'Guarda con: for (int i = 0; i < n; i++) cin >> a[i];',
         'Imprime al revés: for (int i = n - 1; i >= 0; i--) cout << a[i] << " ";',
@@ -43,16 +37,9 @@ final world4 = World(
       ],
       mode: EditorMode.hybrid,
       blocks: const [
-        'decl_int',
-        'decl_array',
-        'read_var',
-        'read_array',
-        'print_array',
-        'for_down',
-        'print_expr',
-        'print_inline',
-        'print_space',
-        'raw_line',
+        'decl_int', 'decl_array', 'read_var', 'read_array',
+        'print_array', 'for_down', 'print_expr', 'print_inline',
+        'print_space', 'raw_line',
       ],
       starter: kStrStarter,
       xp: 200,
@@ -70,15 +57,9 @@ final world4 = World(
       dEn: 'Read n and an array of n integers. Print the total sum.',
       iEs: 'Línea 1: n. Línea 2: n enteros.',
       iEn: 'Line 1: n. Line 2: n integers.',
-      samples: [
-        ['4\n1 2 3 4', '10'],
-        ['3\n10 20 30', '60']
-      ],
-      tests: [
-        ['1\n-5', '-5'],
-        ['5\n0 0 0 0 0', '0'],
-        ['6\n100 -50 25 -25 1 9', '60']
-      ],
+      samples: [['4\n1 2 3 4', '10'], ['3\n10 20 30', '60']],
+      tests: [['1\n-5', '-5'], ['5\n0 0 0 0 0', '0'],
+              ['6\n100 -50 25 -25 1 9', '60']],
       hEs: [
         'int suma = 0; for (int i = 0; i < n; i++) suma += a[i];',
       ],
@@ -87,14 +68,8 @@ final world4 = World(
       ],
       mode: EditorMode.hybrid,
       blocks: const [
-        'decl_int',
-        'decl_array',
-        'read_var',
-        'read_array',
-        'print_expr',
-        'for_i',
-        'add_assign',
-        'raw_line',
+        'decl_int', 'decl_array', 'read_var', 'read_array',
+        'print_expr', 'for_i', 'add_assign', 'raw_line',
       ],
       starter: kStrStarter,
       xp: 200,
@@ -112,15 +87,9 @@ final world4 = World(
       dEn: 'Read n and an array. Print the maximum element.',
       iEs: 'Línea 1: n (n ≥ 1). Línea 2: n enteros.',
       iEn: 'Line 1: n (n ≥ 1). Line 2: n integers.',
-      samples: [
-        ['5\n3 9 2 7 5', '9'],
-        ['3\n-5 -1 -9', '-1']
-      ],
-      tests: [
-        ['1\n42', '42'],
-        ['4\n7 7 7 7', '7'],
-        ['6\n-100 -200 -3 -50 -1 -10', '-1']
-      ],
+      samples: [['5\n3 9 2 7 5', '9'], ['3\n-5 -1 -9', '-1']],
+      tests: [['1\n42', '42'], ['4\n7 7 7 7', '7'],
+              ['6\n-100 -200 -3 -50 -1 -10', '-1']],
       hEs: [
         'int m = a[0]; for (int i = 1; i < n; i++) if (a[i] > m) m = a[i];',
         'Nunca empieces m en 0: ¡falla si todos son negativos!',
@@ -148,15 +117,9 @@ final world4 = World(
           'Print how many times x appears.',
       iEs: 'Línea 1: n. Línea 2: n enteros. Línea 3: x.',
       iEn: 'Line 1: n. Line 2: n integers. Line 3: x.',
-      samples: [
-        ['5\n1 2 2 3 2\n2', '3'],
-        ['4\n5 6 7 8\n9', '0']
-      ],
-      tests: [
-        ['3\n7 7 7\n7', '3'],
-        ['1\n0\n0', '1'],
-        ['6\n-1 2 -1 3 -1 4\n-1', '3']
-      ],
+      samples: [['5\n1 2 2 3 2\n2', '3'], ['4\n5 6 7 8\n9', '0']],
+      tests: [['3\n7 7 7\n7', '3'], ['1\n0\n0', '1'],
+              ['6\n-1 2 -1 3 -1 4\n-1', '3']],
       hEs: [
         'if (a[i] == x) cuenta++; dentro del recorrido.',
       ],
@@ -184,15 +147,10 @@ final world4 = World(
           'If none qualify, print NADA (an empty line).',
       iEs: 'Línea 1: n. Línea 2: n enteros.',
       iEn: 'Line 1: n. Line 2: n integers.',
-      samples: [
-        ['5\n3 15 8 20 11', '15 20 11'],
-        ['3\n1 2 3', 'NADA']
-      ],
-      tests: [
-        ['4\n10 11 10 30', '11 30'],
-        ['2\n100 200', '100 200'],
-        ['1\n10', 'NADA']
-      ],
+      samples: [['5\n3 15 8 20 11', '15 20 11'],
+                ['3\n1 2 3', 'NADA']],
+      tests: [['4\n10 11 10 30', '11 30'], ['2\n100 200', '100 200'],
+              ['1\n10', 'NADA']],
       hEs: [
         'Usa una bandera: bool alguno = false; si imprimes uno, ponla en true.',
         'Al final: if (!alguno) cout << "NADA" << endl;',
@@ -218,15 +176,9 @@ final world4 = World(
           'Print its length with strlen.',
       iEs: 'Una palabra.',
       iEn: 'One word.',
-      samples: [
-        ['espada', '6'],
-        ['a', '1']
-      ],
-      tests: [
-        ['programacion', '12'],
-        ['ioi', '3'],
-        ['supercalifragilistico', '20']
-      ],
+      samples: [['espada', '6'], ['a', '1']],
+      tests: [['programacion', '12'], ['ioi', '3'],
+              ['supercalifragilistico', '20']],
       hEs: [
         'char s[105]; cin >> s; cout << strlen(s) << endl;',
         'Necesitas #include <cstring> para strlen.',
@@ -252,15 +204,8 @@ final world4 = World(
       dEn: 'Read a word and print it reversed.',
       iEs: 'Una palabra.',
       iEn: 'One word.',
-      samples: [
-        ['hola', 'aloh'],
-        ['arena', 'anera']
-      ],
-      tests: [
-        ['a', 'a'],
-        ['ab', 'ba'],
-        ['codigo', 'ogidoc']
-      ],
+      samples: [['hola', 'aloh'], ['arena', 'anera']],
+      tests: [['a', 'a'], ['ab', 'ba'], ['codigo', 'ogidoc']],
       hEs: [
         'int n = strlen(s); for (int i = n - 1; i >= 0; i--) cout << s[i];',
       ],
@@ -286,22 +231,15 @@ final world4 = World(
           'how many vowels it has.',
       iEs: 'Una palabra en minúsculas.',
       iEn: 'One lowercase word.',
-      samples: [
-        ['murcielago', '5'],
-        ['xyz', '0']
-      ],
-      tests: [
-        ['aeiou', '5'],
-        ['bcdfg', '0'],
-        ['programacion', '5']
-      ],
+      samples: [['murcielago', '5'], ['xyz', '0']],
+      tests: [['aeiou', '5'], ['bcdfg', '0'], ['programacion', '5']],
       hEs: [
         'if (s[i] == \'a\' || s[i] == \'e\' || s[i] == \'i\' || '
-            's[i] == \'o\' || s[i] == \'u\')',
+        's[i] == \'o\' || s[i] == \'u\')',
       ],
       hEn: [
         'if (s[i] == \'a\' || s[i] == \'e\' || s[i] == \'i\' || '
-            's[i] == \'o\' || s[i] == \'u\')',
+        's[i] == \'o\' || s[i] == \'u\')',
       ],
       mode: EditorMode.code,
       starter: kStrStarter,
@@ -320,17 +258,9 @@ final world4 = World(
       dEn: 'Read a word. Print SI if it is a palindrome, NO if not.',
       iEs: 'Una palabra en minúsculas.',
       iEn: 'One lowercase word.',
-      samples: [
-        ['reconocer', 'SI'],
-        ['casa', 'NO'],
-        ['a', 'SI']
-      ],
-      tests: [
-        ['abba', 'SI'],
-        ['abcd', 'NO'],
-        ['racecar', 'SI'],
-        ['aab', 'NO']
-      ],
+      samples: [['reconocer', 'SI'], ['casa', 'NO'], ['a', 'SI']],
+      tests: [['abba', 'SI'], ['abcd', 'NO'], ['racecar', 'SI'],
+              ['aab', 'NO']],
       hEs: [
         'Compara s[i] con s[n-1-i] para i desde 0 hasta n/2.',
         'Si alguna pareja difiere, NO es palíndromo.',
@@ -358,17 +288,11 @@ final world4 = World(
           'array rotated k positions to the right.',
       iEs: 'Línea 1: n k. Línea 2: n enteros.',
       iEn: 'Line 1: n k. Line 2: n integers.',
-      samples: [
-        ['5 1\n1 2 3 4 5', '5 1 2 3 4'],
-        ['5 2\n1 2 3 4 5', '4 5 1 2 3'],
-        ['4 4\n1 2 3 4', '1 2 3 4']
-      ],
-      tests: [
-        ['3 1\n7 8 9', '9 7 8'],
-        ['5 7\n1 2 3 4 5', '4 5 1 2 3'],
-        ['1 5\n42', '42'],
-        ['6 3\n1 2 3 4 5 6', '4 5 6 1 2 3']
-      ],
+      samples: [['5 1\n1 2 3 4 5', '5 1 2 3 4'],
+                ['5 2\n1 2 3 4 5', '4 5 1 2 3'],
+                ['4 4\n1 2 3 4', '1 2 3 4']],
+      tests: [['3 1\n7 8 9', '9 7 8'], ['5 7\n1 2 3 4 5', '4 5 1 2 3'],
+              ['1 5\n42', '42'], ['6 3\n1 2 3 4 5 6', '4 5 6 1 2 3']],
       hEs: [
         'k puede ser mayor que n: usa k = k % n.',
         'El elemento de la posición i va a la posición (i + k) % n.',

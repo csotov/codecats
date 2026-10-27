@@ -61,16 +61,11 @@ final world8 = World(
           'k consecutive elements.',
       iEs: 'Línea 1: n k. Línea 2: n enteros.',
       iEn: 'Line 1: n k. Line 2: n integers.',
-      samples: [
-        ['6 3\n1 4 2 10 2 3', '16'],
-        ['4 2\n5 1 9 2', '11']
-      ],
-      tests: [
-        ['3 3\n7 8 9', '24'],
-        ['5 1\n3 9 1 4 2', '9'],
-        ['6 4\n-2 -5 -1 -3 -4 -1', '-9'],
-        ['5 2\n10 -1 -1 10 -1', '9']
-      ],
+      samples: [['6 3\n1 4 2 10 2 3', '16'],
+                ['4 2\n5 1 9 2', '11']],
+      tests: [['3 3\n7 8 9', '24'], ['5 1\n3 9 1 4 2', '9'],
+              ['6 4\n-2 -5 -1 -3 -4 -1', '-9'],
+              ['5 2\n10 -1 -1 10 -1', '9']],
       hEs: [
         'Primera ventana: suma a[0..k-1].',
         'Desliza: resta el que sale (a[i-1]) y suma el que entra (a[i+k-1]).',
@@ -78,7 +73,7 @@ final world8 = World(
       hEn: [
         'First window: sum a[0..k-1].',
         'Slide: subtract the one leaving (a[i-1]) and add the one '
-            'entering (a[i+k-1]).',
+        'entering (a[i+k-1]).',
       ],
       starter: kStrStarter,
       xp: 450,
@@ -97,18 +92,9 @@ final world8 = World(
           'monedas de 25, 10, 5 y 1 que suman c.',
       dEn: 'Read an amount c. Print the minimum number of '
           'coins of 25, 10, 5 and 1 that add up to c.',
-      samples: [
-        ['41', '4'],
-        ['100', '4'],
-        ['7', '3']
-      ],
-      tests: [
-        ['1', '1'],
-        ['30', '2'],
-        ['99', '9'],
-        ['63', '6'],
-        ['0', '0']
-      ],
+      samples: [['41', '4'], ['100', '4'], ['7', '3']],
+      tests: [['1', '1'], ['30', '2'], ['99', '9'], ['63', '6'],
+              ['0', '0']],
       hEs: [
         'cuenta += c / 25; c = c % 25; — repite con 10, 5 y 1.',
       ],
@@ -135,26 +121,18 @@ final world8 = World(
           'position, NO otherwise.',
       iEs: 'Línea 1: n. Línea 2: n enteros ≥ 0.',
       iEn: 'Line 1: n. Line 2: n integers ≥ 0.',
-      samples: [
-        ['5\n2 3 1 1 4', 'SI'],
-        ['5\n3 2 1 0 4', 'NO']
-      ],
-      tests: [
-        ['1\n0', 'SI'],
-        ['4\n0 0 0 0', 'NO'],
-        ['4\n2 0 0 0', 'NO'],
-        ['4\n3 0 0 1', 'SI'],
-        ['6\n2 0 2 0 1 0', 'SI'],
-        ['5\n1 1 1 1 1', 'SI']
-      ],
+      samples: [['5\n2 3 1 1 4', 'SI'], ['5\n3 2 1 0 4', 'NO']],
+      tests: [['1\n0', 'SI'], ['4\n0 0 0 0', 'NO'],
+              ['4\n2 0 0 0', 'NO'], ['4\n3 0 0 1', 'SI'],
+              ['6\n2 0 2 0 1 0', 'SI'], ['5\n1 1 1 1 1', 'SI']],
       hEs: [
         'int lejos = 0; para cada i: si i > lejos no puedes estar ahí → NO. '
-            'Actualiza lejos = max(lejos, i + a[i]).',
+        'Actualiza lejos = max(lejos, i + a[i]).',
         'Llegas si lejos >= n - 1 al terminar sin fallar.',
       ],
       hEn: [
         'int lejos = 0; for each i: if i > lejos you cannot be there → NO. '
-            'Update lejos = max(lejos, i + a[i]).',
+        'Update lejos = max(lejos, i + a[i]).',
         'You make it if lejos >= n - 1 without failing.',
       ],
       starter: kStrStarter,
@@ -176,20 +154,12 @@ final world8 = World(
           'hay de llegar arriba (n ≤ 45).',
       dEn: 'You climb an n-step stair jumping 1 or 2 at a time. '
           'Print how many distinct ways to reach the top (n ≤ 45).',
-      samples: [
-        ['3', '3'],
-        ['5', '8'],
-        ['1', '1']
-      ],
-      tests: [
-        ['2', '2'],
-        ['10', '89'],
-        ['20', '10946'],
-        ['45', '1836311903']
-      ],
+      samples: [['3', '3'], ['5', '8'], ['1', '1']],
+      tests: [['2', '2'], ['10', '89'], ['20', '10946'],
+              ['45', '1836311903']],
       hEs: [
         'formas[0] = 1; formas[1] = 1; '
-            'formas[i] = formas[i-1] + formas[i-2];',
+        'formas[i] = formas[i-1] + formas[i-2];',
         'Es fibonacci desplazado: la respuesta es fib(n+1).',
       ],
       hEn: [
@@ -220,26 +190,21 @@ final world8 = World(
           'last position.',
       iEs: 'Línea 1: n. Línea 2: n costos.',
       iEn: 'Line 1: n. Line 2: n costs.',
-      samples: [
-        ['5\n10 15 20 5 10', '40'],
-        ['4\n1 100 1 1', '3']
-      ],
-      tests: [
-        ['2\n5 7', '12'],
-        ['1\n9', '9'],
-        ['6\n0 0 0 0 0 0', '0'],
-        ['6\n2 5 3 1 4 2', '8']
-      ],
+      samples: [['5\n10 15 20 5 10', '40'],
+                ['4\n1 100 1 1', '3']],
+      tests: [['2\n5 7', '12'], ['1\n9', '9'],
+              ['6\n0 0 0 0 0 0', '0'],
+              ['6\n2 5 3 1 4 2', '8']],
       hEs: [
         'dp[0] = a[0] (pisas la casilla 0 obligatoriamente).',
         'dp[i] = a[i] + min(dp[i-1], dp[i-2]); — pagas la casilla '
-            'más lo mejor de llegar a ella.',
+        'más lo mejor de llegar a ella.',
         'Para i = 1 solo puedes venir de 0: dp[1] = a[0] + a[1].',
       ],
       hEn: [
         'dp[0] = a[0] (stepping on square 0 is mandatory).',
         'dp[i] = a[i] + min(dp[i-1], dp[i-2]); — pay the square '
-            'plus the best way to reach it.',
+        'plus the best way to reach it.',
         'For i = 1 you can only come from 0: dp[1] = a[0] + a[1].',
       ],
       starter: kStrStarter,
@@ -274,17 +239,17 @@ final world8 = World(
       ],
       hEs: [
         'void dfs(int i, int j): si está fuera, es # o ya visitada, '
-            'return; si no: marca visit[i][j]=1, cuenta++, llama dfs a '
-            'las 4 vecinas.',
+        'return; si no: marca visit[i][j]=1, cuenta++, llama dfs a '
+        'las 4 vecinas.',
         'Variables globales: declara el mapa y visit ARRIBA del main '
-            'para que la función los vea.',
+        'para que la función los vea.',
       ],
       hEn: [
         'void dfs(int i, int j): if out of bounds, # or visited, '
-            'return; else mark visit[i][j]=1, count++, call dfs on '
-            'the 4 neighbors.',
+        'return; else mark visit[i][j]=1, count++, call dfs on '
+        'the 4 neighbors.',
         'Global variables: declare the map and visit ABOVE main '
-            'so the function can see them.',
+        'so the function can see them.',
       ],
       starter: kFuncStarter,
       xp: 550,
@@ -311,29 +276,24 @@ final world8 = World(
           'elements (you must take at least 1).',
       iEs: 'Línea 1: n. Línea 2: n enteros.',
       iEn: 'Line 1: n. Line 2: n integers.',
-      samples: [
-        ['8\n-2 -3 4 -1 -2 1 5 -3', '7'],
-        ['5\n1 2 3 4 5', '15'],
-        ['4\n-5 -1 -3 -2', '-1']
-      ],
-      tests: [
-        ['1\n-7', '-7'],
-        ['3\n1 -1 1', '1'],
-        ['6\n-2 1 -3 4 -1 2', '4'],
-        ['9\n2 -1 2 3 -9 4 -1 2 -1 5', '9'],
-        ['7\n-1 -2 -3 -4 -5 -6 -7', '-1']
-      ],
+      samples: [['8\n-2 -3 4 -1 -2 1 5 -3', '7'],
+                ['5\n1 2 3 4 5', '15'],
+                ['4\n-5 -1 -3 -2', '-1']],
+      tests: [['1\n-7', '-7'], ['3\n1 -1 1', '1'],
+              ['6\n-2 1 -3 4 -1 2', '4'],
+              ['9\n2 -1 2 3 -9 4 -1 2 -1 5', '9'],
+              ['7\n-1 -2 -3 -4 -5 -6 -7', '-1']],
       hEs: [
         'mejor = a[0]; actual = 0; por cada x: actual += x; '
-            'mejor = max(mejor, actual); if (actual < 0) actual = 0;',
+        'mejor = max(mejor, actual); if (actual < 0) actual = 0;',
         'Cuidado con el caso "todos negativos": mejor empieza en a[0], '
-            'no en 0.',
+        'no en 0.',
       ],
       hEn: [
         'best = a[0]; actual = 0; for each x: actual += x; '
-            'best = max(best, actual); if (actual < 0) actual = 0;',
+        'best = max(best, actual); if (actual < 0) actual = 0;',
         'Watch the "all negative" case: best starts at a[0], '
-            'not at 0.',
+        'not at 0.',
       ],
       starter: kStrStarter,
       xp: 900,

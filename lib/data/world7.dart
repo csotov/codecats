@@ -75,12 +75,12 @@ final world7 = World(
       ],
       hEs: [
         'Necesitas dos índices: frente y fin. '
-            'Encolar: cola[fin++] = x; Desencolar: cout << cola[frente++];',
+        'Encolar: cola[fin++] = x; Desencolar: cout << cola[frente++];',
         'La única diferencia con la pila: la cola saca por el frente.',
       ],
       hEn: [
         'You need two indexes: front and back. '
-            'Enqueue: cola[fin++] = x; Dequeue: cout << cola[frente++];',
+        'Enqueue: cola[fin++] = x; Dequeue: cout << cola[frente++];',
         'The only difference from a stack: a queue removes from the front.',
       ],
       starter: kStrStarter,
@@ -135,15 +135,10 @@ final world7 = World(
           'Print the values without repeats, space-separated.',
       iEs: 'Línea 1: n. Línea 2: n enteros ordenados.',
       iEn: 'Line 1: n. Line 2: n sorted integers.',
-      samples: [
-        ['7\n1 1 2 2 2 5 5', '1 2 5'],
-        ['4\n3 3 3 3', '3']
-      ],
-      tests: [
-        ['1\n7', '7'],
-        ['5\n1 2 3 4 5', '1 2 3 4 5'],
-        ['8\n-3 -3 -1 0 0 0 2 2', '-3 -1 0 2']
-      ],
+      samples: [['7\n1 1 2 2 2 5 5', '1 2 5'],
+                ['4\n3 3 3 3', '3']],
+      tests: [['1\n7', '7'], ['5\n1 2 3 4 5', '1 2 3 4 5'],
+              ['8\n-3 -3 -1 0 0 0 2 2', '-3 -1 0 2']],
       hEs: [
         'Imprime a[i] solo si i == 0 o a[i] != a[i-1].',
       ],
@@ -168,24 +163,18 @@ final world7 = World(
           'most frequent value. On a tie, the smallest.',
       iEs: 'Línea 1: n. Línea 2: n enteros entre 0 y 9.',
       iEn: 'Line 1: n. Line 2: n integers between 0 and 9.',
-      samples: [
-        ['6\n1 2 2 5 2 9', '2'],
-        ['4\n7 3 3 7', '3']
-      ],
-      tests: [
-        ['5\n9 9 9 8 8', '9'],
-        ['3\n4 4 4', '4'],
-        ['8\n0 1 2 3 4 5 6 7', '0']
-      ],
+      samples: [['6\n1 2 2 5 2 9', '2'], ['4\n7 3 3 7', '3']],
+      tests: [['5\n9 9 9 8 8', '9'], ['3\n4 4 4', '4'],
+              ['8\n0 1 2 3 4 5 6 7', '0']],
       hEs: [
         'Cuenta con frec[10] y luego busca el índice del máximo.',
         'El empate se resuelve solo: el primer máximo encontrado gana '
-            'si usas > estricto al comparar.',
+        'si usas > estricto al comparar.',
       ],
       hEn: [
         'Count with frec[10] then find the index of the maximum.',
         'Ties resolve themselves: the first maximum found wins '
-            'if you compare with strict >.',
+        'if you compare with strict >.',
       ],
       starter: kStrStarter,
       xp: 390,
@@ -205,20 +194,11 @@ final world7 = World(
           'close has its open and they end at 0; NO otherwise.',
       iEs: 'Una cadena de paréntesis.',
       iEn: 'A parentheses string.',
-      samples: [
-        ['(())()', 'BALANCEADO'],
-        ['())(', 'NO'],
-        ['((())', 'NO']
-      ],
-      tests: [
-        ['()', 'BALANCEADO'],
-        ['(', 'NO'],
-        [')', 'NO'],
-        ['((()))', 'BALANCEADO'],
-        ['()()()', 'BALANCEADO'],
-        ['(()())', 'BALANCEADO'],
-        ['())(()', 'NO']
-      ],
+      samples: [['(())()', 'BALANCEADO'], ['())(', 'NO'],
+                ['((())', 'NO']],
+      tests: [['()', 'BALANCEADO'], ['(', 'NO'], [')', 'NO'],
+              ['((()))', 'BALANCEADO'], ['()()()', 'BALANCEADO'],
+              ['(()())', 'BALANCEADO'], ['())(()', 'NO']],
       hEs: [
         'int bal = 0; por cada letra: si es ( suma 1, si es ) resta 1.',
         'Si bal < 0 en cualquier momento → NO. Al final bal debe ser 0.',
@@ -246,28 +226,23 @@ final world7 = World(
           'sorted array of m elements. Print the n+m elements sorted.',
       iEs: 'Línea 1: n m. Línea 2: n enteros. Línea 3: m enteros.',
       iEn: 'Line 1: n m. Line 2: n integers. Line 3: m integers.',
-      samples: [
-        ['3 3\n1 4 7\n2 3 8', '1 2 3 4 7 8'],
-        ['2 2\n1 10\n5 6', '1 5 6 10']
-      ],
-      tests: [
-        ['1 1\n5\n3', '3 5'],
-        ['3 1\n2 4 6\n5', '2 4 5 6'],
-        ['2 3\n9 10\n1 2 3', '1 2 3 9 10']
-      ],
+      samples: [['3 3\n1 4 7\n2 3 8', '1 2 3 4 7 8'],
+                ['2 2\n1 10\n5 6', '1 5 6 10']],
+      tests: [['1 1\n5\n3', '3 5'], ['3 1\n2 4 6\n5', '2 4 5 6'],
+              ['2 3\n9 10\n1 2 3', '1 2 3 9 10']],
       hEs: [
         'Dos índices i y j. while (i < n && j < m): imprime el menor '
-            'de a[i], b[j] y avanza su índice.',
+        'de a[i], b[j] y avanza su índice.',
         'Al final vacía lo que quede del otro arreglo.',
         'También vale: mete todo en un tercer arreglo y ordénalo '
-            'con tu burbuja del mundo anterior.',
+        'con tu burbuja del mundo anterior.',
       ],
       hEn: [
         'Two indexes i and j. while (i < n && j < m): print the smaller '
-            'of a[i], b[j] and advance its index.',
+        'of a[i], b[j] and advance its index.',
         'At the end drain whatever is left in the other array.',
         'Also valid: put everything in a third array and sort it '
-            'with your bubble sort from the previous world.',
+        'with your bubble sort from the previous world.',
       ],
       starter: kStrStarter,
       xp: 410,
@@ -297,7 +272,8 @@ final world7 = World(
         ['6\n1 0 5\n1 1 9\n2 0\n2 1\n1 0 7\n2 0', '5\n9\n7'],
       ],
       tests: [
-        ['8\n1 0 1\n1 0 2\n1 2 9\n2 0\n2 0\n1 2 8\n2 2\n2 2', '2\n1\n9\n8'],
+        ['8\n1 0 1\n1 0 2\n1 2 9\n2 0\n2 0\n1 2 8\n2 2\n2 2',
+         '2\n1\n9\n8'],
         ['5\n1 4 10\n1 4 20\n2 4\n1 4 30\n2 4', '20\n30'],
       ],
       hEs: [

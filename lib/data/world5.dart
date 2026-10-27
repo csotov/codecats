@@ -22,15 +22,8 @@ final world5 = World(
           'En main, lee n e imprime doble(n).',
       dEn: 'Write a function int doble(int x) that returns 2*x. '
           'In main, read n and print doble(n).',
-      samples: [
-        ['21', '42'],
-        ['5', '10']
-      ],
-      tests: [
-        ['0', '0'],
-        ['-7', '-14'],
-        ['1000', '2000']
-      ],
+      samples: [['21', '42'], ['5', '10']],
+      tests: [['0', '0'], ['-7', '-14'], ['1000', '2000']],
       hEs: [
         'Arriba del main: int doble(int x) { return 2 * x; }',
         'Se usa igual que una variable: cout << doble(n);',
@@ -55,15 +48,8 @@ final world5 = World(
           'the largest of the three. Read a b c and print mayor(a, b, c).',
       iEs: 'Tres enteros.',
       iEn: 'Three integers.',
-      samples: [
-        ['1 9 4', '9'],
-        ['8 3 8', '8']
-      ],
-      tests: [
-        ['-5 -2 -9', '-2'],
-        ['0 0 0', '0'],
-        ['100 50 99', '100']
-      ],
+      samples: [['1 9 4', '9'], ['8 3 8', '8']],
+      tests: [['-5 -2 -9', '-2'], ['0 0 0', '0'], ['100 50 99', '100']],
       hEs: [
         'int m = a; if (b > m) m = b; if (c > m) m = c; return m;',
       ],
@@ -86,15 +72,8 @@ final world5 = World(
           'si esPar(n), IMPAR si no.',
       dEn: 'Write bool esPar(int n). Read n and print PAR '
           'if esPar(n), IMPAR otherwise.',
-      samples: [
-        ['8', 'PAR'],
-        ['13', 'IMPAR']
-      ],
-      tests: [
-        ['0', 'PAR'],
-        ['-6', 'PAR'],
-        ['-5', 'IMPAR']
-      ],
+      samples: [['8', 'PAR'], ['13', 'IMPAR']],
+      tests: [['0', 'PAR'], ['-6', 'PAR'], ['-5', 'IMPAR']],
       hEs: [
         'return n % 2 == 0; — la comparación ya da true o false.',
         'En main: if (esPar(n)) ... else ...',
@@ -119,17 +98,9 @@ final world5 = World(
           'base^e with a loop (e ≥ 0). Read base and e, print pot(base, e).',
       iEs: 'Dos enteros: base y exponente.',
       iEn: 'Two integers: base and exponent.',
-      samples: [
-        ['2 10', '1024'],
-        ['3 3', '27'],
-        ['5 0', '1']
-      ],
-      tests: [
-        ['2 0', '1'],
-        ['1 100', '1'],
-        ['10 6', '1000000'],
-        ['2 20', '1048576']
-      ],
+      samples: [['2 10', '1024'], ['3 3', '27'], ['5 0', '1']],
+      tests: [['2 0', '1'], ['1 100', '1'], ['10 6', '1000000'],
+              ['2 20', '1048576']],
       hEs: [
         'long long r = 1; for (int i = 0; i < e; i++) r = r * base; return r;',
         'Cualquier número a la 0 es 1: el bucle simplemente no corre.',
@@ -154,15 +125,8 @@ final world5 = World(
           'Lee n (0 ≤ n ≤ 20) e imprime fact(n).',
       dEn: 'Write a RECURSIVE long long fact(int n) that computes n!. '
           'Read n (0 ≤ n ≤ 20) and print fact(n).',
-      samples: [
-        ['5', '120'],
-        ['0', '1']
-      ],
-      tests: [
-        ['1', '1'],
-        ['6', '720'],
-        ['15', '1307674368000']
-      ],
+      samples: [['5', '120'], ['0', '1']],
+      tests: [['1', '1'], ['6', '720'], ['15', '1307674368000']],
       hEs: [
         'if (n == 0) return 1; — el caso base DETIENE la recursión.',
         'return n * fact(n - 1); — se llama a sí misma con un número menor.',
@@ -191,29 +155,20 @@ final world5 = World(
           'int fib(int n) with a LOOP (recursion makes thousands of '
           'repeated calls and is slow: engineers measure the cost '
           'of their decisions!). Read n (0 ≤ n ≤ 45) and print fib(n).',
-      samples: [
-        ['6', '8'],
-        ['10', '55'],
-        ['0', '0']
-      ],
-      tests: [
-        ['1', '1'],
-        ['2', '1'],
-        ['7', '13'],
-        ['20', '6765'],
-        ['45', '1134903170']
-      ],
+      samples: [['6', '8'], ['10', '55'], ['0', '0']],
+      tests: [['1', '1'], ['2', '1'], ['7', '13'], ['20', '6765'],
+              ['45', '1134903170']],
       hEs: [
         'Versión iterativa: int a = 0, b = 1; repite n veces '
-            '{ int t = a + b; a = b; b = t; } — la respuesta queda en a.',
+        '{ int t = a + b; a = b; b = t; } — la respuesta queda en a.',
         'Si quieres probar la recursión, úsala solo con n pequeños '
-            'y compara el tiempo.',
+        'y compara el tiempo.',
       ],
       hEn: [
         'Iterative version: int a = 0, b = 1; repeat n times '
-            '{ int t = a + b; a = b; b = t; } — the answer stays in a.',
+        '{ int t = a + b; a = b; b = t; } — the answer stays in a.',
         'If you want to try recursion, use it only for small n '
-            'and compare the timing.',
+        'and compare the timing.',
       ],
       starter: kFuncStarter,
       xp: 280,
@@ -235,17 +190,9 @@ final world5 = World(
           'Read a b and print mcd(a, b).',
       iEs: 'Dos enteros positivos.',
       iEn: 'Two positive integers.',
-      samples: [
-        ['12 18', '6'],
-        ['7 13', '1'],
-        ['100 80', '20']
-      ],
-      tests: [
-        ['5 5', '5'],
-        ['48 36', '12'],
-        ['17 31', '1'],
-        ['1000 625', '125']
-      ],
+      samples: [['12 18', '6'], ['7 13', '1'], ['100 80', '20']],
+      tests: [['5 5', '5'], ['48 36', '12'], ['17 31', '1'],
+              ['1000 625', '125']],
       hEs: [
         'if (b == 0) return a; return mcd(b, a % b);',
         'También con bucle: while (b != 0) { int t = b; b = a % b; a = t; }',
@@ -270,19 +217,9 @@ final world5 = World(
           'o NOPRIMO. (n < 2 no es primo)',
       dEn: 'Write bool esPrimo(int n). Read n and print PRIMO '
           'or NOPRIMO. (n < 2 is not prime)',
-      samples: [
-        ['7', 'PRIMO'],
-        ['12', 'NOPRIMO'],
-        ['2', 'PRIMO']
-      ],
-      tests: [
-        ['1', 'NOPRIMO'],
-        ['0', 'NOPRIMO'],
-        ['97', 'PRIMO'],
-        ['91', 'NOPRIMO'],
-        ['997', 'PRIMO'],
-        ['999', 'NOPRIMO']
-      ],
+      samples: [['7', 'PRIMO'], ['12', 'NOPRIMO'], ['2', 'PRIMO']],
+      tests: [['1', 'NOPRIMO'], ['0', 'NOPRIMO'], ['97', 'PRIMO'],
+              ['91', 'NOPRIMO'], ['997', 'PRIMO'], ['999', 'NOPRIMO']],
       hEs: [
         'if (n < 2) return false; — no olvides el caso 0 y 1.',
         'for (int i = 2; i * i <= n; i++) if (n % i == 0) return false;',
@@ -309,16 +246,8 @@ final world5 = World(
           'dígitos de n (n ≥ 0). Lee n e imprime sumaDig(n).',
       dEn: 'Write a recursive int sumaDig(int n) that sums the '
           'digits of n (n ≥ 0). Read n and print sumaDig(n).',
-      samples: [
-        ['1234', '10'],
-        ['0', '0'],
-        ['999', '27']
-      ],
-      tests: [
-        ['7', '7'],
-        ['1000000', '1'],
-        ['8642', '20']
-      ],
+      samples: [['1234', '10'], ['0', '0'], ['999', '27']],
+      tests: [['7', '7'], ['1000000', '1'], ['8642', '20']],
       hEs: [
         'if (n == 0) return 0; return n % 10 + sumaDig(n / 10);',
       ],
@@ -341,17 +270,8 @@ final world5 = World(
           '(incluyendo n).',
       dEn: 'Read n (n ≤ 30). Print how many primes exist between 1 '
           'and n (including n).',
-      samples: [
-        ['10', '4'],
-        ['2', '1'],
-        ['1', '0']
-      ],
-      tests: [
-        ['20', '8'],
-        ['30', '10'],
-        ['3', '2'],
-        ['29', '10']
-      ],
+      samples: [['10', '4'], ['2', '1'], ['1', '0']],
+      tests: [['20', '8'], ['30', '10'], ['3', '2'], ['29', '10']],
       hEs: [
         'Reutiliza esPrimo del nivel anterior.',
         'for (int i = 2; i <= n; i++) if (esPrimo(i)) cuenta++;',

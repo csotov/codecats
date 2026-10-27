@@ -24,16 +24,8 @@ final world2 = World(
           '(Hint: n % 2 is 0 for even numbers)',
       oEs: 'La palabra PAR o IMPAR.',
       oEn: 'The word PAR or IMPAR.',
-      samples: [
-        ['4', 'PAR'],
-        ['7', 'IMPAR']
-      ],
-      tests: [
-        ['0', 'PAR'],
-        ['-3', 'IMPAR'],
-        ['1000', 'PAR'],
-        ['-8', 'PAR']
-      ],
+      samples: [['4', 'PAR'], ['7', 'IMPAR']],
+      tests: [['0', 'PAR'], ['-3', 'IMPAR'], ['1000', 'PAR'], ['-8', 'PAR']],
       hEs: [
         'if (n % 2 == 0) significa "si el residuo de n entre 2 es cero".',
         'Ojo: se comparan con == (doble igual), no con =.',
@@ -44,11 +36,7 @@ final world2 = World(
       ],
       mode: EditorMode.hybrid,
       blocks: const [
-        'decl_int',
-        'read_var',
-        'print_text',
-        'if_else',
-        'raw_line',
+        'decl_int', 'read_var', 'print_text', 'if_else', 'raw_line',
       ],
       xp: 120,
       concepts: const ['if', 'módulo', 'comparación'],
@@ -65,16 +53,8 @@ final world2 = World(
           'o CERO si es 0.',
       dEn: 'Read n. Print POSITIVO if n > 0, NEGATIVO if n < 0, '
           'or CERO if it is 0.',
-      samples: [
-        ['5', 'POSITIVO'],
-        ['-9', 'NEGATIVO'],
-        ['0', 'CERO']
-      ],
-      tests: [
-        ['1', 'POSITIVO'],
-        ['-1', 'NEGATIVO'],
-        ['99999', 'POSITIVO']
-      ],
+      samples: [['5', 'POSITIVO'], ['-9', 'NEGATIVO'], ['0', 'CERO']],
+      tests: [['1', 'POSITIVO'], ['-1', 'NEGATIVO'], ['99999', 'POSITIVO']],
       hEs: [
         'Puedes usar un bloque if/else y dentro del else poner otro if/else.',
         'En código: if (n > 0) {...} else if (n < 0) {...} else {...}',
@@ -85,11 +65,7 @@ final world2 = World(
       ],
       mode: EditorMode.hybrid,
       blocks: const [
-        'decl_int',
-        'read_var',
-        'print_text',
-        'if_block',
-        'if_else',
+        'decl_int', 'read_var', 'print_text', 'if_block', 'if_else',
         'raw_line',
       ],
       xp: 120,
@@ -107,15 +83,8 @@ final world2 = World(
           'If equal, print either.',
       iEs: 'Dos enteros a y b.',
       iEn: 'Two integers a and b.',
-      samples: [
-        ['3 9', '9'],
-        ['8 2', '8']
-      ],
-      tests: [
-        ['5 5', '5'],
-        ['-3 -10', '-3'],
-        ['0 -1', '0']
-      ],
+      samples: [['3 9', '9'], ['8 2', '8']],
+      tests: [['5 5', '5'], ['-3 -10', '-3'], ['0 -1', '0']],
       hEs: [
         'if (a > b) imprime a, si no imprime b.',
       ],
@@ -124,11 +93,7 @@ final world2 = World(
       ],
       mode: EditorMode.hybrid,
       blocks: const [
-        'decl_int',
-        'read_var',
-        'print_expr',
-        'if_else',
-        'raw_line',
+        'decl_int', 'read_var', 'print_expr', 'if_else', 'raw_line',
       ],
       xp: 130,
       concepts: const ['if/else', 'max'],
@@ -147,27 +112,17 @@ final world2 = World(
           'C (p<20), B (20-49), A (50-99), S (p>=100).',
       dEn: 'Read power p. Print the rank letter: '
           'C (p<20), B (20-49), A (50-99), S (p>=100).',
-      samples: [
-        ['75', 'A'],
-        ['15', 'C'],
-        ['120', 'S']
-      ],
-      tests: [
-        ['20', 'B'],
-        ['49', 'B'],
-        ['50', 'A'],
-        ['99', 'A'],
-        ['100', 'S'],
-        ['0', 'C']
-      ],
+      samples: [['75', 'A'], ['15', 'C'], ['120', 'S']],
+      tests: [['20', 'B'], ['49', 'B'], ['50', 'A'], ['99', 'A'],
+              ['100', 'S'], ['0', 'C']],
       hEs: [
         'Revisa los rangos de mayor a menor: primero if (p >= 100), '
-            'luego else if (p >= 50)...',
+        'luego else if (p >= 50)...',
         'Cuidado con los bordes: 20 ya es B, 50 ya es A.',
       ],
       hEn: [
         'Check ranges from highest to lowest: first if (p >= 100), '
-            'then else if (p >= 50)...',
+        'then else if (p >= 50)...',
         'Watch the edges: 20 is already B, 50 is already A.',
       ],
       mode: EditorMode.code,
@@ -188,19 +143,10 @@ final world2 = World(
           'NORMAL si no. Regla: (y%4==0 && y%100!=0) || (y%400==0)',
       dEn: 'Read a year y. Print BISIESTO if it is leap, '
           'NORMAL if not. Rule: (y%4==0 && y%100!=0) || (y%400==0)',
-      samples: [
-        ['2024', 'BISIESTO'],
-        ['2023', 'NORMAL'],
-        ['1900', 'NORMAL'],
-        ['2000', 'BISIESTO']
-      ],
-      tests: [
-        ['4', 'BISIESTO'],
-        ['100', 'NORMAL'],
-        ['400', 'BISIESTO'],
-        ['2100', 'NORMAL'],
-        ['2400', 'BISIESTO']
-      ],
+      samples: [['2024', 'BISIESTO'], ['2023', 'NORMAL'],
+                ['1900', 'NORMAL'], ['2000', 'BISIESTO']],
+      tests: [['4', 'BISIESTO'], ['100', 'NORMAL'], ['400', 'BISIESTO'],
+              ['2100', 'NORMAL'], ['2400', 'BISIESTO']],
       hEs: [
         '&& significa "y también". || significa "o".',
         'Estructura: if ((y % 4 == 0 && y % 100 != 0) || (y % 400 == 0))',
@@ -223,23 +169,16 @@ final world2 = World(
       dEn: 'Read three integers a, b, c. Print the largest.',
       iEs: 'Tres enteros a b c.',
       iEn: 'Three integers a b c.',
-      samples: [
-        ['3 9 5', '9'],
-        ['7 7 7', '7']
-      ],
-      tests: [
-        ['-1 -5 -3', '-1'],
-        ['10 2 9', '10'],
-        ['1 2 3', '3'],
-        ['0 0 -1', '0']
-      ],
+      samples: [['3 9 5', '9'], ['7 7 7', '7']],
+      tests: [['-1 -5 -3', '-1'], ['10 2 9', '10'], ['1 2 3', '3'],
+              ['0 0 -1', '0']],
       hEs: [
         'Guarda el mayor en una variable: int m = a; '
-            'if (b > m) m = b; if (c > m) m = c;',
+        'if (b > m) m = b; if (c > m) m = c;',
       ],
       hEn: [
         'Keep the largest in a variable: int m = a; '
-            'if (b > m) m = b; if (c > m) m = c;',
+        'if (b > m) m = b; if (c > m) m = c;',
       ],
       mode: EditorMode.code,
       xp: 150,
@@ -259,17 +198,9 @@ final world2 = World(
           'Print the result of applying the operation.',
       iEs: 'a op b — por ejemplo: 5 + 3',
       iEn: 'a op b — for example: 5 + 3',
-      samples: [
-        ['5 + 3', '8'],
-        ['10 - 4', '6'],
-        ['6 * 7', '42']
-      ],
-      tests: [
-        ['9 - 9', '0'],
-        ['-2 * 5', '-10'],
-        ['100 + 23', '123'],
-        ['8 * 0', '0']
-      ],
+      samples: [['5 + 3', '8'], ['10 - 4', '6'], ['6 * 7', '42']],
+      tests: [['9 - 9', '0'], ['-2 * 5', '-10'], ['100 + 23', '123'],
+              ['8 * 0', '0']],
       hEs: [
         'char op; cin >> a >> op >> b; lee los tres valores.',
         'Compara caracteres con comillas simples: if (op == \'+\')',
@@ -296,17 +227,10 @@ final world2 = World(
           'and e >= 30; otherwise FALTA.',
       iEs: 'Dos enteros a e.',
       iEn: 'Two integers a e.',
-      samples: [
-        ['60 40', 'LISTO'],
-        ['60 10', 'FALTA'],
-        ['50 30', 'LISTO']
-      ],
-      tests: [
-        ['49 100', 'FALTA'],
-        ['100 29', 'FALTA'],
-        ['51 31', 'LISTO'],
-        ['0 0', 'FALTA']
-      ],
+      samples: [['60 40', 'LISTO'], ['60 10', 'FALTA'],
+                ['50 30', 'LISTO']],
+      tests: [['49 100', 'FALTA'], ['100 29', 'FALTA'],
+              ['51 31', 'LISTO'], ['0 0', 'FALTA']],
       hEs: [
         'if (a >= 50 && e >= 30) — ambas condiciones deben cumplirse.',
       ],
@@ -331,17 +255,10 @@ final world2 = World(
           'a triangle (a+b>c and a+c>b and b+c>a), NO otherwise.',
       iEs: 'Tres enteros positivos.',
       iEn: 'Three positive integers.',
-      samples: [
-        ['3 4 5', 'SI'],
-        ['1 1 10', 'NO'],
-        ['5 5 5', 'SI']
-      ],
-      tests: [
-        ['2 2 4', 'NO'],
-        ['7 10 5', 'SI'],
-        ['1 2 3', 'NO'],
-        ['100 100 199', 'SI']
-      ],
+      samples: [['3 4 5', 'SI'], ['1 1 10', 'NO'],
+                ['5 5 5', 'SI']],
+      tests: [['2 2 4', 'NO'], ['7 10 5', 'SI'], ['1 2 3', 'NO'],
+              ['100 100 199', 'SI']],
       hEs: [
         'Necesitas tres comparaciones unidas con &&.',
         'Igualdad NO sirve: 1 2 3 no forma triángulo (1+2 = 3, no >).',
@@ -370,19 +287,10 @@ final world2 = World(
           'Print GANAS, PIERDES or EMPATAS.',
       iEs: 'Dos enteros t j (0=piedra, 1=papel, 2=tijeras).',
       iEn: 'Two integers t j (0=rock, 1=paper, 2=scissors).',
-      samples: [
-        ['0 2', 'GANAS'],
-        ['1 2', 'PIERDES'],
-        ['2 2', 'EMPATAS']
-      ],
-      tests: [
-        ['0 0', 'EMPATAS'],
-        ['0 1', 'PIERDES'],
-        ['1 0', 'GANAS'],
-        ['1 1', 'EMPATAS'],
-        ['2 0', 'PIERDES'],
-        ['2 1', 'GANAS']
-      ],
+      samples: [['0 2', 'GANAS'], ['1 2', 'PIERDES'],
+                ['2 2', 'EMPATAS']],
+      tests: [['0 0', 'EMPATAS'], ['0 1', 'PIERDES'], ['1 0', 'GANAS'],
+              ['1 1', 'EMPATAS'], ['2 0', 'PIERDES'], ['2 1', 'GANAS']],
       hEs: [
         'Primero el empate: if (t == j) EMPATAS.',
         'Ganas si (t==0 && j==2) || (t==1 && j==0) || (t==2 && j==1).',

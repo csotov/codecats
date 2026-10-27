@@ -126,6 +126,7 @@ class Complexity {
   /// Detect a loop that shrinks its range geometrically:
   /// `i /= 2`, `lo = mid + 1`, `hi = mid - 1`, `b /= 2`…
   static bool _hasHalvingLoop(String code) {
-    return RegExp(r'/\s*=\s*2|>>=|=\s*mid\s*[+-]|lo\s*=|hi\s*=').hasMatch(code);
+    return RegExp(r'/\s*=\s*2|>>=|=\s*mid\s*[+-]|lo\s*=|hi\s*=')
+        .hasMatch(code);
   }
 }

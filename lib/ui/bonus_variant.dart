@@ -19,16 +19,16 @@ enum BonusVariant { findBug, reorder, predict }
 
 /// Body lines worth playing with (no includes/braces/blank lines).
 List<int> _bodyLines(List<String> lines) => [
-      for (var i = 0; i < lines.length; i++)
-        if (lines[i].trim().isNotEmpty &&
-            !lines[i].trim().startsWith('#') &&
-            !lines[i].contains('using namespace') &&
-            !lines[i].contains('int main') &&
-            lines[i].trim() != '{' &&
-            lines[i].trim() != '}' &&
-            !lines[i].trim().startsWith('return'))
-          i,
-    ];
+  for (var i = 0; i < lines.length; i++)
+    if (lines[i].trim().isNotEmpty &&
+        !lines[i].trim().startsWith('#') &&
+        !lines[i].contains('using namespace') &&
+        !lines[i].contains('int main') &&
+        lines[i].trim() != '{' &&
+        lines[i].trim() != '}' &&
+        !lines[i].trim().startsWith('return'))
+      i,
+];
 
 /// Swap one operator in one line: returns (line index, mutated code).
 (int, String)? mutateCode(String code, math.Random rnd) {
@@ -106,8 +106,9 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
   late List<int> _order = [..._body]..shuffle(_rnd);
   // predict
   final _answer = TextEditingController();
-  late final SampleIO? _sample =
-      widget.level.samples.isEmpty ? null : widget.level.samples.first;
+  late final SampleIO? _sample = widget.level.samples.isEmpty
+      ? null
+      : widget.level.samples.first;
   int _tries = 0;
   bool _done = false;
 
@@ -140,17 +141,17 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
     final l = L.instance;
     return switch (widget.variant) {
       BonusVariant.findBug => l.pick(
-          'Un gato travieso cambió UNA cosa en tu código. Tocá la línea que tiene el error.',
-          'A naughty cat changed ONE thing in your code. Tap the line with the bug.',
-        ),
+        'Un gato travieso cambió UNA cosa en tu código. Tocá la línea que tiene el error.',
+        'A naughty cat changed ONE thing in your code. Tap the line with the bug.',
+      ),
       BonusVariant.reorder => l.pick(
-          'Las líneas de tu solución se mezclaron. Ordenalas con las flechas.',
-          'The lines of your solution got mixed up. Put them in order with the arrows.',
-        ),
+        'Las líneas de tu solución se mezclaron. Ordenalas con las flechas.',
+        'The lines of your solution got mixed up. Put them in order with the arrows.',
+      ),
       BonusVariant.predict => l.pick(
-          'Sin ejecutar: ¿qué imprime tu programa con esta entrada?',
-          'Without running it: what does your program print for this input?',
-        ),
+        'Sin ejecutar: ¿qué imprime tu programa con esta entrada?',
+        'Without running it: what does your program print for this input?',
+      ),
     };
   }
 
@@ -163,8 +164,9 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
     // which would hide today's bonus.
     final eligible = p.bonusLevelId == widget.level.id;
     p.recordSolve(widget.level.id, widget.level.xp, lp.stars);
-    final card =
-        eligible ? p.awardGoldenCard([for (final c in kCats) c.id]) : null;
+    final card = eligible
+        ? p.awardGoldenCard([for (final c in kCats) c.id])
+        : null;
     Cloud.instance.log(
       'bonus_done',
       levelId: widget.level.id,
@@ -192,14 +194,14 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
   }
 
   Widget _mono(String s, {Color? color, bool bold = false}) => Text(
-        s,
-        style: TextStyle(
-          fontFamily: 'monospace',
-          fontSize: 14,
-          color: color,
-          fontWeight: bold ? FontWeight.w800 : FontWeight.w400,
-        ),
-      );
+    s,
+    style: TextStyle(
+      fontFamily: 'monospace',
+      fontSize: 14,
+      color: color,
+      fontWeight: bold ? FontWeight.w800 : FontWeight.w400,
+    ),
+  );
 
   Widget _findBug(L l) {
     final bug = _bug!;
@@ -245,10 +247,10 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
                 onPressed: k == 0 || _done
                     ? null
                     : () => setState(() {
-                          final t = _order[k - 1];
-                          _order[k - 1] = _order[k];
-                          _order[k] = t;
-                        }),
+                        final t = _order[k - 1];
+                        _order[k - 1] = _order[k];
+                        _order[k] = t;
+                      }),
                 icon: const Icon(Icons.arrow_upward),
               ),
               IconButton(
@@ -256,10 +258,10 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
                 onPressed: k == _order.length - 1 || _done
                     ? null
                     : () => setState(() {
-                          final t = _order[k + 1];
-                          _order[k + 1] = _order[k];
-                          _order[k] = t;
-                        }),
+                        final t = _order[k + 1];
+                        _order[k + 1] = _order[k];
+                        _order[k] = t;
+                      }),
                 icon: const Icon(Icons.arrow_downward),
               ),
             ],
@@ -272,8 +274,8 @@ class _BonusVariantScreenState extends State<BonusVariantScreen> {
                 ? null
                 : () {
                     _tries++;
-                    final ok = [for (final i in _order) _lines[i].trim()]
-                            .join('\n') ==
+                    final ok =
+                        [for (final i in _order) _lines[i].trim()].join('\n') ==
                         [for (final i in _body) _lines[i].trim()].join('\n');
                     if (ok) {
                       _win();
