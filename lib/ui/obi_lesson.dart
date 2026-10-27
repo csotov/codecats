@@ -219,14 +219,10 @@ class _ObiLessonScreenState extends State<ObiLessonScreen> {
                   '│   ├── grader.cpp   ← el main de la OBI (no se toca)\n'
                   '│   ├── placa.h      ← la declaración de la función (no se toca)\n'
                   '│   └── placa.cpp    ← ✏️ ACÁ escribís vos\n'
-                  '├── py/              ← lo mismo en Python\n'
                   '└── examples/\n'
                   '    ├── 0-01.in      ← una entrada de ejemplo\n'
                   '    └── 0-01.out     ← la respuesta esperada'),
               _h('3. Compilar y probar (en la carpeta cpp/)'),
-              const Text('🐧 Ubuntu (terminal):'),
-              _box('g++ -std=c++20 -O2 -o placa grader.cpp placa.cpp\n'
-                  './placa < ../examples/0-01.in'),
               const Text('🪟 Windows (terminal de VS Code, PowerShell):'),
               _box('g++ -std=c++20 -O2 -o placa.exe grader.cpp placa.cpp\n'
                   'Get-Content ..\\examples\\0-01.in | .\\placa.exe'),
