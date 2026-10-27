@@ -78,7 +78,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
   final _term = <_Line>[];
   final _subs = <List<bool>>[];
   final _manual = TextEditingController();
-  bool _busy = false, _windows = false, _compiled = false;
+  bool _busy = false, _compiled = false;
   final _opened = DateTime.now();
 
   @override
@@ -91,14 +91,12 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
     super.dispose();
   }
 
-  String get _exe => _windows ? '${t.file}.exe' : t.file;
+  String get _exe => '${t.file}.exe';
   String get _compileCmd =>
       'g++ -std=c++20 -O2 -o $_exe grader.cpp ${t.file}.cpp';
   String _runCmd(int i) {
     final f = '0-${(i + 1).toString().padLeft(2, '0')}.in';
-    return _windows
-        ? 'Get-Content ..\\examples\\$f | .\\$_exe'
-        : './$_exe < ../examples/$f';
+    return 'Get-Content ..\\examples\\$f | .\\$_exe';
   }
 
   String? _lint() {
@@ -181,11 +179,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
     final input = manual ?? t.examples[i][0];
     setState(() {
       _busy = true;
-      _say(
-          manual == null
-              ? '\$ ${_runCmd(i)}'
-              : '\$ ${_windows ? '.\\' : './'}$_exe',
-          cmd: true);
+      _say(manual == null ? '\$ ${_runCmd(i)}' : '\$ .\\$_exe', cmd: true);
       if (manual != null) _say(input, color: Colors.white70);
     });
     _scrollTerm();
@@ -433,17 +427,6 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
       Padding(
         padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
         child: Wrap(spacing: 8, runSpacing: 8, children: [
-          Tooltip(
-            message: 'Cambiar entre comandos de Ubuntu y de Windows',
-            child: SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(value: false, label: Text('🐧 Ubuntu')),
-                ButtonSegment(value: true, label: Text('🪟 Windows')),
-              ],
-              selected: {_windows},
-              onSelectionChanged: (v) => setState(() => _windows = v.first),
-            ),
-          ),
           _btn('⚙️ Compilar', 'Compilar grader.cpp junto con tu archivo',
               _compile),
           for (var i = 0; i < t.examples.length; i++)
@@ -478,10 +461,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
           decoration: BoxDecoration(
               color: Colors.black, borderRadius: BorderRadius.circular(8)),
           child: _scroll(_s3, [
-            Text(
-                _windows
-                    ? 'PS C:\\obi\\${t.file}\\cpp>'
-                    : '~/obi/${t.file}/cpp\$',
+            Text('PS C:\\obi\\${t.file}\\cpp>',
                 style: _mono.copyWith(color: Colors.white38)),
             if (_term.isEmpty)
               Text(
