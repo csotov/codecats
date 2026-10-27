@@ -31,6 +31,7 @@ flutter:
     - assets/vendor/
     - assets/memes/
     - assets/badges/
+    - assets/shopcats/
     - assets/profe.png
     - assets/boss.png
     - assets/music/

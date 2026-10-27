@@ -11,3 +11,9 @@
 - `monitor.jpg`: "Cat stares at itself on computer monitor.jpg" por Jimmie Quick, CC BY 2.0. https://commons.wikimedia.org/wiki/File:Cat_stares_at_itself_on_computer_monitor.jpg
 - `nap.jpg`: "Computer Cat Nap.jpg" por SanGatiche, CC BY 2.0. https://commons.wikimedia.org/wiki/File:Computer_Cat_Nap.jpg
 - `pcpair.jpg`: "Cat-and-computer.JPG" por elian, CC BY 2.5. https://commons.wikimedia.org/wiki/File:Cat-and-computer.JPG
+
+
+## Arte generado para el juego (sin licencias de terceros)
+
+- 18 fotos de gatos estilo meme (`grump`, `shockface`, `chonkster`, `tongue`, `cheeks`, `sideeye`, `paper`, `achoo`, `smug`, `sitting`, `loaf`, `peeking`, `lloron`, `tallcat`, `glass`, `kbloaf`, `sweater`, `grin`): imágenes generadas con IA para CodeCats.
+- `assets/shopcats/`: 45 retratos de gatos estilo sticker generados con IA para CodeCats.
