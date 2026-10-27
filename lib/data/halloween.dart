@@ -6,7 +6,7 @@ class Halloween {
   Halloween._();
 
   /// The event closes at the start of this day (local time).
-  static final DateTime end = DateTime(2026, 11, 3);
+  static final DateTime end = DateTime(2026, 11, 22);
 
   static bool get active => DateTime.now().isBefore(end);
 

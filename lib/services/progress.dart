@@ -211,6 +211,21 @@ class Progress extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Spends [price] Miaudólares; false (nothing charged) if too few.
+  bool spendCoins(int price) {
+    if (coins < price) return false;
+    coins -= price;
+    _save();
+    notifyListeners();
+    return true;
+  }
+
+  void earnCoins(int n) {
+    coins += n;
+    _save();
+    notifyListeners();
+  }
+
   /// Minutes played since the last lightning round, and right answers so
   /// far (more right answers -> 2 questions per round instead of 1).
   int blitzMin = 0;
@@ -303,8 +318,8 @@ class Progress extends ChangeNotifier {
   /// last one asked. Null when nothing is unlocked yet.
   String? nextBlitzCard(List<String> unlocked) {
     if (unlocked.isEmpty) return null;
-    final sorted = [...unlocked]..sort((a, b) =>
-        (blitzCards[a]?[1] ?? 0).compareTo(blitzCards[b]?[1] ?? 0));
+    final sorted = [...unlocked]..sort(
+        (a, b) => (blitzCards[a]?[1] ?? 0).compareTo(blitzCards[b]?[1] ?? 0));
     return sorted.first;
   }
 
@@ -470,7 +485,8 @@ class Progress extends ChangeNotifier {
         blitzSeq = (j['bzs'] as num?)?.toInt() ?? 0;
         openPhases
           ..clear()
-          ..addAll((j['php'] as List? ?? const []).map((e) => (e as num).toInt()));
+          ..addAll(
+              (j['php'] as List? ?? const []).map((e) => (e as num).toInt()));
         examPhase = (j['exp'] as num?)?.toInt() ?? 0;
         examIds =
             List.unmodifiable((j['exi'] as List? ?? const []).map((e) => '$e'));
@@ -575,8 +591,8 @@ class Progress extends ChangeNotifier {
     });
     blitzOk = math.max(blitzOk, (d['bzo'] as num?)?.toInt() ?? 0);
     blitzSeq = math.max(blitzSeq, (d['bzs'] as num?)?.toInt() ?? 0);
-    openPhases.addAll(
-        (d['php'] as List? ?? const []).map((e) => (e as num).toInt()));
+    openPhases
+        .addAll((d['php'] as List? ?? const []).map((e) => (e as num).toInt()));
     _mergeMax(blitzCards, d['bq']);
     _mergeMax(mathGym, d['mg']);
     final lv = d['lv'];
@@ -622,18 +638,18 @@ class Progress extends ChangeNotifier {
           'bdg': badges.toList(),
           'bde': equippedBadge,
           'cfh': cfHandle,
-        'acu': atcoderUser,
+          'acu': atcoderUser,
           'sc': scores,
           'bzm': blitzMin,
           'bzo': blitzOk,
-        'bzs': blitzSeq,
-        'php': openPhases.toList(),
-        'exp': examPhase,
-        'exi': examIds,
-        'exe': examEndMs,
-        'exs': examSolved.toList(),
-        'bq': blitzCards,
-        'mg': mathGym,
+          'bzs': blitzSeq,
+          'php': openPhases.toList(),
+          'exp': examPhase,
+          'exi': examIds,
+          'exe': examEndMs,
+          'exs': examSolved.toList(),
+          'bq': blitzCards,
+          'mg': mathGym,
           'ct': contestIds,
           'cte': contestEndMs,
           'lv': levels.map((k, v) => MapEntry(k, v.toJson())),

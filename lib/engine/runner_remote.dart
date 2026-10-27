@@ -32,6 +32,17 @@ class RemoteRunner implements CppRunner {
   }
 
   Future<Map<String, dynamic>?> _post(String code, String input) async {
+    for (var attempt = 0; attempt < 4; attempt++) {
+      final r = await _postOnce(code, input);
+      if (r != _busy) return r;
+      await Future<void>.delayed(Duration(seconds: 3 * (attempt + 1)));
+    }
+    return null;
+  }
+
+  static const _busy = <String, dynamic>{'busy': true};
+
+  Future<Map<String, dynamic>?> _postOnce(String code, String input) async {
     try {
       final res = await _client
           .post(Uri.parse(judgeUrl),
@@ -44,6 +55,7 @@ class RemoteRunner implements CppRunner {
                 'compiler-option-raw': '-O2',
               }))
           .timeout(const Duration(seconds: 40));
+      if (res.statusCode == 429) return _busy;
       if (res.statusCode != 200) return null;
       return jsonDecode(res.body) as Map<String, dynamic>;
     } catch (_) {

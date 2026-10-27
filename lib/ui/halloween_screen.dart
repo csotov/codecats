@@ -3,11 +3,14 @@ import '../data/olympiad_tracks.dart';
 
 import '../data/cats.dart';
 import '../data/halloween.dart';
+import '../data/obi_tasks.dart';
 import '../l10n.dart';
 import '../models.dart';
 import '../services/progress.dart';
 import '../services/sfx.dart';
 import 'keyboard_scroll.dart';
+import 'obi_lesson.dart';
+import 'obi_sim_screen.dart';
 import 'level_intro.dart';
 import 'professor.dart';
 
@@ -101,14 +104,18 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
                   const SizedBox(height: 14),
                   ProfessorSays(
                     text: l.pick(
-                        '¡Muajaja! Hoy me puse el sombrero de bruja. Resolvé '
-                            'estos 5 hechizos de C++ y vas a ganar gatos de '
-                            'Halloween que después desaparecen. ¡No te los '
-                            'pierdas!',
+                        '¡Muajaja! Esta Noche de Brujas es de entrenamiento para la OBI: problemas con grader y subtareas, igualitos al examen. Primero la Escuela del grader, después el calentamiento y al final los 4 problemas oficiales de la Clasificatoria.',
                         'Mwahaha! Today I wear my witch hat. Solve these 5 C++ '
                             'spells to win Halloween cats that disappear later. '
                             'Do not miss them!'),
                   ),
+                  ..._obiSection(context),
+                  const SizedBox(height: 22),
+                  const Text('🎃 Hechizos clásicos (con cin/cout)',
+                      style: TextStyle(
+                          color: _orange,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16)),
                   const SizedBox(height: 16),
                   Text(
                     l.pick('Gatos del evento: $owned/${cats.length}',
@@ -227,6 +234,60 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
         onTap: () => _play(context, lv),
       ),
     );
+  }
+
+  List<Widget> _obiSection(BuildContext context) {
+    Widget card(
+            String emoji, String title, String sub, String tip, Widget screen,
+            {String? trailing}) =>
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Tooltip(
+            message: tip,
+            child: Card(
+              color: const Color(0xFF2B1238),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: const BorderSide(color: _orange, width: 1.4)),
+              child: ListTile(
+                leading: Text(emoji, style: const TextStyle(fontSize: 28)),
+                title: Text(title,
+                    style: const TextStyle(fontWeight: FontWeight.w900)),
+                subtitle: Text(sub, style: const TextStyle(fontSize: 12)),
+                trailing: Text(trailing ?? '›',
+                    style: const TextStyle(
+                        color: _orange, fontWeight: FontWeight.w900)),
+                onTap: () => Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => screen)),
+              ),
+            ),
+          ),
+        );
+    Widget head(String t) => Padding(
+          padding: const EdgeInsets.only(top: 14, bottom: 6),
+          child: Text(t,
+              style: const TextStyle(
+                  color: _orange, fontWeight: FontWeight.w900, fontSize: 16)),
+        );
+    return [
+      head('1. Escuela del grader'),
+      card(
+          '🎓',
+          'Cómo funciona el examen',
+          'Grader, archivos, compilar, subtareas y puntos',
+          'Aprender el formato del examen',
+          const ObiLessonScreen()),
+      head('2. Calentamiento con grader'),
+      for (final t in kObiTasks.where((t) => !t.official))
+        card(t.emoji, t.title, t.meme, 'Practicar el formato con grader',
+            ObiSimScreen(task: t),
+            trailing: '${obiBest(t)}/100'),
+      head('3. Clasificatoria 2026 (problemas oficiales)'),
+      for (final t in kObiTasks.where((t) => t.official))
+        card(t.emoji, t.title, t.meme, 'Resolver el problema oficial',
+            ObiSimScreen(task: t),
+            trailing: '${obiBest(t)}/100'),
+    ];
   }
 
   void _play(BuildContext context, Level lv) {
