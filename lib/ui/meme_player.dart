@@ -156,6 +156,9 @@ class _BurstDialogState extends State<_BurstDialog>
     final cap = widget.capEs == null
         ? null
         : l.pick(widget.capEs!, widget.capEn ?? widget.capEs!);
+    // Square clips: big on desktop, never wider than a phone screen.
+    final size = MediaQuery.sizeOf(context);
+    final side = (size.shortestSide * 0.62).clamp(200.0, 420.0);
     return GestureDetector(
       // Taps can't skip the meme before its minimum on-screen time.
       onTap: () {
@@ -170,8 +173,8 @@ class _BurstDialogState extends State<_BurstDialog>
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 280,
-                  height: 280,
+                  width: side,
+                  height: side,
                   decoration: BoxDecoration(
                     color: AppTheme.bgAlt,
                     borderRadius: BorderRadius.circular(22),

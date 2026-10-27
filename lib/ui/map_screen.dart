@@ -119,10 +119,13 @@ class _MapScreenState extends State<MapScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(l.t('app_title'),
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
                     style: const TextStyle(fontWeight: FontWeight.w800)),
-                Text(l.t('subtitle'),
-                    style:
-                        const TextStyle(fontSize: 11, color: AppTheme.textLo)),
+                if (MediaQuery.sizeOf(context).width >= 600)
+                  Text(l.t('subtitle'),
+                      style: const TextStyle(
+                          fontSize: 11, color: AppTheme.textLo)),
               ],
             ),
             actions: [
