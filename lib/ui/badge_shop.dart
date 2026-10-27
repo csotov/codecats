@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../data/badges.dart';
+import '../data/cats.dart';
+import '../data/shop_cats.dart';
 import '../l10n.dart';
 import '../services/progress.dart';
 import 'keyboard_scroll.dart';
@@ -109,6 +111,7 @@ class BadgeShopScreen extends StatefulWidget {
 
 class _BadgeShopScreenState extends State<BadgeShopScreen> {
   final _shopScroll = ScrollController();
+  final _catScroll = ScrollController();
   final _goalScroll = ScrollController();
 
   @override
@@ -120,6 +123,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
   @override
   void dispose() {
     _shopScroll.dispose();
+    _catScroll.dispose();
     _goalScroll.dispose();
     super.dispose();
   }
@@ -129,7 +133,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
     final l = L.instance;
     final p = Progress.instance;
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: AnimatedBuilder(
         animation: p,
         builder: (context, _) => Scaffold(
@@ -143,7 +147,13 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
                       message: l.pick(
                           'Fotos de gatos famosos para comprar y ponerte',
                           'Famous cat photos to buy and wear'),
-                      child: Text(l.pick('Tienda', 'Shop')))),
+                      child: Text(l.pick('Insignias', 'Badges')))),
+              Tab(
+                  child: Tooltip(
+                      message: l.pick('Gatitos para adoptar con Miaudólares',
+                          'Kitties to adopt with Miaudólares'),
+                      child: Text(
+                          '🐱 ${l.pick('Gatos', 'Cats')} ${kShopCats.where((c) => p.badges.contains(c.id)).length}/${kShopCats.length}'))),
               Tab(
                   child: Tooltip(
                       message: l.pick('Medallas de C++ que se ganan con metas',
@@ -154,6 +164,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
           ),
           body: TabBarView(children: [
             _grid(_shopScroll, kShopBadges, p, l),
+            _catsGrid(p, l),
             _grid(_goalScroll, kGoalBadges, p, l),
           ]),
         ),
@@ -221,8 +232,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
         child: Column(
           children: [
             Expanded(
-              child: Center(
-                  child: BadgeArt(b, size: 104, locked: !owned && !b.isShop)),
+              child: Center(child: BadgeArt(b, size: 104, locked: !owned)),
             ),
             const SizedBox(height: 6),
             Text(l.pick(b.nameEs, b.nameEn),
@@ -240,6 +250,107 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
         ),
       ),
     );
+  }
+
+  Widget _catsGrid(Progress p, L l) {
+    return KeyboardScroll(
+      controller: _catScroll,
+      child: GridView.builder(
+        controller: _catScroll,
+        padding: const EdgeInsets.all(14),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 170,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.74,
+        ),
+        itemCount: kShopCats.length,
+        itemBuilder: (context, i) => _catCard(kShopCats[i], p, l),
+      ),
+    );
+  }
+
+  Widget _catCard(ShopCat c, Progress p, L l) {
+    final owned = p.badges.contains(c.id);
+    final img = ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Image.asset(c.file,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) =>
+              const Center(child: Text('🐱', style: TextStyle(fontSize: 40)))),
+    );
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          children: [
+            Expanded(
+              child: owned
+                  ? img
+                  : Opacity(
+                      opacity: 0.35,
+                      child: ColorFiltered(
+                        colorFilter: const ColorFilter.matrix([
+                          0.33, 0.33, 0.33, 0, 0, //
+                          0.33, 0.33, 0.33, 0, 0, //
+                          0.33, 0.33, 0.33, 0, 0, //
+                          0, 0, 0, 1, 0,
+                        ]),
+                        child: img,
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle, color: c.rarity.color),
+                ),
+                const SizedBox(width: 5),
+                Flexible(
+                  child: Text(l.pick(c.nameEs, c.nameEn),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800, fontSize: 13)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            if (owned)
+              Text(l.pick('¡Tuyo!', 'Yours!'),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.accent2,
+                      fontSize: 12))
+            else
+              Tooltip(
+                message: l.pick('Adoptar por ${c.price} Miaudólares',
+                    'Adopt for ${c.price} Miaudólares'),
+                child: FilledButton(
+                  onPressed: p.coins >= c.price ? () => _buyCat(c) : null,
+                  child: Text('${c.price} 🪙'),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _buyCat(ShopCat c) {
+    final l = L.instance;
+    final ok = Progress.instance.buyBadge(c.id, c.price);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(ok
+          ? l.pick('¡Adoptaste a "${c.nameEs}"!', 'You adopted "${c.nameEn}"!')
+          : l.pick(
+              'No te alcanzan los Miaudólares.', 'Not enough Miaudólares.')),
+    ));
   }
 
   void _buy(CatBadge b) {
