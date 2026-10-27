@@ -32,6 +32,7 @@ import '../data/profe_talks.dart';
 import '../data/challenges.dart';
 import 'golden_card.dart';
 import '../data/halloween.dart';
+import '../data/grader_specs.dart';
 import 'professor.dart';
 import 'results.dart';
 import 'theme.dart';
@@ -120,8 +121,7 @@ class _LevelScreenState extends State<LevelScreen>
   static const _hesitMs = 2500;
   Timer? _modeTick;
   bool get _inCodeMode =>
-      widget.level.mode == EditorMode.code ||
-      (_promotedToCode && _tabController.index == 1);
+      _codeOnly || (_promotedToCode && _tabController.index == 1);
 
   static void _bump(Map<String, int> m, String k) {
     if (k.isEmpty) return;
@@ -212,8 +212,15 @@ class _LevelScreenState extends State<LevelScreen>
     _maxGapMs = 0;
   }
 
-  bool get _usesBlocks => widget.level.mode != EditorMode.code;
-  bool get _hybrid => widget.level.mode == EditorMode.hybrid;
+  /// OBI-style grader version of this level (null = classic cin/cout).
+  late final GraderSpec? _grader = graderFor(widget.level.id);
+  bool get _codeOnly => widget.level.mode == EditorMode.code || _grader != null;
+  String get _starter => _grader?.starter ?? widget.level.starterCode;
+
+  /// What the engine runs: the player's functions plus the hidden grader.
+  String get _runCode => _grader?.wrap(_currentCode) ?? _currentCode;
+  bool get _usesBlocks => !_codeOnly;
+  bool get _hybrid => widget.level.mode == EditorMode.hybrid && _grader == null;
 
   @override
   void initState() {
@@ -266,8 +273,8 @@ class _LevelScreenState extends State<LevelScreen>
     // Every visit (or retry) starts clean: no leftover code from
     // the previous attempt. Paid hints stay unlocked.
     _roots = blocksFromJson(null);
-    _savedCode = widget.level.starterCode;
-    _promotedToCode = widget.level.mode == EditorMode.code;
+    _savedCode = _starter;
+    _promotedToCode = _codeOnly;
     _hintsShown = Progress.instance.of(widget.level.id).hintsBought;
     _tabController = TabController(length: _hybrid ? 2 : 1, vsync: this);
   }
@@ -360,8 +367,8 @@ class _LevelScreenState extends State<LevelScreen>
   void _restart() {
     setState(() {
       _roots.clear();
-      _promotedToCode = widget.level.mode == EditorMode.code;
-      _savedCode = widget.level.starterCode;
+      _promotedToCode = _codeOnly;
+      _savedCode = _starter;
       _editorKey = GlobalKey();
       _editorGen++;
       _console = '';
@@ -449,9 +456,38 @@ class _LevelScreenState extends State<LevelScreen>
     );
   }
 
+  /// Grader (OBI) vs classic cin/cout: reopens the level in the other format.
+  Widget _graderSwitch() {
+    final l = L.instance;
+    return Tooltip(
+      message: l.pick(
+          'Formato grader (como en la OBI): solo escribís la función. Tocá para cambiar a cin/cout.',
+          'Grader format (like the OBI): you only write the function. Tap to switch to cin/cout.'),
+      child: FilterChip(
+        avatar: const Icon(Icons.extension, size: 16),
+        label: Text(l.pick('Grader', 'Grader'),
+            style: const TextStyle(fontSize: 12)),
+        selected: GraderPref.on,
+        onSelected: (on) async {
+          await GraderPref.set(on);
+          Cloud.instance
+              .log('grader_format', levelId: widget.level.id, data: {'on': on});
+          if (!mounted) return;
+          Navigator.of(context).pushReplacement(MaterialPageRoute(
+            builder: (_) => LevelScreen(
+              level: widget.level,
+              examMode: widget.examMode,
+              bonus: widget.bonus,
+            ),
+          ));
+        },
+      ),
+    );
+  }
+
   /// The C++ source that will be executed right now.
   String get _currentCode {
-    if (widget.level.mode == EditorMode.code || _promotedToCode) {
+    if (_codeOnly || _promotedToCode) {
       return _editorKey.currentState?.code ?? _savedCode;
     }
     return blocksToCode(_roots);
@@ -478,7 +514,7 @@ class _LevelScreenState extends State<LevelScreen>
     final sample =
         widget.level.samples.isNotEmpty ? widget.level.samples.first : null;
     final res = await _engine.run(
-      _currentCode,
+      _runCode,
       sample?.input ?? '',
       maxOps: widget.level.maxOps,
     );
@@ -530,7 +566,7 @@ class _LevelScreenState extends State<LevelScreen>
     final report = await judge(
       _engine,
       widget.level,
-      _currentCode,
+      _runCode,
       onProgress: (done, total) {
         if (mounted) {
           setState(() => _busyLabel = '$done/$total');
@@ -1102,9 +1138,38 @@ class _LevelScreenState extends State<LevelScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            l.pick(lv.statementEs, lv.statementEn),
+            _grader != null
+                ? l.pick(_grader.es, _grader.en)
+                : l.pick(lv.statementEs, lv.statementEn),
             style: const TextStyle(fontSize: 14, height: 1.4),
           ),
+          if (_grader != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.black26,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFF9F1C)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l.pick('🧩 Formato grader: implementá',
+                        '🧩 Grader format: implement'),
+                    style:
+                        const TextStyle(fontSize: 12, color: Color(0xFFFF9F1C)),
+                  ),
+                  for (final sig in _grader.sigs)
+                    SelectableText(sig,
+                        style: const TextStyle(
+                            fontFamily: 'monospace', fontSize: 14)),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
           _specRow(l.t('input_spec'), l.pick(lv.inputEs, lv.inputEn)),
           _specRow(l.t('output_spec'), l.pick(lv.outputEs, lv.outputEn)),
@@ -1528,7 +1593,7 @@ class _LevelScreenState extends State<LevelScreen>
 
   Widget _editorSection() {
     final l = L.instance;
-    if (widget.level.mode == EditorMode.code) {
+    if (_codeOnly) {
       return SectionCard(
         title: l.t('your_code'),
         child: CodeEditor(
@@ -1691,9 +1756,13 @@ class _LevelScreenState extends State<LevelScreen>
           children: [
             // The cloud g++ is slow: only from world 6 (sorting/searching)
             // on, where real speed and the full STL start to matter.
-            if ((widget.level.mode == EditorMode.code || _promotedToCode) &&
+            if ((_codeOnly || _promotedToCode) &&
                 worldNumberOf(widget.level) >= 6) ...[
               _judgeSwitch(),
+              const SizedBox(width: 8),
+            ],
+            if (kGraderSpecs.containsKey(widget.level.id)) ...[
+              _graderSwitch(),
               const SizedBox(width: 8),
             ],
             Expanded(

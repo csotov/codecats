@@ -1,3 +1,4 @@
+import 'data/grader_specs.dart';
 import 'ui/olympiad_screens.dart';
 import 'data/coach_problems.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,7 @@ Future<void> main() async {
   BlitzClock.start();
   Cloud.instance.addListener(CoachStore.instance.load);
   await Progress.instance.ensureLoaded();
+  await GraderPref.load();
   runApp(const CodeCatsApp());
   Sfx.menu(); // fire-and-forget; browsers may delay audio until first tap
   // A key press also counts as a user gesture for the browser.
