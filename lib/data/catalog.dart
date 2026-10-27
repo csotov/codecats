@@ -76,6 +76,15 @@ int main() {
 }
 ''';
 
+const kStlStarter = '''#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    // Escribe tu código aquí / Write your code here
+    return 0;
+}
+''';
+
 const kFuncStarter = '''#include <iostream>
 using namespace std;
 

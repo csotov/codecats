@@ -31,7 +31,7 @@ const kPhases = [
       'Bronze',
       'Funciones, ordenar y buscar, estructuras y técnicas de olimpiada.',
       'Functions, sorting and searching, structures and olympiad techniques.',
-      ['w5', 'w6', 'w7', 'w8']),
+      ['w5', 'w15', 'w6', 'w7', 'w8']),
   Phase(
       3,
       'Plata',
@@ -55,10 +55,12 @@ Phase? phaseOfWorld(String worldId) {
 bool phaseOpen(Phase ph, Progress p) {
   if (ph.n == 1 || p.openPhases.contains(ph.n)) return true;
   final prev = kPhases[ph.n - 2];
+  // The toolbox world (w15) was added later: it never re-locks a phase.
   final bosses = [
     for (final w in prev.worlds)
-      for (final l in w.levels)
-        if (l.boss) l
+      if (w.id != 'w15')
+        for (final l in w.levels)
+          if (l.boss) l
   ];
   if (bosses.isNotEmpty && bosses.every((l) => p.of(l.id).solved)) return true;
   return ph.worlds.any((w) => w.levels.any((l) {

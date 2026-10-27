@@ -351,9 +351,9 @@ class L {
     'remote_judge': {'es': 'Juez real (g++)', 'en': 'Real judge (g++)'},
     'tip_remote_judge': {
       'es':
-          'Compila con un g++ de verdad en la nube: toda la STL, velocidad real y límite de tiempo real. Necesita internet y tarda unos segundos más.',
+          'Compila con un g++ de verdad en la nube: vector, string, sort, set, map, struct, velocidad real y límite de tiempo real. Desde el mundo 6 se prende solo. Necesita internet.',
       'en':
-          'Compiles with a real g++ in the cloud: full STL, real speed and real time limit. Needs internet and takes a few seconds longer.'
+          'Compiles with a real g++ in the cloud: vector, string, sort, set, map, struct, real speed and real time limit. Turns on by itself from world 6. Needs internet.'
     },
     'tip_admin': {
       'es': 'Panel de admin: qué hace cada jugador',

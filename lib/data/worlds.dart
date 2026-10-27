@@ -19,6 +19,7 @@ import 'world11.dart';
 import 'world12.dart';
 import 'world13.dart';
 import 'world14.dart';
+import 'world15.dart';
 import 'world_more.dart';
 
 /// The full campaign in order.
@@ -29,6 +30,7 @@ final List<World> kWorlds = [
     world3,
     world4,
     world5,
+    world15,
     world6,
     world7,
     world8,
