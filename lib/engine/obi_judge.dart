@@ -88,27 +88,45 @@ class ObiJudge {
     return ObiRun(ok: true, output: r.output);
   }
 
-  /// Judges all subtasks in a single run (one request to the judge).
+  /// Judges all subtasks in one request; each subtask runs in its own
+  /// process with its own time limit, so a slow last subtask (TLE) does not
+  /// sink the points of the easier ones.
   Future<List<ObiRun>> judgeAll(String code) async {
-    final all = [for (final st in task.subtasks) ...st.tests];
-    final input = '${all.length}\n${all.map((t) => t[0]).join('\n')}\n';
-    final r = await _run(code, task.batch, input);
-    final got = r.output.split('\n');
-    final out = <ObiRun>[];
-    var k = 0;
-    for (final st in task.subtasks) {
-      ObiRun res = const ObiRun(ok: true);
-      for (var j = 0; j < st.tests.length; j++, k++) {
-        if (!res.ok) continue;
-        final g = k < got.length ? got[k].trim() : null;
-        if (g == null || (!r.ok && k >= got.length - 1)) {
-          res = ObiRun(ok: false, error: r.ok ? 'wrong|${j + 1}' : r.error);
-        } else if (g != st.tests[j][1]) {
-          res = ObiRun(ok: false, error: 'wrong|${j + 1}');
-        }
-      }
-      out.add(res);
+    final sol = _strip(code);
+    final src = '${task.header}\n$sol\n${task.batch}';
+    final lines = '\n'.allMatches(sol).length + 1;
+    final inputs = [
+      for (final st in task.subtasks)
+        '${st.tests.length}\n${st.tests.map((t) => t[0]).join('\n')}\n'
+    ];
+    final rs = await _runner.runBatch(src, inputs,
+        timeout: const Duration(seconds: 3));
+    return [
+      for (var i = 0; i < task.subtasks.length; i++)
+        _check(rs[i], task.subtasks[i].tests, lines),
+    ];
+  }
+
+  ObiRun _check(RunOutput r, List<List<String>> tests, int lines) {
+    if (!r.ok) {
+      final kind = switch (r.error) {
+        RunError.parse => 'compile',
+        RunError.tle => 'tle',
+        RunError.engine => 'net',
+        _ => 'runtime',
+      };
+      return ObiRun(
+          ok: false,
+          output: r.output,
+          error: '$kind|${_pretty(r.detail, lines)}');
     }
-    return out;
+    final got = r.output.split('\n');
+    for (var j = 0; j < tests.length; j++) {
+      final g = j < got.length ? got[j].trim() : '';
+      if (g != tests[j][1]) {
+        return ObiRun(ok: false, output: r.output, error: 'wrong|${j + 1}');
+      }
+    }
+    return ObiRun(ok: true, output: r.output);
   }
 }

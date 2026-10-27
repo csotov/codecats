@@ -274,6 +274,17 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
     return [
       head('1. Escuela del grader'),
       card(
+          '🧭',
+          'Tutorial guiado: tu primer problema con grader',
+          'Paso a paso: se ilumina dónde tocar y lo demás se apaga',
+          'Aprender el formato tocando, con el Profe al lado',
+          ObiSimScreen(
+              task: kObiTasks.firstWhere((t) => t.id == 'multiplos'),
+              tutorial: true),
+          trailing: (Progress.instance.scores['tut:grader'] ?? 0) > 0
+              ? '✅'
+              : '¡Empezá acá!'),
+      card(
           '🎓',
           'Cómo funciona el examen',
           'Grader, archivos, compilar, subtareas y puntos',

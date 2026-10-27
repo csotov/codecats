@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../data/obi_models.dart';
@@ -44,6 +46,9 @@ Widget _box(String text, {Color color = const Color(0xFF0B0B0B)}) => Container(
           style: _mono.copyWith(color: const Color(0xFFB8F5B0))),
     );
 
+Widget _boxK(Key? key, String text) =>
+    KeyedSubtree(key: key, child: _box(text));
+
 Widget _h(String t) => Padding(
       padding: const EdgeInsets.only(top: 14, bottom: 6),
       child: Text(t,
@@ -55,8 +60,11 @@ Widget _h(String t) => Padding(
 /// edits, a fake terminal with the real compile/run commands, and CMS-like
 /// submissions scored by subtask (best per subtask across submissions).
 class ObiSimScreen extends StatefulWidget {
-  const ObiSimScreen({super.key, required this.task});
+  const ObiSimScreen({super.key, required this.task, this.tutorial = false});
   final ObiTask task;
+
+  /// Guided first run: highlights one control at a time and dims the rest.
+  final bool tutorial;
 
   @override
   State<ObiSimScreen> createState() => _ObiSimScreenState();
@@ -69,8 +77,205 @@ class _Line {
   final bool cmd;
 }
 
-class _ObiSimScreenState extends State<ObiSimScreen> {
+enum _Act { next, tab1, tab2, tab3, compile, sample, submit, code }
+
+class _Step {
+  const _Step(this.tab, this.target, this.text, [this.act = _Act.next]);
+  final int tab;
+  final GlobalKey Function(_ObiSimScreenState s) target;
+  final String text;
+  final _Act act;
+}
+
+const kTutorialSolution = '''#include "multiplos.h"
+
+long long contar(long long n)
+{
+    long long c = 0;
+    for (long long i = 1; i <= n; i++)
+        if (i % 3 == 0 || i % 5 == 0) c++;
+    return c;
+}
+''';
+
+final _steps = <_Step>[
+  _Step(
+      0,
+      (s) => s._kSig,
+      'Paso 1 de 12 · En la OBI no escribís un programa entero: completás UNA '
+      'función. Esta es contar(n): recibe n entre los paréntesis y '
+      'devuelve la respuesta con return.'),
+  _Step(
+      0,
+      (s) => s._kExamples,
+      'Paso 2 · Los ejemplos: el .in es lo que el grader lee y le pasa a tu '
+      'función. El .out es lo que tiene que salir.'),
+  _Step(
+      0,
+      (s) => s._kSubtasks,
+      'Paso 3 · Las subtareas son el mismo problema con "regalos": n ≤ 10 y '
+      'n ≤ 1 000 000 son regalos. La última NO tiene regalos: es la más '
+      'difícil. Hoy vamos a juntar los regalos.'),
+  _Step(0, (s) => s._kTabs[1], 'Paso 4 · Tocá la pestaña "Mi archivo".',
+      _Act.tab1),
+  _Step(
+      1,
+      (s) => s._kFileBar,
+      'Paso 5 · grader.cpp y multiplos.h ya vienen hechos y NO se tocan. '
+      'Vos escribís solamente multiplos.cpp.'),
+  _Step(
+      1,
+      (s) => s._kEditor,
+      'Paso 6 · Adentro de la función escribí un for de 1 a n que cuente los '
+      'múltiplos de 3 o de 5, y al final return c;\n'
+      'Sin cin ni cout: n llega por los paréntesis y la respuesta sale con '
+      'return.',
+      _Act.code),
+  _Step(1, (s) => s._kTabs[2], 'Paso 7 · Ahora tocá la pestaña "Terminal".',
+      _Act.tab2),
+  _Step(
+      2,
+      (s) => s._kCompile,
+      'Paso 8 · Tocá Compilar: junta grader.cpp con tu archivo y arma el '
+      'programa multiplos.exe.',
+      _Act.compile),
+  _Step(
+      2,
+      (s) => s._kSample,
+      'Paso 9 · Tocá Ejemplo 1: el grader lee 0-01.in, llama a tu función y '
+      'escribe lo que devolvió.',
+      _Act.sample),
+  _Step(
+      2,
+      (s) => s._kTermOut,
+      'Paso 10 · Si ves ✔, tu salida es igual al .out. Si ves ✘, volvé a '
+      '"Mi archivo", corregí y compilá de nuevo.'),
+  _Step(
+      2, (s) => s._kTabs[3], 'Paso 11 · Tocá la pestaña "Envíos".', _Act.tab3),
+  _Step(
+      3,
+      (s) => s._kSubmit,
+      'Paso 12 · Tocá Enviar: el juez prueba tu función con casos ocultos de '
+      'cada subtarea.',
+      _Act.submit),
+  _Step(
+      3,
+      (s) => s._kScore,
+      '¡Así se suman los puntos! S1 y S2 ✅ son los regalos (n chico, el for '
+      'alcanza). S3 ❌: con n = 10^18 el for tardaría siglos. Por eso la '
+      'subtarea sin restricciones es la más difícil: pide una idea más '
+      'fuerte. Pista: n/3 + n/5 − n/15. ¡Probalo vos!'),
+];
+
+class _ObiSimScreenState extends State<ObiSimScreen>
+    with SingleTickerProviderStateMixin {
   ObiTask get t => widget.task;
+  late final TabController _tabs = TabController(length: 4, vsync: this)
+    ..addListener(_onTab);
+  final _kStack = GlobalKey(), _kSig = GlobalKey(), _kExamples = GlobalKey();
+  final _kSubtasks = GlobalKey(), _kFileBar = GlobalKey();
+  final _kEditor = GlobalKey(), _kCompile = GlobalKey(), _kSample = GlobalKey();
+  final _kTermOut = GlobalKey(), _kSubmit = GlobalKey(), _kScore = GlobalKey();
+  final _kTabs = List.generate(4, (_) => GlobalKey());
+  late int? _step = widget.tutorial ? 0 : null;
+  String? _tutNote;
+  Rect? _hole;
+  Timer? _tick;
+  int _editorGen = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.tutorial) {
+      _tick =
+          Timer.periodic(const Duration(milliseconds: 250), (_) => _measure());
+      WidgetsBinding.instance.addPostFrameCallback((_) => _go(0));
+    }
+  }
+
+  void _measure() {
+    final i = _step;
+    if (i == null || !mounted) return;
+    final box = _kStack.currentContext?.findRenderObject() as RenderBox?;
+    final tb =
+        _steps[i].target(this).currentContext?.findRenderObject() as RenderBox?;
+    Rect? r;
+    if (box != null && tb != null && tb.attached && tb.hasSize) {
+      final o = tb.localToGlobal(Offset.zero, ancestor: box);
+      r = (o & tb.size).intersect(Offset.zero & box.size);
+      if (r.width <= 0 || r.height <= 0) r = null;
+    }
+    if (r != _hole) setState(() => _hole = r);
+  }
+
+  void _go(int? i, {String? note}) {
+    setState(() {
+      _step = i;
+      _tutNote = note;
+      _hole = null;
+    });
+    if (i == null) {
+      _tick?.cancel();
+      Progress.instance.recordScore('tut:grader', 1);
+      Cloud.instance.log('obi_tutorial_done', levelId: t.id);
+      return;
+    }
+    final st = _steps[i];
+    if (st.act == _Act.next || st.act == _Act.code) {
+      if (_tabs.index != st.tab) _tabs.animateTo(st.tab);
+    }
+    Future.delayed(const Duration(milliseconds: 350), () {
+      final c = st.target(this).currentContext;
+      if (c != null && c.mounted) {
+        Scrollable.ensureVisible(c,
+            alignment: 0.2, duration: const Duration(milliseconds: 250));
+      }
+      _measure();
+    });
+  }
+
+  void _advance(_Act a, {bool ok = true}) {
+    final i = _step;
+    if (i == null || _steps[i].act != a) return;
+    if (!ok && a == _Act.compile) {
+      _go(3,
+          note: 'No compiló. Leé el error en la terminal, volvé a "Mi archivo" '
+              'y revisá tu código.');
+      return;
+    }
+    _go(i + 1 < _steps.length ? i + 1 : null);
+  }
+
+  void _onTab() {
+    if (_tabs.indexIsChanging) return;
+    const acts = [null, _Act.tab1, _Act.tab2, _Act.tab3];
+    final a = acts[_tabs.index];
+    if (a != null) _advance(a);
+    Future.delayed(const Duration(milliseconds: 300), _measure);
+  }
+
+  void _checkCode() {
+    final c = _code.replaceAll(RegExp(r'//.*'), '');
+    if (!RegExp(r'\bfor\b').hasMatch(c) ||
+        !RegExp(r'return\s+\w').hasMatch(c) ||
+        RegExp(r'return\s+0\s*;').hasMatch(c)) {
+      setState(() => _tutNote =
+          'Todavía falta: un for de 1 a n y un return con tu contador '
+              '(no return 0). Si querés, tocá "Escribilo por mí" y miralo.');
+      return;
+    }
+    _advance(_Act.code);
+  }
+
+  void _fillCode() {
+    setState(() {
+      _code = kTutorialSolution;
+      _compiled = false;
+      _editorGen++;
+    });
+    Future.delayed(const Duration(milliseconds: 300), _checkCode);
+  }
+
   late final ObiJudge _judge = ObiJudge(t)..warm();
   late String _code = t.starter;
   final _s1 = ScrollController(), _s3 = ScrollController();
@@ -83,6 +288,8 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
 
   @override
   void dispose() {
+    _tick?.cancel();
+    _tabs.dispose();
     _judge.dispose();
     for (final c in [_s1, _s3, _s4]) {
       c.dispose();
@@ -165,6 +372,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
     });
     Cloud.instance.log('obi_compile', levelId: t.id, data: {'ok': r.ok});
     _scrollTerm();
+    _advance(_Act.compile, ok: r.ok);
   }
 
   Future<void> _sample(int i, {String? manual}) async {
@@ -200,6 +408,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
       }
     });
     _scrollTerm();
+    if (manual == null) _advance(_Act.sample);
   }
 
   Future<void> _submit() async {
@@ -231,6 +440,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
       _subs.insert(0, ok);
       _lastErrors = [for (final r in res) r.ok ? '' : _explain(r)];
     });
+    _advance(_Act.submit);
     if (!mounted) return;
     if (won > 0) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -242,57 +452,217 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        backgroundColor: _bg,
-        appBar: AppBar(
-          backgroundColor: const Color(0xFF2A0E05),
-          title: Text('${t.emoji} ${t.title}',
-              style:
-                  const TextStyle(fontWeight: FontWeight.w900, color: _orange)),
-          actions: [
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 14),
-                child: AnimatedBuilder(
-                  animation: Progress.instance,
-                  builder: (_, __) => Text('${obiBest(t)} / 100',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w900, fontSize: 16)),
+    final scaffold = Scaffold(
+      backgroundColor: _bg,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF2A0E05),
+        title: Text('${t.emoji} ${t.title}',
+            style:
+                const TextStyle(fontWeight: FontWeight.w900, color: _orange)),
+        actions: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 14),
+              child: AnimatedBuilder(
+                animation: Progress.instance,
+                builder: (_, __) => Text('${obiBest(t)} / 100',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w900, fontSize: 16)),
+              ),
+            ),
+          )
+        ],
+        bottom: TabBar(
+          controller: _tabs,
+          isScrollable: true,
+          labelColor: _orange,
+          indicatorColor: _orange,
+          indicatorWeight: 4,
+          tabs: [
+            Tooltip(
+                message: 'Leer el problema y las subtareas',
+                child: Tab(key: _kTabs[0], text: '📜 Enunciado')),
+            Tooltip(
+                message: 'El único archivo que escribís vos',
+                child: Tab(key: _kTabs[1], text: '📝 Mi archivo')),
+            Tooltip(
+                message: 'Compilar y probar con los ejemplos',
+                child: Tab(key: _kTabs[2], text: '💻 Terminal')),
+            Tooltip(
+                message: 'Enviar al juez y ver los puntos',
+                child: Tab(key: _kTabs[3], text: '📤 Envíos')),
+          ],
+        ),
+      ),
+      body: TabBarView(controller: _tabs, children: [
+        _statement(),
+        _editor(),
+        _terminal(),
+        _submissions(),
+      ]),
+    );
+    return Stack(key: _kStack, children: [
+      scaffold,
+      if (_step != null) _coach(),
+    ]);
+  }
+
+  Widget _coach() {
+    final st = _steps[_step!];
+    return LayoutBuilder(builder: (context, box) {
+      final size = Size(box.maxWidth, box.maxHeight);
+      final h = _hole?.inflate(6).intersect(Offset.zero & size);
+      const dim = Color(0xC8000000);
+      Widget block(double l, double tp, double w, double ht) => Positioned(
+            left: l,
+            top: tp,
+            width: w < 0 ? 0 : w,
+            height: ht < 0 ? 0 : ht,
+            child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {},
+                child: const ColoredBox(color: dim)),
+          );
+      final below = h == null || h.center.dy < size.height / 2;
+      final bubble = Material(
+        color: const Color(0xFFFFF4E8),
+        elevation: 8,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('🎃 Profe Miaurício',
+                    style: TextStyle(
+                        color: Color(0xFFB34700), fontWeight: FontWeight.w900)),
+                const SizedBox(height: 4),
+                if (_tutNote != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(_tutNote!,
+                        style: const TextStyle(
+                            color: Color(0xFFC62828),
+                            fontWeight: FontWeight.w700)),
+                  ),
+                Text(st.text,
+                    style: const TextStyle(
+                        color: Colors.black87, fontSize: 15, height: 1.35)),
+                if (st.act == _Act.code) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(8),
+                    color: const Color(0xFF1B1B1B),
+                    child: Text(
+                        kTutorialSolution
+                            .split('\n')
+                            .skip(4)
+                            .take(4)
+                            .join('\n'),
+                        style: _mono.copyWith(
+                            color: const Color(0xFFB8F5B0), fontSize: 12)),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    alignment: WrapAlignment.end,
+                    children: [
+                      Tooltip(
+                        message: 'Salir del tutorial y usar la pantalla libre',
+                        child: TextButton(
+                            onPressed: () => _go(null),
+                            child: const Text('Saltar tutorial')),
+                      ),
+                      if (st.act == _Act.code)
+                        Tooltip(
+                          message: 'Pone el código del ejemplo en tu archivo',
+                          child: OutlinedButton(
+                              onPressed: _fillCode,
+                              child: const Text('Escribilo por mí')),
+                        ),
+                      if (st.act == _Act.code)
+                        Tooltip(
+                          message: 'Revisar lo que escribiste y seguir',
+                          child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                  backgroundColor: _orange),
+                              onPressed: _checkCode,
+                              child: const Text('Ya lo escribí',
+                                  style: TextStyle(color: Colors.black))),
+                        ),
+                      if (st.act == _Act.next)
+                        Tooltip(
+                          message: 'Ir al paso siguiente',
+                          child: FilledButton(
+                              style: FilledButton.styleFrom(
+                                  backgroundColor: _orange),
+                              onPressed: () => _go(_step! + 1 < _steps.length
+                                  ? _step! + 1
+                                  : null),
+                              child: Text(
+                                  _step! + 1 < _steps.length
+                                      ? 'Siguiente'
+                                      : 'Terminar',
+                                  style: const TextStyle(color: Colors.black))),
+                        ),
+                      if (st.act != _Act.next && st.act != _Act.code)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 10),
+                          child: Text('👉 tocá lo que brilla',
+                              style: TextStyle(
+                                  color: Color(0xFFB34700),
+                                  fontWeight: FontWeight.w800)),
+                        ),
+                    ]),
+              ]),
+        ),
+      );
+      final maxW = size.width - 24 > 520 ? 520.0 : size.width - 24;
+      final left = h == null
+          ? (size.width - maxW) / 2
+          : (h.center.dx - maxW / 2).clamp(12.0, size.width - maxW - 12);
+      return Stack(children: [
+        if (h == null)
+          block(0, 0, size.width, size.height)
+        else ...[
+          block(0, 0, size.width, h.top),
+          block(0, h.bottom, size.width, size.height - h.bottom),
+          block(0, h.top, h.left, h.height),
+          block(h.right, h.top, size.width - h.right, h.height),
+          Positioned.fromRect(
+            rect: h,
+            child: IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: _orange, width: 3),
+                  boxShadow: const [
+                    BoxShadow(
+                        color: Color(0x99FF8A1F),
+                        blurRadius: 18,
+                        blurStyle: BlurStyle.outer)
+                  ],
                 ),
               ),
-            )
-          ],
-          bottom: const TabBar(
-            isScrollable: true,
-            labelColor: _orange,
-            indicatorColor: _orange,
-            indicatorWeight: 4,
-            tabs: [
-              Tooltip(
-                  message: 'Leer el problema y las subtareas',
-                  child: Tab(text: '📜 Enunciado')),
-              Tooltip(
-                  message: 'El único archivo que escribís vos',
-                  child: Tab(text: '📝 Mi archivo')),
-              Tooltip(
-                  message: 'Compilar y probar con los ejemplos',
-                  child: Tab(text: '💻 Terminal')),
-              Tooltip(
-                  message: 'Enviar al juez y ver los puntos',
-                  child: Tab(text: '📤 Envíos')),
-            ],
+            ),
+          ),
+        ],
+        Positioned(
+          left: left,
+          width: maxW,
+          top: below ? (h == null ? size.height * 0.3 : h.bottom + 14) : null,
+          bottom: below ? null : size.height - h.top + 14,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: size.height * 0.5),
+            child: SingleChildScrollView(child: bubble),
           ),
         ),
-        body: TabBarView(children: [
-          _statement(),
-          _editor(),
-          _terminal(),
-          _submissions(),
-        ]),
-      ),
-    );
+      ]);
+    });
   }
 
   Widget _statement() {
@@ -309,18 +679,22 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
         const SizedBox(height: 8),
         Text(t.statement, style: const TextStyle(fontSize: 15, height: 1.4)),
         _h('Implementación (en ${t.file}.cpp)'),
-        _box(t.sig),
+        KeyedSubtree(key: _kSig, child: _box(t.sig)),
         const Text(
             'El grader llama a tu función una vez por caso. Tu código no lee '
             'ni imprime nada: de eso se encarga el grader.',
             style: TextStyle(color: Colors.white70)),
         _h('Ejemplos (carpeta examples/)'),
         for (var i = 0; i < t.examples.length; i++)
-          _box('0-${(i + 1).toString().padLeft(2, '0')}.in:\n'
+          _boxK(
+              i == 0 ? _kExamples : null,
+              '0-${(i + 1).toString().padLeft(2, '0')}.in:\n'
               '${t.examples[i][0].isEmpty ? '(vacío)' : t.examples[i][0]}\n'
               '0-${(i + 1).toString().padLeft(2, '0')}.out:\n${t.examples[i][1]}'),
         _h('Subtareas'),
-        for (var i = 0; i < t.subtasks.length; i++) _subtaskCard(i),
+        Column(key: _kSubtasks, children: [
+          for (var i = 0; i < t.subtasks.length; i++) _subtaskCard(i),
+        ]),
         const SizedBox(height: 10),
         const ProfessorSays(
           typewriter: false,
@@ -388,6 +762,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
   Widget _editor() {
     return Column(children: [
       Container(
+        key: _kFileBar,
         width: double.infinity,
         color: const Color(0xFF1E1030),
         padding: const EdgeInsets.all(8),
@@ -398,8 +773,10 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
       ),
       Expanded(
         child: SingleChildScrollView(
+          key: _kEditor,
           padding: const EdgeInsets.all(8),
           child: CodeEditor(
+            key: ValueKey('ed$_editorGen'),
             initial: _code,
             minHeight: 360,
             onChanged: (s) {
@@ -412,7 +789,9 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
     ]);
   }
 
-  Widget _btn(String label, String tip, VoidCallback? on) => Tooltip(
+  Widget _btn(String label, String tip, VoidCallback? on, {Key? key}) =>
+      Tooltip(
+        key: key,
         message: tip,
         child: FilledButton(
             style: FilledButton.styleFrom(backgroundColor: _orange),
@@ -428,10 +807,12 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
         padding: const EdgeInsets.fromLTRB(10, 8, 10, 4),
         child: Wrap(spacing: 8, runSpacing: 8, children: [
           _btn('⚙️ Compilar', 'Compilar grader.cpp junto con tu archivo',
-              _compile),
+              _compile,
+              key: _kCompile),
           for (var i = 0; i < t.examples.length; i++)
             _btn('▶ Ejemplo ${i + 1}', 'Probar con examples/0-0${i + 1}.in',
-                () => _sample(i)),
+                () => _sample(i),
+                key: i == 0 ? _kSample : null),
           _btn('🧹', 'Limpiar la terminal', () => setState(_term.clear)),
         ]),
       ),
@@ -457,6 +838,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
       if (_busy) const LinearProgressIndicator(color: _orange),
       Expanded(
         child: Container(
+          key: _kTermOut,
           margin: const EdgeInsets.all(10),
           decoration: BoxDecoration(
               color: Colors.black, borderRadius: BorderRadius.circular(8)),
@@ -483,14 +865,15 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
     return AnimatedBuilder(
       animation: p,
       builder: (context, _) => _scroll(_s4, [
-        _btn('📤 Enviar ${t.file}.cpp', 'Mandar tu archivo al juez', _submit),
+        _btn('📤 Enviar ${t.file}.cpp', 'Mandar tu archivo al juez', _submit,
+            key: _kSubmit),
         if (_busy)
           const Padding(
             padding: EdgeInsets.only(top: 8),
             child: Text('El juez está corriendo los casos ocultos…'),
           ),
         _h('Tu puntaje (lo mejor de cada subtarea): ${obiBest(t)} / 100'),
-        Wrap(spacing: 6, runSpacing: 6, children: [
+        Wrap(key: _kScore, spacing: 6, runSpacing: 6, children: [
           for (var i = 0; i < t.subtasks.length; i++)
             Chip(
               backgroundColor: (p.scores[t.scoreKey(i)] ?? 0) > 0
