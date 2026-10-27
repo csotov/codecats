@@ -15,13 +15,15 @@ void main() {
       expect(g.starter, isNot(contains('int main')));
       final full = g.wrap(g.starter);
       expect(full, contains('int main()'));
-      expect(full.startsWith(GraderSpec.header), isTrue);
+      expect(g.starter, isNot(contains('responder')));
+      expect(full.startsWith(g.header), isTrue);
     }
   });
 
   test('worlds 1 to 3 are all in grader format', () {
     for (final w in kWorlds.take(3)) {
       for (final l in w.levels) {
+        if (l.id == 'w3l9' || l.id == 'w3l25') continue; // drawings stay cout
         expect(kGraderSpecs, contains(l.id));
       }
     }

@@ -5,8 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// prints what they return. Levels without a spec stay in classic
 /// cin/cout format.
 class GraderSpec {
-  const GraderSpec(this.sigs, this.main, this.es, this.en,
-      {this.helpers = false, this.draw = false});
+  const GraderSpec(this.sigs, this.main, this.es, this.en);
 
   /// Function signatures the player must implement, e.g. `int suma(int a, int b)`.
   final List<String> sigs;
@@ -14,12 +13,6 @@ class GraderSpec {
   /// Body of the grader's `main` (reads input, calls, prints).
   final String main;
   final String es, en;
-
-  /// Offers `responder(x)` / `responderTexto(s)` to hand in answers.
-  final bool helpers;
-
-  /// Offers `dibujar(c)` / `saltar()` to draw character pictures.
-  final bool draw;
 
   static String _ret(String sig) {
     final t = sig.substring(0, sig.indexOf(RegExp(r'\s\w+\s*\(')));
@@ -30,9 +23,10 @@ class GraderSpec {
         return '    return false;\n';
       case 'char':
         return "    return '?';\n";
-      case 'const char*':
+      case 'string':
         return '    return "";\n';
       default:
+        if (t.startsWith('vector')) return '    return {};\n';
         return '    return 0;\n';
     }
   }
@@ -40,29 +34,20 @@ class GraderSpec {
   String get starter {
     final b = StringBuffer('// Formato grader: no hay main, ni cin, ni cout.\n'
         '// El grader lee los datos, llama a tu función y escribe la respuesta.\n');
-    if (helpers) {
-      b.write(
-          '// Para entregar cada respuesta: responder(x); o responderTexto("TEXTO");\n');
-    }
-    if (draw) {
-      b.write(
-          "// Para dibujar: dibujar('*'); escribe un carácter y saltar(); baja de línea.\n");
-    }
     for (final s in sigs) {
       b.write('\n$s {\n    // Tu código acá\n${_ret(s)}}\n');
     }
     return b.toString();
   }
 
-  /// Header lines prepended to the player's code (kept on few lines so
-  /// error line numbers stay close).
-  static const header = '#include <iostream>\n'
-      'using namespace std;\n'
-      'void responder(long long x) { cout << x << endl; } '
-      'void responderTexto(const char* s) { cout << s << endl; } '
-      'void dibujar(char c) { cout << c; } '
-      'void saltar() { cout << endl; }\n';
-  static const headerLines = 3;
+  /// `string` / `vector` need the real g++ in the cloud: the in-browser
+  /// interpreter lacks them.
+  bool get remote =>
+      sigs.any((s) => s.contains('string') || s.contains('vector'));
+
+  String get header => remote
+      ? '#include <iostream>\n#include <string>\n#include <vector>\nusing namespace std;\n'
+      : '#include <iostream>\nusing namespace std;\n';
 
   String wrap(String code) =>
       '$header$code\n\nint main() {\n$main\n    return 0;\n}\n';
@@ -102,12 +87,12 @@ const _sign = '    int s = signo(n);\n'
 
 final Map<String, GraderSpec> kGraderSpecs = {
   'w1l1': const GraderSpec(
-      ['const char* saludo()'],
+      ['string saludo()'],
       '    cout << saludo() << endl;\n',
       'Completá la función saludo: tiene que devolver la palabra "Hola" (return "Hola";). El grader la escribe por vos.',
       'Complete saludo: it must return the word "Hola" (return "Hola";). The grader prints it for you.'),
   'w1l2': const GraderSpec(
-      ['const char* primera()', 'const char* segunda()'],
+      ['string primera()', 'string segunda()'],
       '    cout << primera() << endl;\n    cout << segunda() << endl;\n',
       'Dos funciones: primera devuelve "Code" y segunda devuelve "Arena". El grader las escribe en dos líneas.',
       'Two functions: primera returns "Code" and segunda returns "Arena". The grader prints them on two lines.'),
@@ -141,11 +126,11 @@ final Map<String, GraderSpec> kGraderSpecs = {
       'El grader te pasa m minutos. horas devuelve las horas completas (m / 60) y minutos los que sobran (m % 60).',
       'The grader gives you m minutes. horas returns full hours (m / 60) and minutos the rest (m % 60).'),
   'w1l9': const GraderSpec(
-      ['void cambio(int a, int b)'],
-      '$_r2    cambio(a, b);\n',
-      'Completá cambio: entregá primero b y después a, usando responder(x) para cada uno.',
-      'Complete cambio: hand in b first and then a, calling responder(x) for each.',
-      helpers: true),
+      ['vector<int> cambio(int a, int b)'],
+      '$_r2    vector<int> r = cambio(a, b);\n'
+          '    for (int i = 0; i < (int)r.size(); i++) cout << r[i] << endl;\n',
+      'Completá cambio: devolvé un vector con b primero y a después: return {b, a};',
+      'Complete cambio: return a vector with b first and then a: return {b, a};'),
   'w1l20': const GraderSpec([
     'int suma(int a, int b)',
     'int resta(int a, int b)',
@@ -268,17 +253,17 @@ final Map<String, GraderSpec> kGraderSpecs = {
       'Completá jugar (0=piedra, 1=papel, 2=tijeras): devuelve 1 si ganás, -1 si perdés y 0 si empatan.',
       'Complete jugar (0=rock, 1=paper, 2=scissors): return 1 if you win, -1 if you lose, 0 on a tie.'),
   'w3l1': const GraderSpec(
-      ['void contar(int n)'],
-      '$_r1    contar(n);\n',
-      'Completá contar: entregá los números del 1 al n, en orden, con responder(i).',
-      'Complete contar: hand in 1..n in order with responder(i).',
-      helpers: true),
+      ['vector<int> contar(int n)'],
+      '$_r1    vector<int> r = contar(n);\n'
+          '    for (int i = 0; i < (int)r.size(); i++) cout << r[i] << endl;\n',
+      'Completá contar: devolvé un vector con los números del 1 al n, en orden. Creá vector<int> r; y agregá cada número con r.push_back(i);',
+      'Complete contar: return a vector with 1..n in order. Create vector<int> r; and add each with r.push_back(i);'),
   'w3l2': const GraderSpec(
-      ['void cuentaAtras(int n)'],
-      '$_r1    cuentaAtras(n);\n',
-      'Completá cuentaAtras: entregá los números de n hasta 1 con responder(i).',
-      'Complete cuentaAtras: hand in n down to 1 with responder(i).',
-      helpers: true),
+      ['vector<int> cuentaAtras(int n)'],
+      '$_r1    vector<int> r = cuentaAtras(n);\n'
+          '    for (int i = 0; i < (int)r.size(); i++) cout << r[i] << endl;\n',
+      'Completá cuentaAtras: devolvé un vector con los números de n hasta 1 (r.push_back(i)).',
+      'Complete cuentaAtras: return a vector with n down to 1 (r.push_back(i)).'),
   'w3l3': const GraderSpec(
       ['long long sumaHasta(int n)'],
       '$_r1    cout << sumaHasta(n) << endl;\n',
@@ -300,33 +285,26 @@ final Map<String, GraderSpec> kGraderSpecs = {
       'Completá factorial: devuelve n! = 1 * 2 * ... * n (1 ≤ n ≤ 20).',
       'Complete factorial: return n! (1 ≤ n ≤ 20).'),
   'w3l7': const GraderSpec(
-      ['void tabla(int n)'],
-      '$_r1    tabla(n);\n',
-      'Completá tabla: entregá n×1, n×2, ..., n×10 con responder(x).',
-      'Complete tabla: hand in n×1 ... n×10 with responder(x).',
-      helpers: true),
+      ['vector<int> tabla(int n)'],
+      '$_r1    vector<int> r = tabla(n);\n    for (int i = 0; i < (int)r.size(); i++) cout << r[i] << " ";\n    cout << endl;\n',
+      'Completá tabla: devolvé un vector con n×1, n×2, ..., n×10.',
+      'Complete tabla: return a vector with n×1 ... n×10.'),
   'w3l8': const GraderSpec(
       ['int sumaDigitos(int n)'],
       '$_r1    cout << sumaDigitos(n) << endl;\n',
       'Completá sumaDigitos: devuelve la suma de las cifras de n.',
       'Complete sumaDigitos: return the digit sum of n.'),
-  'w3l9': const GraderSpec(
-      ['void piramide(int n)'],
-      '$_r1    piramide(n);\n',
-      "Completá piramide: la fila i tiene i asteriscos. Usá dibujar('*') para cada asterisco y saltar() al final de cada fila.",
-      "Complete piramide: row i has i asterisks. Use dibujar('*') and saltar() at the end of each row.",
-      draw: true),
   'w3l20': const GraderSpec(
       ['long long sumaHasta(int n)'],
       '$_r1    cout << sumaHasta(n) << endl;\n',
       'Completá sumaHasta: devuelve 1 + 2 + ... + n.',
       'Complete sumaHasta: return 1 + 2 + ... + n.'),
   'w3l21': const GraderSpec(
-      ['void pares(int n)'],
-      '$_r1    pares(n);\n',
-      'Completá pares: entregá los pares de 2 a n con responder(x).',
-      'Complete pares: hand in the even numbers 2..n with responder(x).',
-      helpers: true),
+      ['vector<int> pares(int n)'],
+      '$_r1    vector<int> r = pares(n);\n'
+          '    for (int i = 0; i < (int)r.size(); i++) cout << r[i] << endl;\n',
+      'Completá pares: devolvé un vector con los pares de 2 a n.',
+      'Complete pares: return a vector with the even numbers 2..n.'),
   'w3l22': const GraderSpec(
       ['int divisores(int n)'],
       '$_r1    cout << divisores(n) << endl;\n',
@@ -342,16 +320,10 @@ final Map<String, GraderSpec> kGraderSpecs = {
       '$_r1    cout << espejo(n) << endl;\n',
       'Completá espejo: devuelve n con las cifras al revés (123 → 321).',
       'Complete espejo: return n with its digits reversed.'),
-  'w3l25': const GraderSpec(
-      ['void escalera(int n)'],
-      '$_r1    escalera(n);\n',
-      "Completá escalera: la línea i tiene i asteriscos. Usá dibujar('*') y saltar().",
-      "Complete escalera: line i has i asterisks. Use dibujar('*') and saltar().",
-      draw: true),
   'w3l10': const GraderSpec(
-      ['void miauWow(int n)'],
-      '$_r1    miauWow(n);\n',
-      'Completá miauWow: para i de 1 a n entregá FIZZBUZZ si i es múltiplo de 15, FIZZ si de 3, BUZZ si de 5, o el número. Usá responderTexto("FIZZ") o responder(i).',
-      'Complete miauWow: for i in 1..n hand in FIZZBUZZ / FIZZ / BUZZ or i, with responderTexto or responder.',
-      helpers: true),
+      ['vector<string> miauWow(int n)'],
+      '$_r1    vector<string> r = miauWow(n);\n'
+          '    for (int i = 0; i < (int)r.size(); i++) cout << r[i] << endl;\n',
+      'Completá miauWow: devolvé un vector de textos; para i de 1 a n agregá "FIZZBUZZ" si i es múltiplo de 15, "FIZZ" si de 3, "BUZZ" si de 5, o el número como texto: to_string(i).',
+      'Complete miauWow: return a vector of strings; for i in 1..n add "FIZZBUZZ", "FIZZ", "BUZZ" or to_string(i).'),
 };

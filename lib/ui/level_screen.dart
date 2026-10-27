@@ -427,7 +427,8 @@ class _LevelScreenState extends State<LevelScreen>
 
   /// "Juez real": compile with a real g++ in the cloud instead of the
   /// in-browser interpreter (full STL, real speed, real TLE).
-  late bool _remoteJudge = autoRemoteJudge(widget.level);
+  late bool _remoteJudge =
+      autoRemoteJudge(widget.level) || (_grader?.remote ?? false);
   RemoteRunner? _remote;
 
   void _toggleRemoteJudge(bool on) {
