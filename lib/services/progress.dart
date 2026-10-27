@@ -861,9 +861,12 @@ class Progress extends ChangeNotifier {
   /// Starter ('always') cats are never granted here: they join the
   /// Gatoteca only when actually shown (see [markSeen]).
   static const kHatCoins = 5;
-  static const kHatTrade = 20;
 
-  /// Hats made by trading [kHatTrade] of the tier below: feo, ultra HD,
+  /// Hats of each tier needed to make one of the next (feo, ultra HD,
+  /// plateado, de agua): 20, 40, 80 and 160 Gorritos Gatunos in total.
+  static const kHatTrade = [20, 2, 2, 2];
+
+  /// Hats made by trading [kHatTrade] hats of the tier below: feo, ultra HD,
   /// plateado, de agua.
   List<int> hatMade = [0, 0, 0, 0];
 
@@ -875,12 +878,12 @@ class Progress extends ChangeNotifier {
   /// Hats of [tier] in hand (0 = Gorrito Gatuno … 4 = gorrito de agua).
   int hatsInHand(int tier) {
     final made = tier == 0 ? hats : hatMade[tier - 1];
-    return made - (tier < 4 ? kHatTrade * hatMade[tier] : 0);
+    return made - (tier < 4 ? kHatTrade[tier] * hatMade[tier] : 0);
   }
 
   /// Trade [kHatTrade] hats of [tier] for one of the next tier.
   bool tradeHats(int tier) {
-    if (tier >= 4 || hatsInHand(tier) < kHatTrade) return false;
+    if (tier >= 4 || hatsInHand(tier) < kHatTrade[tier]) return false;
     hatMade[tier]++;
     _save();
     notifyListeners();

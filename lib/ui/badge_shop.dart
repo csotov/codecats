@@ -299,9 +299,8 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
         padding: const EdgeInsets.all(14),
         children: [
           Text(
-            l.pick(
-                'Cada ${Progress.kHatTrade} gorritos se canjean por... una sorpresa 🎁',
-                'Every ${Progress.kHatTrade} caps trade for... a surprise 🎁'),
+            l.pick('Juntá gorritos y canjealos por... una sorpresa 🎁',
+                'Collect caps and trade them for... a surprise 🎁'),
             style: const TextStyle(color: AppTheme.textLo),
           ),
           const SizedBox(height: 10),
@@ -390,7 +389,8 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
                       minHeight: 6,
                       backgroundColor: Colors.white12,
                       color: const Color(0xFFFFC53D),
-                      value: (have / Progress.kHatTrade).clamp(0, 1).toDouble(),
+                      value:
+                          (have / Progress.kHatTrade[t]).clamp(0, 1).toDouble(),
                     ),
                   ],
                 ],
@@ -400,10 +400,10 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
               const SizedBox(width: 10),
               Tooltip(
                 message: l.pick(
-                    'Canjear ${Progress.kHatTrade} por una sorpresa',
-                    'Trade ${Progress.kHatTrade} for a surprise'),
+                    'Canjear ${Progress.kHatTrade[t]} por una sorpresa',
+                    'Trade ${Progress.kHatTrade[t]} for a surprise'),
                 child: FilledButton(
-                  onPressed: have >= Progress.kHatTrade
+                  onPressed: have >= Progress.kHatTrade[t]
                       ? () {
                           p.tradeHats(t);
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -411,7 +411,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
                                   '¡Nuevo: $next! 🎉', 'New: $next! 🎉'))));
                         }
                       : null,
-                  child: Text('${Progress.kHatTrade} → 1'),
+                  child: Text('${Progress.kHatTrade[t]} → 1'),
                 ),
               ),
             ],
