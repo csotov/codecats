@@ -568,9 +568,8 @@ Future<void> maybeRunBlitz(BuildContext context) async {
         if (p.of(c.levelId).solved) c.id
     ];
     final cardId = p.blitzSeq % 4 == 3 ? null : p.nextBlitzCard(unlocked);
-    final card = cardId == null
-        ? null
-        : kConceptCards.firstWhere((c) => c.id == cardId);
+    final card =
+        cardId == null ? null : kConceptCards.firstWhere((c) => c.id == cardId);
     final q = card?.quiz ?? kBlitz[p.nextRot('blitz', kBlitz.length)];
     if (!context.mounted) break;
     final ok = await ProfessorQuizDialog.show(context, q,
@@ -579,8 +578,8 @@ Future<void> maybeRunBlitz(BuildContext context) async {
     if (ok == true) right++;
     if (card != null) p.answerBlitzCard(card.id, ok == true);
     p.blitzSeq++;
-    Cloud.instance.log('blitz_q',
-        data: {'card': card?.id ?? 'math', 'ok': ok == true});
+    Cloud.instance
+        .log('blitz_q', data: {'card': card?.id ?? 'math', 'ok': ok == true});
   }
   Cloud.instance.log('blitz', data: {'right': right, 'of': n});
   p.finishBlitz(right);

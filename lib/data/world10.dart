@@ -7,7 +7,8 @@ final world10 = World(
   id: 'w10',
   titleEs: 'El Templo del Atún',
   titleEn: 'The Tuna Temple',
-  descEs: 'Los secretos de los números: primos, mcd, criba y potencias modulares.',
+  descEs:
+      'Los secretos de los números: primos, mcd, criba y potencias modulares.',
   descEn: 'The secrets of numbers: primes, gcd, sieve and modular powers.',
   icon: 'π',
   levels: [

@@ -11,7 +11,8 @@ import 'runner.dart';
 
 /// Runs a block forest directly against stdin tokens.
 class BlocksRunner implements CppRunner {
-  BlocksRunner(List<BlockNode> roots) : _roots = roots.map((n) => n.clone()).toList();
+  BlocksRunner(List<BlockNode> roots)
+      : _roots = roots.map((n) => n.clone()).toList();
   final List<BlockNode> _roots;
 
   @override
@@ -27,9 +28,13 @@ class BlocksRunner implements CppRunner {
       return RunOutput(ok: true, exitCode: 0, output: vm.out.toString());
     } on _VmError catch (e) {
       return RunOutput(
-          ok: false, error: RunError.runtime, detail: e.message, output: vm.out.toString());
+          ok: false,
+          error: RunError.runtime,
+          detail: e.message,
+          output: vm.out.toString());
     } on _StepsExceeded {
-      return RunOutput(ok: false, error: RunError.tle, output: vm.out.toString());
+      return RunOutput(
+          ok: false, error: RunError.tle, output: vm.out.toString());
     }
   }
 
@@ -48,8 +53,11 @@ class _VmError implements Exception {
 }
 
 class _StepsExceeded implements Exception {}
+
 class _BreakSignal implements Exception {}
+
 class _ContinueSignal implements Exception {}
+
 class _ReturnSignal implements Exception {}
 
 // ---------------------------------------------------------------------------
@@ -57,7 +65,8 @@ class _ReturnSignal implements Exception {}
 // ---------------------------------------------------------------------------
 class _Vm {
   _Vm(this.roots, String input, {required this.maxSteps})
-      : _tokens = input.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
+      : _tokens =
+            input.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
 
   final List<BlockNode> roots;
   final int maxSteps;
@@ -94,11 +103,8 @@ class _Vm {
   }
 
   /// "a, b" → ['a','b'] — comma-separated identifiers in one param.
-  List<String> _names(String raw) => raw
-      .split(',')
-      .map((s) => s.trim())
-      .where((s) => s.isNotEmpty)
-      .toList();
+  List<String> _names(String raw) =>
+      raw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
 
   void _exec(BlockNode n) {
     _tick();
@@ -138,7 +144,8 @@ class _Vm {
         _assign(_param(n, 'name', 'x'), null, _eval(_param(n, 'expr', '0')));
       case 'add_assign':
         final name = _param(n, 'name', 'suma');
-        _vars[name] = _toNum(_vars[name]) + _toNum(_eval(_param(n, 'expr', '1')));
+        _vars[name] =
+            _toNum(_vars[name]) + _toNum(_eval(_param(n, 'expr', '1')));
       case 'increment':
         final name = _param(n, 'name', 'i');
         _vars[name] = _toNum(_vars[name]) + 1;
@@ -216,7 +223,8 @@ class _Vm {
       // ---- arrays ---------------------------------------------------------
       case 'decl_array':
         final size = _toNum(_eval(_param(n, 'size', '105')));
-        _vars[_param(n, 'name', 'a')] = List<int>.filled(size < 0 ? 0 : size, 0);
+        _vars[_param(n, 'name', 'a')] =
+            List<int>.filled(size < 0 ? 0 : size, 0);
       case 'decl_str':
         _vars[_param(n, 'name', 's')] = '';
       case 'read_array':
@@ -322,8 +330,12 @@ class _Vm {
       return;
     }
     final eq = c.indexOf('=');
-    if (eq > 0 && c[eq + 1] != '=' && c[eq - 1] != '=' && c[eq - 1] != '!' &&
-        c[eq - 1] != '<' && c[eq - 1] != '>') {
+    if (eq > 0 &&
+        c[eq + 1] != '=' &&
+        c[eq - 1] != '=' &&
+        c[eq - 1] != '!' &&
+        c[eq - 1] != '<' &&
+        c[eq - 1] != '>') {
       _assignLhs(c.substring(0, eq).trim(), _eval(c.substring(eq + 1)));
       return;
     }

@@ -24,7 +24,9 @@ final world1 = World(
       iEn: 'This program reads nothing.',
       oEs: 'La palabra Hola',
       oEn: 'The word Hola',
-      samples: [['', 'Hola']],
+      samples: [
+        ['', 'Hola']
+      ],
       tests: const [],
       hEs: [
         'En C++ se imprime con: cout << "texto" << endl;',
@@ -50,7 +52,9 @@ final world1 = World(
       iEn: 'This program reads nothing.',
       oEs: 'Dos líneas: Code y Arena',
       oEn: 'Two lines: Code and Arena',
-      samples: [['', 'Code\nArena']],
+      samples: [
+        ['', 'Code\nArena']
+      ],
       hEs: [
         'Necesitas dos cout, uno para cada línea.',
         'En bloques: usa dos bloques "Imprimir texto".',
@@ -75,8 +79,15 @@ final world1 = World(
       dEn: 'Read an integer and print it back unchanged.',
       oEs: 'El mismo número.',
       oEn: 'The same number.',
-      samples: [['7', '7'], ['42', '42']],
-      tests: [['-13', '-13'], ['0', '0'], ['999999', '999999']],
+      samples: [
+        ['7', '7'],
+        ['42', '42']
+      ],
+      tests: [
+        ['-13', '-13'],
+        ['0', '0'],
+        ['999999', '999999']
+      ],
       hEs: [
         'Primero declara la variable: int x = 0;',
         'Luego lee con cin >> x; e imprime con cout << x << endl;',
@@ -87,7 +98,10 @@ final world1 = World(
       ],
       mode: EditorMode.blocks,
       blocks: const [
-        'decl_int', 'read_var', 'print_expr', 'print_text',
+        'decl_int',
+        'read_var',
+        'print_expr',
+        'print_text',
       ],
       concepts: const ['cin', 'variables'],
     ),
@@ -103,8 +117,15 @@ final world1 = World(
       dEn: 'Read two integers a and b, and print a + b.',
       iEs: 'Dos enteros a y b separados por espacio.',
       iEn: 'Two integers a and b separated by a space.',
-      samples: [['3 4', '7'], ['10 25', '35']],
-      tests: [['-5 5', '0'], ['100 200', '300'], ['-7 -8', '-15']],
+      samples: [
+        ['3 4', '7'],
+        ['10 25', '35']
+      ],
+      tests: [
+        ['-5 5', '0'],
+        ['100 200', '300'],
+        ['-7 -8', '-15']
+      ],
       hEs: [
         'Declara dos variables: int a = 0, b = 0; (o dos bloques "Variable entera").',
         'Lee ambos: cin >> a >> b; y luego imprime a + b.',
@@ -115,7 +136,11 @@ final world1 = World(
       ],
       mode: EditorMode.hybrid,
       blocks: const [
-        'decl_int', 'read_var', 'print_expr', 'assign', 'add_assign',
+        'decl_int',
+        'read_var',
+        'print_expr',
+        'assign',
+        'add_assign',
       ],
       concepts: const ['cin', 'suma', 'variables'],
     ),
@@ -129,8 +154,15 @@ final world1 = World(
       dEn: 'Read two integers and print their product (a * b).',
       iEs: 'Dos enteros a y b.',
       iEn: 'Two integers a and b.',
-      samples: [['6 7', '42'], ['12 3', '36']],
-      tests: [['0 999', '0'], ['-4 5', '-20'], ['1000 1000', '1000000']],
+      samples: [
+        ['6 7', '42'],
+        ['12 3', '36']
+      ],
+      tests: [
+        ['0 999', '0'],
+        ['-4 5', '-20'],
+        ['1000 1000', '1000000']
+      ],
       hEs: [
         'La multiplicación en C++ usa el asterisco: a * b',
       ],
@@ -139,7 +171,11 @@ final world1 = World(
       ],
       mode: EditorMode.hybrid,
       blocks: const [
-        'decl_int', 'decl_ll', 'read_var', 'print_expr', 'assign',
+        'decl_int',
+        'decl_ll',
+        'read_var',
+        'print_expr',
+        'assign',
       ],
       concepts: const ['multiplicación', 'variables'],
     ),
@@ -151,8 +187,15 @@ final world1 = World(
       sEn: 'Leveling up is just adding 1. That simple!',
       dEs: 'Lee un entero n e imprime n + 1.',
       dEn: 'Read an integer n and print n + 1.',
-      samples: [['9', '10'], ['0', '1']],
-      tests: [['-1', '0'], ['2147483640', '2147483641'], ['-50', '-49']],
+      samples: [
+        ['9', '10'],
+        ['0', '1']
+      ],
+      tests: [
+        ['-1', '0'],
+        ['2147483640', '2147483641'],
+        ['-50', '-49']
+      ],
       hEs: [
         'Puedes imprimir la expresión directamente: cout << n + 1 << endl;',
         'O sumarle a la variable: n = n + 1; (bloque "Asignar").',
@@ -163,7 +206,11 @@ final world1 = World(
       ],
       mode: EditorMode.hybrid,
       blocks: const [
-        'decl_int', 'read_var', 'print_expr', 'assign', 'add_assign',
+        'decl_int',
+        'read_var',
+        'print_expr',
+        'assign',
+        'add_assign',
         'increment',
       ],
       concepts: const ['incremento'],
@@ -184,8 +231,15 @@ final world1 = World(
       iEn: 'Two integers a and b (b is not 0).',
       oEs: 'Línea 1: a / b. Línea 2: a % b.',
       oEn: 'Line 1: a / b. Line 2: a % b.',
-      samples: [['17 5', '3\n2'], ['10 2', '5\n0']],
-      tests: [['7 3', '2\n1'], ['100 9', '11\n1'], ['8 8', '1\n0']],
+      samples: [
+        ['17 5', '3\n2'],
+        ['10 2', '5\n0']
+      ],
+      tests: [
+        ['7 3', '2\n1'],
+        ['100 9', '11\n1'],
+        ['8 8', '1\n0']
+      ],
       hEs: [
         '17 / 5 da 3 porque 5 cabe 3 veces en 17.',
         '17 % 5 da 2 porque sobran 2.',
@@ -198,7 +252,10 @@ final world1 = World(
       ],
       mode: EditorMode.hybrid,
       blocks: const [
-        'decl_int', 'read_var', 'print_expr', 'assign',
+        'decl_int',
+        'read_var',
+        'print_expr',
+        'assign',
       ],
       concepts: const ['división', 'módulo'],
     ),
@@ -214,8 +271,15 @@ final world1 = World(
           'horas completas (m / 60) y minutos que sobran (m % 60).',
       dEn: 'Read an integer m (minutes). Print two lines: '
           'full hours (m / 60) and leftover minutes (m % 60).',
-      samples: [['130', '2\n10'], ['59', '0\n59']],
-      tests: [['60', '1\n0'], ['200', '3\n20'], ['1440', '24\n0']],
+      samples: [
+        ['130', '2\n10'],
+        ['59', '0\n59']
+      ],
+      tests: [
+        ['60', '1\n0'],
+        ['200', '3\n20'],
+        ['1440', '24\n0']
+      ],
       hEs: [
         'Es igual que el nivel anterior: / para las horas, % para los minutos.',
       ],
@@ -239,8 +303,15 @@ final world1 = World(
       iEn: 'Two integers a and b.',
       oEs: 'b y a en la misma línea, separados por un espacio.',
       oEn: 'b and a on the same line, separated by one space.',
-      samples: [['3 8', '8 3'], ['-1 5', '5 -1']],
-      tests: [['0 0', '0 0'], ['99 1', '1 99'], ['-7 -2', '-2 -7']],
+      samples: [
+        ['3 8', '8 3'],
+        ['-1 5', '5 -1']
+      ],
+      tests: [
+        ['0 0', '0 0'],
+        ['99 1', '1 99'],
+        ['-7 -2', '-2 -7']
+      ],
       hEs: [
         'Fácil: imprime cout << b << " " << a << endl; — ni siquiera hace falta intercambiar.',
         'Si quieres practicar el intercambio real: int t = a; a = b; b = t;',
@@ -251,8 +322,13 @@ final world1 = World(
       ],
       mode: EditorMode.hybrid,
       blocks: const [
-        'decl_int', 'read_var', 'print_expr', 'print_inline',
-        'print_space', 'assign', 'swap_vars',
+        'decl_int',
+        'read_var',
+        'print_expr',
+        'print_inline',
+        'print_space',
+        'assign',
+        'swap_vars',
       ],
       concepts: const ['variables', 'swap'],
     ),
@@ -268,8 +344,15 @@ final world1 = World(
           'el perímetro 2*(h+w) y el área h*w.',
       dEn: 'Read two integers h (height) and w (width). Print two lines: '
           'the perimeter 2*(h+w) and the area h*w.',
-      samples: [['3 5', '16\n15'], ['10 10', '40\n100']],
-      tests: [['1 1', '4\n1'], ['7 2', '18\n14'], ['50 20', '140\n1000']],
+      samples: [
+        ['3 5', '16\n15'],
+        ['10 10', '40\n100']
+      ],
+      tests: [
+        ['1 1', '4\n1'],
+        ['7 2', '18\n14'],
+        ['50 20', '140\n1000']
+      ],
       hEs: [
         'Perímetro = suma de todos los lados = 2*h + 2*w.',
         'Los paréntesis importan: 2*(h+w)',
