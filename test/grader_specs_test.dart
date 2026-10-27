@@ -1,0 +1,29 @@
+import 'package:codecats/data/grader_specs.dart';
+import 'package:codecats/data/worlds.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  test('every grader spec points to a real level and builds a full program',
+      () {
+    final ids = {for (final l in allLevels) l.id};
+    for (final e in kGraderSpecs.entries) {
+      expect(ids, contains(e.key));
+      final g = e.value;
+      for (final s in g.sigs) {
+        expect(g.starter, contains(s));
+      }
+      expect(g.starter, isNot(contains('int main')));
+      final full = g.wrap(g.starter);
+      expect(full, contains('int main()'));
+      expect(full.startsWith(GraderSpec.header), isTrue);
+    }
+  });
+
+  test('worlds 1 to 3 are all in grader format', () {
+    for (final w in kWorlds.take(3)) {
+      for (final l in w.levels) {
+        expect(kGraderSpecs, contains(l.id));
+      }
+    }
+  });
+}
