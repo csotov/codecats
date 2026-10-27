@@ -94,8 +94,9 @@ class Sfx {
     await _play(_byName(t));
   }
 
-  static _Track _byName(String n) =>
-      _Track.values.firstWhere((t) => t.name == n, orElse: () => _Track.menu);
+  static _Track _byName(String n) => n.startsWith('boss:')
+      ? _Track.boss
+      : _Track.values.firstWhere((t) => t.name == n, orElse: () => _Track.menu);
 
   /// Menu loop: Am–F–C–G at 92 bpm, soft arpeggios.
   static Future<void> menu() => _play(_Track.menu);
@@ -103,8 +104,34 @@ class Sfx {
   /// Battle loop: Am–F–Dm–E at 132 bpm, driving bass.
   static Future<void> battle() => _play(_Track.battle);
 
-  /// Boss fight: "Aura Farming" clip (assets/music/boss.mp3).
-  static Future<void> boss() => _play(_Track.boss);
+  /// Boss fight: each world's boss has its own meme song
+  /// (assets/music/boss_<world>.mp3); unknown worlds use "Aura Farming".
+  static Future<void> boss([String world = '']) {
+    _bossFile = kBossSongs.containsKey(world) ? 'boss_$world.mp3' : 'boss.mp3';
+    return _play(_Track.boss);
+  }
+
+  static String _bossFile = 'boss.mp3';
+
+  /// World key (`w1`…`w15`, `hw`) → meme song name, for credits/tooltips.
+  static const kBossSongs = {
+    'w1': 'Nyan Cat',
+    'w2': 'Keyboard Cat',
+    'w3': 'Chipi Chipi Chapa Chapa',
+    'w4': 'Never Gonna Give You Up',
+    'w5': 'Maxwell the Cat',
+    'w6': 'OIIA OIIA',
+    'w7': 'Caramelldansen',
+  'w8': 'Coffin Dance',
+    'w9': 'Monkeys Spinning Monkeys',
+    'w10': 'Sneaky Snitch',
+    'w11': 'Gigachad',
+    'w12': 'Sandstorm',
+    'w13': 'Running in the 90s',
+    'w14': 'Ievan Polkka',
+    'w15': 'Megalovania',
+    'hw': 'Spooky Scary Skeletons',
+  };
 
   /// Halloween event loop: Dm–Bb–Gm–A at 80 bpm, eerie square arps.
   static Future<void> spooky() => _play(_Track.spooky);
@@ -116,12 +143,13 @@ class Sfx {
   static Future<void> focus() => _play(_Track.focus);
 
   static Future<void> _play(_Track t) async {
-    if (_track == t.name) return;
-    _track = t.name;
+    final key = t == _Track.boss ? 'boss:$_bossFile' : t.name;
+    if (_track == key) return;
+    _track = key;
     if (!_musicReady || muted) return;
     try {
       if (t == _Track.boss) {
-        await _music.playAsset('music/boss.mp3');
+        await _music.playAsset('music/$_bossFile');
         return;
       }
       await _music.playWav(

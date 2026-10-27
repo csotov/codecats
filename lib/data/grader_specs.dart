@@ -5,7 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// prints what they return. Levels without a spec stay in classic
 /// cin/cout format.
 class GraderSpec {
-  const GraderSpec(this.sigs, this.main, this.es, this.en);
+  const GraderSpec(this.sigs, this.main, this.es, this.en,
+      {this.storyEs, this.storyEn});
+
+  /// Replaces a level story that talks about cin/cout.
+  final String? storyEs, storyEn;
 
   /// Function signatures the player must implement, e.g. `int suma(int a, int b)`.
   final List<String> sigs;
@@ -94,11 +98,16 @@ const _sign = '    int s = signo(n);\n'
     '    else cout << "CERO" << endl;\n';
 
 final Map<String, GraderSpec> kGraderSpecs = {
-  'w1l1': const GraderSpec(
-      ['std::string saludo()'],
+  'w1l1': const GraderSpec([
+    'std::string saludo()'
+  ],
       '    cout << saludo() << endl;\n',
       'Completá la función saludo: tiene que devolver la palabra "Hola" (return "Hola";). El grader la escribe por vos.',
-      'Complete saludo: it must return the word "Hola" (return "Hola";). The grader prints it for you.'),
+      'Complete saludo: it must return the word "Hola" (return "Hola";). The grader prints it for you.',
+      storyEs:
+          'Todo héroe empieza saludando a la arena. Tu función devuelve el saludo y el grader lo anuncia.',
+      storyEn:
+          'Every hero starts by greeting the arena. Your function returns the greeting and the grader announces it.'),
   'w1l2': const GraderSpec(
       ['std::string primera()', 'std::string segunda()'],
       '    cout << primera() << endl;\n    cout << segunda() << endl;\n',

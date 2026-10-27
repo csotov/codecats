@@ -263,10 +263,13 @@ class _LevelScreenState extends State<LevelScreen>
           )
           .take(14),
     );
-    if (Halloween.isEventLevel(widget.level.id)) {
+    final isEvent = Halloween.isEventLevel(widget.level.id);
+    if (widget.level.boss) {
+      Sfx.boss(isEvent
+          ? 'hw'
+          : RegExp(r'^(w\d+)l').firstMatch(widget.level.id)?.group(1) ?? '');
+    } else if (isEvent) {
       Sfx.spooky();
-    } else if (widget.level.boss) {
-      Sfx.boss();
     } else {
       Sfx.battle();
     }
@@ -1130,7 +1133,8 @@ class _LevelScreenState extends State<LevelScreen>
           if (!widget.examMode) _starRules(),
           const SizedBox(height: 6),
           Text(
-            l.pick(lv.storyEs, lv.storyEn),
+            l.pick(
+                _grader?.storyEs ?? lv.storyEs, _grader?.storyEn ?? lv.storyEn),
             style: const TextStyle(
               fontStyle: FontStyle.italic,
               color: AppTheme.textLo,
