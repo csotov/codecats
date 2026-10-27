@@ -128,6 +128,8 @@ class _AdminScreenState extends State<AdminScreen> {
                   else if (_userId != null) ...[
                     _summary(l),
                     const SizedBox(height: 12),
+                    _typingReport(l),
+                    const SizedBox(height: 12),
                     _weekCompare(l),
                     const SizedBox(height: 12),
                     _trend(l),
@@ -205,6 +207,10 @@ class _AdminScreenState extends State<AdminScreen> {
         '$codePct% ${l.pick('código', 'code')} · ${100 - codePct}% ${l.pick('bloques', 'blocks')}'
       ],
       [
+        l.pick('Tiempo total en el juego', 'Total time in game'),
+        fmt(_sum('heartbeat', 'sec'))
+      ],
+      [
         l.pick('Tecleo', 'Typing'),
         '$keys ${l.pick('teclas', 'keys')}, $back ${l.pick('borrados', 'deletes')} ($typo% ${l.pick('corrección', 'correction')})'
       ],
@@ -221,6 +227,86 @@ class _AdminScreenState extends State<AdminScreen> {
     ];
     return SectionCard(
       title: l.pick('Resumen', 'Summary'),
+      child: Column(
+        children: [
+          for (final r in rows)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                      width: 190,
+                      child: Text(r[0],
+                          style: const TextStyle(fontWeight: FontWeight.w600))),
+                  Expanded(child: Text(r[1])),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Merges the {char: count} maps carried in `key` of each typing event.
+  Map<String, int> _charMap(String key) {
+    final out = <String, int>{};
+    for (final e in _of('typing')) {
+      final m = _data(e)[key];
+      if (m is Map) {
+        m.forEach((k, v) {
+          if (v is num)
+            out[k.toString()] = (out[k.toString()] ?? 0) + v.toInt();
+        });
+      }
+    }
+    return out;
+  }
+
+  static String _charName(String c) => switch (c) {
+        ' ' => 'espacio',
+        '\n' => 'salto de línea',
+        '\t' => 'tab',
+        ';' => 'punto y coma  ;',
+        '"' => 'comillas  "',
+        '\'' => 'comilla simple  \'',
+        _ => c,
+      };
+
+  static List<String> _top(Map<String, int> m, int n) {
+    final e = m.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    return [for (final x in e.take(n)) '${_charName(x.key)} ×${x.value}'];
+  }
+
+  /// Writing report: what he deletes/adds, hesitates on, and fixes
+  /// right after losing a battle.
+  Widget _typingReport(L l) {
+    final del = _charMap('del'), add = _charMap('add');
+    final delF = _charMap('delF'), addF = _charMap('addF');
+    final tok = _charMap('tok'), tokF = _charMap('tokF');
+    final hesit = _sum('typing', 'hesit');
+    final gap = _of('typing')
+        .map((e) => (_data(e)['gap'] as num?) ?? 0)
+        .fold<num>(0, (a, b) => b > a ? b : a);
+    String row(Map<String, int> m) =>
+        m.isEmpty ? '—' : _top(m, 6).join('   ·   ');
+    final rows = <List<String>>[
+      [l.pick('Lo que más borra', 'Most deleted'), row(del)],
+      [l.pick('Lo que más agrega', 'Most added'), row(add)],
+      [l.pick('Borra tras fallar (90 s)', 'Deleted after a loss'), row(delF)],
+      [l.pick('Agrega tras fallar (90 s)', 'Added after a loss'), row(addF)],
+      [l.pick('Palabras/frases que agrega', 'Words added'), row(tok)],
+      [
+        l.pick('Palabras que agrega tras fallar', 'Words added after a loss'),
+        row(tokF)
+      ],
+      [
+        l.pick('Dudas (>2.5 s sin teclear)', 'Hesitations'),
+        '$hesit ${l.pick('veces', 'times')} · ${l.pick('la más larga', 'longest')} ${(gap / 1000).round()} s'
+      ],
+    ];
+    return SectionCard(
+      title: l.pick('Informe de escritura', 'Writing report'),
       child: Column(
         children: [
           for (final r in rows)

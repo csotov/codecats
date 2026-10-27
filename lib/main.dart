@@ -20,7 +20,10 @@ Future<void> main() async {
   Sfx.menu(); // fire-and-forget; browsers may delay audio until first tap
   // A key press also counts as a user gesture for the browser.
   HardwareKeyboard.instance.addHandler((e) {
-    if (e is KeyDownEvent) Sfx.poke();
+    if (e is KeyDownEvent) {
+      Sfx.poke();
+      Cloud.instance.touch();
+    }
     return false;
   });
 }
