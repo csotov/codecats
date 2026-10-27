@@ -3,12 +3,39 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../data/cats.dart';
+import '../data/worlds.dart';
 import '../l10n.dart';
 import '../services/progress.dart';
 import '../services/sfx.dart';
 import 'keyboard_scroll.dart';
 import 'meme_player.dart';
 import 'theme.dart';
+
+/// Why the player got [cat], e.g. "3 estrellas en el nivel 1 de La
+/// Guardería Gatuna". Falls back to the unlock rule when the battle that
+/// gave it was not recorded (cats won before origins were saved).
+String catHow(CatMeme cat, L l) {
+  final base = l.pick(cat.hintEs, cat.hintEn);
+  final o = Progress.instance.catOrigin[cat.id]?.split('|');
+  final lv = (o == null || o[0].isEmpty) ? null : levelById(o[0]);
+  final w = lv == null ? null : worldOf(lv);
+  if (lv == null || w == null) return base;
+  final n = w.levels.indexOf(lv) + 1;
+  final where =
+      l.pick('el nivel $n de ${w.titleEs}', 'level $n of ${w.titleEn}');
+  if (cat.trigger == CatTrigger.perfect) {
+    return l.pick('3 estrellas en $where', '3 stars on $where');
+  }
+  return '$base · ${l.pick('en', 'on')} $where';
+}
+
+/// The day [cat] was won (yyyy-mm-dd → dd/mm/yyyy), if recorded.
+String? catWhen(CatMeme cat) {
+  final o = Progress.instance.catOrigin[cat.id]?.split('|');
+  if (o == null || o.length < 3 || o[2].length != 10) return null;
+  final d = o[2];
+  return '${d.substring(8)}/${d.substring(5, 7)}/${d.substring(0, 4)}';
+}
 
 /// La Gatoteca: cat-dex grid. Locked cats show as mystery silhouettes
 /// with the unlock hint — kids see exactly how to earn each cat.
@@ -65,7 +92,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
               maxCrossAxisExtent: 170,
               mainAxisSpacing: 10,
               crossAxisSpacing: 10,
-              childAspectRatio: 0.72,
+              childAspectRatio: 0.64,
             ),
             itemCount: kCats.length,
             itemBuilder: (context, i) {
@@ -81,7 +108,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   Widget _catCard(BuildContext context, L l, CatMeme cat, bool owned) {
     return Tooltip(
-      message: owned ? l.t('tip_watch_cat') : l.pick(cat.hintEs, cat.hintEn),
+      message: owned
+          ? '${l.t('tip_watch_cat')}\n${catHow(cat, l)}'
+          : l.pick(cat.hintEs, cat.hintEn),
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -142,15 +171,24 @@ class _CollectionScreenState extends State<CollectionScreen> {
                           fontSize: 11, fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(height: 2),
+                    if (owned)
+                      Text(
+                        cat.rarity.key(l.lang.value),
+                        maxLines: 1,
+                        style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: cat.rarity.color),
+                      ),
                     Text(
                       owned
-                          ? cat.rarity.key(l.lang.value)
+                          ? '🏆 ${catHow(cat, l)}'
                           : l.pick(cat.hintEs, cat.hintEn),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 9,
-                        color: owned ? cat.rarity.color : AppTheme.textLo,
+                        color: owned ? AppTheme.textHi : AppTheme.textLo,
                       ),
                     ),
                   ],
@@ -214,6 +252,13 @@ class _CollectionScreenState extends State<CollectionScreen> {
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: cat.rarity.color)),
+                    const SizedBox(height: 6),
+                    Text(
+                        '🏆 ${l.pick('Lo conseguiste por', 'You got it for')}: '
+                        '${catHow(cat, l)}'
+                        '${catWhen(cat) == null ? '' : ' (${catWhen(cat)})'}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 13)),
                   ],
                 ),
               ),
