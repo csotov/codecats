@@ -32,12 +32,12 @@ void main() {
     expect(pr.coins, before + Progress.kHatCoins);
   });
 
-  test('20 caps trade for one of the next tier', () async {
+  test('10 caps trade for one of the next tier', () async {
     SharedPreferences.setMockInitialValues({});
     final pr = Progress.instance;
     await pr.ensureLoaded();
     await pr.reset();
-    for (var i = 1; i <= 21; i++) {
+    for (var i = 1; i <= 11; i++) {
       pr.awardHat('w1l$i');
     }
     expect(pr.tradeHats(1), isFalse);
@@ -45,5 +45,28 @@ void main() {
     expect(pr.hatsInHand(0), 1);
     expect(pr.hatsInHand(1), 1);
     expect(pr.tradeHats(0), isFalse);
+  });
+
+  test('higher caps need only 2 of the tier below', () async {
+    SharedPreferences.setMockInitialValues({});
+    final pr = Progress.instance;
+    await pr.ensureLoaded();
+    await pr.reset();
+    for (var i = 1; i <= 160; i++) {
+      pr.awardHat('x$i');
+    }
+    for (var i = 0; i < 16; i++) {
+      expect(pr.tradeHats(0), isTrue);
+    }
+    expect(pr.tradeHats(0), isFalse);
+    for (final (tier, n) in [(1, 8), (2, 4), (3, 2), (4, 1)]) {
+      for (var i = 0; i < n; i++) {
+        expect(pr.tradeHats(tier), isTrue);
+      }
+      expect(pr.tradeHats(tier), isFalse);
+    }
+    expect(pr.hatsInHand(5), 1);
+    expect(pr.tradeHats(5), isFalse);
+    expect(pr.hatsInHand(0), 0);
   });
 }
