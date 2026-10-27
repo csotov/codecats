@@ -35,6 +35,7 @@ import 'coach_screen.dart';
 import '../data/coach_problems.dart';
 import 'trace_screen.dart';
 import '../data/challenges.dart';
+import 'meme_player.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'badge_shop.dart';
@@ -62,6 +63,21 @@ class _MapScreenState extends State<MapScreen> {
     _badgeTick = Timer.periodic(const Duration(seconds: 2), (_) async {
       if (_badgePopup || !mounted) return;
       if (ModalRoute.of(context)?.isCurrent != true) return;
+      final coinCats = Progress.instance.checkCoinCats();
+      if (coinCats.isNotEmpty) {
+        _badgePopup = true;
+        for (final c in coinCats) {
+          if (!mounted) break;
+          await MemeBurst.show(
+            context,
+            c,
+            captionEs: '¡Gato nuevo por tus Miaudólares!',
+            captionEn: 'New cat for your Meowdollars!',
+          );
+        }
+        _badgePopup = false;
+        return;
+      }
       final fresh = checkGoalBadges(Progress.instance);
       if (fresh.isEmpty) return;
       _badgePopup = true;
@@ -1034,7 +1050,14 @@ class _MapScreenState extends State<MapScreen> {
               const SizedBox(height: 6),
               Tooltip(
                 message: starsSummary(level, p.starMask),
-                child: StarsRow(stars: p.stars, size: 13),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    StarsRow(stars: p.stars, size: 13),
+                    if (p.starMask & kStarHat != 0)
+                      const Text(' 🧢', style: TextStyle(fontSize: 12)),
+                  ],
+                ),
               ),
             ],
           ),

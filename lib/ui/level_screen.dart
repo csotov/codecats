@@ -269,7 +269,6 @@ class _LevelScreenState extends State<LevelScreen>
     _savedCode = widget.level.starterCode;
     _promotedToCode = widget.level.mode == EditorMode.code;
     _hintsShown = Progress.instance.of(widget.level.id).hintsBought;
-    _hintsAtStart = _hintsShown;
     _tabController = TabController(length: _hybrid ? 2 : 1, vsync: this);
   }
 
@@ -468,6 +467,7 @@ class _LevelScreenState extends State<LevelScreen>
 
   Future<void> _runSample() async {
     if (_busy) return;
+    _triedSample = true;
     final l = L.instance;
     setState(() {
       _busy = true;
@@ -668,17 +668,21 @@ class _LevelScreenState extends State<LevelScreen>
       if (!mounted) return;
     }
 
-    // Three visible stars: win, no hint bought this visit, level challenge.
+    // Three visible stars: win, the habit star (alternates per level:
+    // tested before fighting / explained to the Profe), level challenge.
+    final habit = habitIsQuiz(widget.level)
+        ? (widget.examMode || await _habitQuiz())
+        : _triedSample;
+    if (!mounted) return;
     final challenge = challengeMet(
       widget.level,
       fights: _attemptsThisSession,
       codeRank: bigORank(Complexity.analyze(_currentCode).notation),
     );
-    final mask = kStarWin |
-        (_hintsShown <= _hintsAtStart ? kStarNoHint : 0) |
-        (challenge ? kStarChallenge : 0);
+    final mask =
+        kStarWin | (habit ? kStarHabit : 0) | (challenge ? kStarChallenge : 0);
     final stars = 1 +
-        (mask & kStarNoHint != 0 ? 1 : 0) +
+        (mask & kStarHabit != 0 ? 1 : 0) +
         (mask & kStarChallenge != 0 ? 1 : 0);
     if (!challenge) _challengeMisses++;
     Cloud.instance.log(
@@ -703,6 +707,10 @@ class _LevelScreenState extends State<LevelScreen>
     );
     final newCats =
         rewardCat ? Progress.instance.checkCatUnlocks() : const <CatMeme>[];
+    // Gorrito Gatuno: 3 stars on the first battle of the visit.
+    final hat = stars == 3 &&
+        _attemptsThisSession == 1 &&
+        Progress.instance.awardHat(widget.level.id);
     if (wasReview) {
       Cloud.instance.log(
         'review_done',
@@ -741,6 +749,15 @@ class _LevelScreenState extends State<LevelScreen>
         Navigator.pushReplacement(context, levelRoute(next!));
       },
     );
+    if (hat && mounted) {
+      await ProfessorDialog.show(context, [
+        L.instance.pick(
+          '🧢 ¡GORRITO GATUNO! 3 estrellas al primer combate. Ese código está más fino que gato en caja de cartón. +${Progress.kHatCoins} Miaudólares (llevás ${Progress.instance.hats} 🧢).',
+          '🧢 CAT CAP! 3 stars on the first battle. That code fits like a cat in a box. +${Progress.kHatCoins} Meowdollars (${Progress.instance.hats} 🧢 so far).',
+        ),
+      ]);
+      if (!mounted) return;
+    }
     if (Progress.instance.lastChallengeBonus > 0 && mounted) {
       await ProfessorDialog.show(context, [
         L.instance.pick(
@@ -784,8 +801,67 @@ class _LevelScreenState extends State<LevelScreen>
   bool _failMemeShown = false;
   bool _tutorialShown = false;
   bool _leaveTalkShown = false;
-  int _hintsAtStart = 0;
   int _challengeMisses = 0;
+  bool _triedSample = false;
+
+  /// "Explain it to the Profe": pick what the code prints for sample 1.
+  Future<bool> _habitQuiz() async {
+    final l = L.instance;
+    final s = widget.level.samples.first;
+    final right = s.output.trim();
+    final n = int.tryParse(right);
+    final reversed = right.split('').reversed.join();
+    final wrong = n != null
+        ? '${n + (math.Random().nextBool() ? 1 : -1)}'
+        : reversed != right
+            ? reversed
+            : null;
+    if (wrong == null) return true;
+    final opts = [right, wrong]..shuffle();
+    final pick = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => AlertDialog(
+        title: Text(
+            l.pick('🐱 Explicáselo al Profe', '🐱 Explain it to the Profe')),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l.pick('Si a tu código le doy esta entrada, ¿qué escribe?',
+                  'If your code gets this input, what does it print?')),
+              const SizedBox(height: 8),
+              SelectableText(s.input.trim().isEmpty ? '(—)' : s.input.trim(),
+                  style: const TextStyle(fontFamily: 'monospace')),
+            ],
+          ),
+        ),
+        actions: [
+          for (final o in opts)
+            Tooltip(
+              message: l.pick('Elegir esta respuesta', 'Pick this answer'),
+              child: FilledButton(
+                onPressed: () => Navigator.pop(c, o),
+                child: Text(o, style: const TextStyle(fontFamily: 'monospace')),
+              ),
+            ),
+        ],
+      ),
+    );
+    final ok = pick == right;
+    Cloud.instance
+        .log('habit_quiz', levelId: widget.level.id, data: {'ok': ok});
+    if (!ok && mounted) {
+      await ProfessorDialog.show(context, [
+        l.pick(
+            'Casi, michi 😼. Escribe $right. ¡Seguí los pasos de tu código con el dedo, como gato persiguiendo un láser!',
+            'Close, kitty 😼. It prints $right. Trace your code with a finger, like a cat chasing a laser!'),
+      ]);
+    }
+    return ok;
+  }
+
   int _polyaForHint = -1;
 
   /// The three star rules, visible before playing; earned ones lit.
@@ -815,11 +891,12 @@ class _LevelScreenState extends State<LevelScreen>
       child: Wrap(
         children: [
           rule(kStarWin, l.pick('Ganar', 'Win')),
-          rule(kStarNoHint, l.pick('Sin comprar pista', 'No hint bought')),
+          rule(kStarHabit, habitText(widget.level)),
           rule(
             kStarChallenge,
             '${l.pick('Desafío', 'Challenge')}: ${challengeText(widget.level)}',
           ),
+          rule(kStarHat, hatText()),
         ],
       ),
     );

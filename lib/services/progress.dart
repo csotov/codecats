@@ -439,6 +439,7 @@ class Progress extends ChangeNotifier {
     unlockedCats.clear();
     badges.clear();
     equippedBadge = '';
+    hatMade = [0, 0, 0, 0];
     final raw = prefs.getString(_keyFor(active!.id));
     if (raw != null) {
       try {
@@ -474,6 +475,7 @@ class Progress extends ChangeNotifier {
           ..clear()
           ..addAll((j['bdg'] as List? ?? const []).map((e) => '$e'));
         equippedBadge = j['bde'] as String? ?? '';
+        hatMade = _hatList(j['hmt']);
         cfHandle = j['cfh'] as String? ?? '';
         atcoderUser = j['acu'] as String? ?? '';
         scores
@@ -529,6 +531,7 @@ class Progress extends ChangeNotifier {
         'gc': goldenCards.toList(),
         'bd': bonusDay,
         'bdg': badges.toList(),
+        'hmt': hatMade,
         'bde': equippedBadge,
         'cfh': cfHandle,
         'acu': atcoderUser,
@@ -582,6 +585,8 @@ class Progress extends ChangeNotifier {
     goldenCards.addAll(List<String>.from(d['gc'] ?? const []));
     bonusDay = math.max(bonusDay, (d['bd'] as num?)?.toInt() ?? 0);
     badges.addAll(List<String>.from(d['bdg'] ?? const []));
+    final hm = _hatList(d['hmt']);
+    hatMade = [for (var i = 0; i < 4; i++) math.max(hatMade[i], hm[i])];
     if (equippedBadge.isEmpty) equippedBadge = d['bde'] as String? ?? '';
     if (!equippedBadge.startsWith('s_')) equippedBadge = '';
     if (cfHandle.isEmpty) cfHandle = d['cfh'] as String? ?? '';
@@ -636,6 +641,7 @@ class Progress extends ChangeNotifier {
           'gc': goldenCards.toList(),
           'bd': bonusDay,
           'bdg': badges.toList(),
+          'hmt': hatMade,
           'bde': equippedBadge,
           'cfh': cfHandle,
           'acu': atcoderUser,
@@ -854,6 +860,64 @@ class Progress extends ChangeNotifier {
   /// after two empty events in a row the next one always gives a cat.
   /// Starter ('always') cats are never granted here: they join the
   /// Gatoteca only when actually shown (see [markSeen]).
+  static const kHatCoins = 5;
+  static const kHatTrade = 20;
+
+  /// Hats made by trading [kHatTrade] of the tier below: feo, ultra HD,
+  /// plateado, de agua.
+  List<int> hatMade = [0, 0, 0, 0];
+
+  static List<int> _hatList(Object? raw) {
+    final l = [for (final e in (raw as List? ?? const [])) (e as num).toInt()];
+    return [for (var i = 0; i < 4; i++) i < l.length ? l[i] : 0];
+  }
+
+  /// Hats of [tier] in hand (0 = Gorrito Gatuno … 4 = gorrito de agua).
+  int hatsInHand(int tier) {
+    final made = tier == 0 ? hats : hatMade[tier - 1];
+    return made - (tier < 4 ? kHatTrade * hatMade[tier] : 0);
+  }
+
+  /// Trade [kHatTrade] hats of [tier] for one of the next tier.
+  bool tradeHats(int tier) {
+    if (tier >= 4 || hatsInHand(tier) < kHatTrade) return false;
+    hatMade[tier]++;
+    _save();
+    notifyListeners();
+    return true;
+  }
+
+  /// Gorritos Gatunos earned (one per level at most).
+  int get hats => levels.values.where((p) => p.starMask & 8 != 0).length;
+
+  /// Gives the Gorrito Gatuno of [levelId] once; false if already owned.
+  bool awardHat(String levelId) {
+    final p = of(levelId);
+    if (p.starMask & 8 != 0) return false;
+    p.starMask |= 8;
+    coins += kHatCoins;
+    _save();
+    notifyListeners();
+    return true;
+  }
+
+  /// Coin cats are granted as soon as the purse is big enough, from any
+  /// screen, without the random draw.
+  List<CatMeme> checkCoinCats() {
+    final fresh = [
+      for (final c in kCats)
+        if (c.trigger == CatTrigger.coinsN &&
+            !unlockedCats.contains(c.id) &&
+            coins >= c.need)
+          c
+    ];
+    if (fresh.isEmpty) return fresh;
+    unlockedCats.addAll(fresh.map((c) => c.id));
+    _save();
+    notifyListeners();
+    return fresh;
+  }
+
   List<CatMeme> checkCatUnlocks() {
     final fresh = <CatMeme>[];
     int rank(CatMeme c) => c.trigger == CatTrigger.halloweenN
@@ -878,6 +942,7 @@ class Progress extends ChangeNotifier {
     if (eligible.isNotEmpty) fresh.add(eligible.first);
     if (fresh.isNotEmpty) {
       final give = rank(fresh.first) < 2 ||
+          fresh.first.trigger == CatTrigger.coinsN ||
           unlockedCats.isEmpty ||
           _dryChecks >= 2 ||
           _rng.nextDouble() < 0.5;
@@ -1164,6 +1229,7 @@ class Progress extends ChangeNotifier {
     goldenCards.clear();
     badges.clear();
     equippedBadge = '';
+    hatMade = [0, 0, 0, 0];
     bonusDay = 0;
     contestIds = const [];
     contestEndMs = 0;
