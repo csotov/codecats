@@ -559,7 +559,7 @@ class _MapScreenState extends State<MapScreen> {
                                 color: Color(0xFFFF8A1F))),
                         Text(
                             l.pick(
-                                'Niveles y gatos espeluznantes · quedan '
+                                'Entrenamiento OBI con grader · quedan '
                                     '${Halloween.daysLeft} días',
                                 'Spooky levels and cats · '
                                     '${Halloween.daysLeft} days left'),
