@@ -138,6 +138,17 @@ class Progress extends ChangeNotifier {
   /// Cat-meme collection: ids of unlocked cats (see data/cats.dart).
   final Set<String> unlockedCats = {};
 
+  /// How each cat was won: `levelId|stars|yyyy-mm-dd` (levelId empty when
+  /// it was not tied to a battle). Cats won before this existed have none.
+  final Map<String, String> catOrigin = {};
+
+  void _noteCatOrigin(String id) {
+    if (catOrigin.containsKey(id)) return;
+    final s = _lastSolve;
+    final d = DateTime.now().toIso8601String().substring(0, 10);
+    catOrigin[id] = '${s?.levelId ?? ''}|${s?.stars ?? 0}|$d';
+  }
+
   /// Big O classes the professor already explained.
   final Set<String> taughtBigO = {};
 
@@ -478,6 +489,7 @@ class Progress extends ChangeNotifier {
     ghostStartDay = 0;
     levels.clear();
     unlockedCats.clear();
+    catOrigin.clear();
     badges.clear();
     equippedBadge = '';
     hatMade = List.filled(kHatTrade.length, 0);
@@ -549,6 +561,10 @@ class Progress extends ChangeNotifier {
         unlockedCats
           ..clear()
           ..addAll((j['cats'] as List? ?? const []).map((e) => '$e'));
+        catOrigin
+          ..clear()
+          ..addAll(((j['co'] as Map?) ?? const {})
+              .map((k, v) => MapEntry('$k', '$v')));
         taughtBigO
           ..clear()
           ..addAll((j['bo'] as List? ?? const []).map((e) => '$e'));
@@ -565,6 +581,7 @@ class Progress extends ChangeNotifier {
         'rd': lastSolveDay,
         'gh': ghostStartDay,
         'cats': unlockedCats.toList(),
+        'co': catOrigin,
         'bo': taughtBigO.toList(),
         'rot': rot,
         'qz': quiz,
@@ -672,6 +689,9 @@ class Progress extends ChangeNotifier {
       lastSolveDay = d['rd'] as String;
     }
     unlockedCats.addAll(List<String>.from(d['cats'] ?? const []));
+    ((d['co'] as Map?) ?? const {}).forEach((k, v) {
+      catOrigin.putIfAbsent('$k', () => '$v');
+    });
     taughtBigO.addAll(List<String>.from(d['bo'] ?? const []));
     ((d['rot'] as Map?) ?? const {}).forEach((k, v) {
       rot['$k'] = math.max(rot['$k'] ?? 0, (v as num).toInt());
@@ -735,6 +755,7 @@ class Progress extends ChangeNotifier {
           'rd': lastSolveDay,
           'gh': ghostStartDay,
           'cats': unlockedCats.toList(),
+          'co': catOrigin,
           'bo': taughtBigO.toList(),
           'rot': rot,
           'qz': quiz,
@@ -859,7 +880,8 @@ class Progress extends ChangeNotifier {
     }
     streak++;
     _bumpDayStreak();
-    _lastSolve = _SolveCtx(stars: stars, codeMode: codeMode, boss: boss);
+    _lastSolve = _SolveCtx(
+        levelId: levelId, stars: stars, codeMode: codeMode, boss: boss);
     _save();
     notifyListeners();
     return earned;
@@ -947,6 +969,7 @@ class Progress extends ChangeNotifier {
   /// The Gatoteca lists exactly the cats the player has seen on screen.
   void markSeen(String id) {
     if (!unlockedCats.add(id)) return;
+    _noteCatOrigin(id);
     _save();
     notifyListeners();
   }
@@ -1061,6 +1084,9 @@ class Progress extends ChangeNotifier {
       }
     }
     unlockedCats.addAll(fresh.map((c) => c.id));
+    for (final c in fresh) {
+      _noteCatOrigin(c.id);
+    }
     if (fresh.isNotEmpty) {
       _save();
       notifyListeners();
@@ -1328,6 +1354,7 @@ class Progress extends ChangeNotifier {
     coins = kStartCoins;
     streak = 0;
     unlockedCats.clear();
+    catOrigin.clear();
     taughtBigO.clear();
     levels.clear();
     rot.clear();
@@ -1350,7 +1377,12 @@ class Progress extends ChangeNotifier {
 
 /// Player rank derived from XP.
 class _SolveCtx {
-  _SolveCtx({required this.stars, required this.codeMode, required this.boss});
+  _SolveCtx(
+      {required this.levelId,
+      required this.stars,
+      required this.codeMode,
+      required this.boss});
+  final String levelId;
   final int stars;
   final bool codeMode;
   final bool boss;
