@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/worlds.dart';
 import '../data/cats.dart';
 import '../data/complexity.dart';
@@ -96,6 +98,7 @@ class _AdminScreenState extends State<AdminScreen> {
       appBar: AppBar(
         title: Text(l.pick('Panel de admin', 'Admin panel')),
         actions: [
+          const MusicButton(),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: Tooltip(

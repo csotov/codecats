@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/ioi_tasks.dart';
 import '../l10n.dart';
 import '../services/open_url.dart';
@@ -32,6 +34,7 @@ class _IoiScreenState extends State<IoiScreen> {
     final w = worldReached(Progress.instance);
     return Scaffold(
       appBar: AppBar(
+          actions: const [MusicButton()],
           title: Text(
               '🏅 ${l.pick('Problemas de olimpiada', 'Olympiad problems')}')),
       body: KeyboardScroll(

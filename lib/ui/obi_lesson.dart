@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../services/cloud.dart';
 import 'keyboard_scroll.dart';
 import 'professor.dart';
@@ -187,6 +189,7 @@ class _ObiLessonScreenState extends State<ObiLessonScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF140A1E),
       appBar: AppBar(
+        actions: const [MusicButton()],
         backgroundColor: const Color(0xFF2A0E05),
         title: const Text('🎓 Escuela del grader',
             style: TextStyle(fontWeight: FontWeight.w900, color: _orange)),

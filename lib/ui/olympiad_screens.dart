@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/olympiad_tracks.dart';
 import '../data/tracks_models.dart';
 import '../data/worlds.dart';
@@ -60,8 +62,9 @@ class LeadInScreen extends StatelessWidget {
     final l = L.instance;
     final steps = kLeadIns[stem.id] ?? const <Level>[];
     return Scaffold(
-      appBar:
-          AppBar(title: Text('🪜 ${l.pick('Camino de ayuda', 'Help path')}')),
+      appBar: AppBar(
+          actions: const [MusicButton()],
+          title: Text('🪜 ${l.pick('Camino de ayuda', 'Help path')}')),
       body: AnimatedBuilder(
         animation: Progress.instance,
         builder: (context, _) {
@@ -185,6 +188,7 @@ class ClosingScreen extends StatelessWidget {
     final items = kClosing.where((c) => c.$1 == world).toList();
     return Scaffold(
       appBar: AppBar(
+          actions: const [MusicButton()],
           title: Text(
               '🏁 ${l.pick('Cierre del Mundo $world', 'World $world closing')}')),
       body: AnimatedBuilder(
@@ -268,8 +272,9 @@ class CoderListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = L.instance;
     return Scaffold(
-      appBar:
-          AppBar(title: Text('🛠️ ${l.pick('Ronda Coder', 'Coder round')}')),
+      appBar: AppBar(
+          actions: const [MusicButton()],
+          title: Text('🛠️ ${l.pick('Ronda Coder', 'Coder round')}')),
       body: AnimatedBuilder(
         animation: Progress.instance,
         builder: (context, _) {
@@ -447,7 +452,7 @@ class _CoderTaskScreenState extends State<CoderTaskScreen> {
     final t = widget.task;
     final breakit = t.kind == CoderKind.breakit;
     return Scaffold(
-      appBar: AppBar(title: Text(t.title)),
+      appBar: AppBar(actions: const [MusicButton()], title: Text(t.title)),
       body: KeyboardScroll(
         controller: _scroll,
         child: ListView(
@@ -568,9 +573,8 @@ Future<void> maybeRunBlitz(BuildContext context) async {
         if (p.of(c.levelId).solved) c.id
     ];
     final cardId = p.blitzSeq % 4 == 3 ? null : p.nextBlitzCard(unlocked);
-    final card = cardId == null
-        ? null
-        : kConceptCards.firstWhere((c) => c.id == cardId);
+    final card =
+        cardId == null ? null : kConceptCards.firstWhere((c) => c.id == cardId);
     final q = card?.quiz ?? kBlitz[p.nextRot('blitz', kBlitz.length)];
     if (!context.mounted) break;
     final ok = await ProfessorQuizDialog.show(context, q,
@@ -579,8 +583,8 @@ Future<void> maybeRunBlitz(BuildContext context) async {
     if (ok == true) right++;
     if (card != null) p.answerBlitzCard(card.id, ok == true);
     p.blitzSeq++;
-    Cloud.instance.log('blitz_q',
-        data: {'card': card?.id ?? 'math', 'ok': ok == true});
+    Cloud.instance
+        .log('blitz_q', data: {'card': card?.id ?? 'math', 'ok': ok == true});
   }
   Cloud.instance.log('blitz', data: {'right': right, 'of': n});
   p.finishBlitz(right);

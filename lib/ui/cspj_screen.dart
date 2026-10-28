@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/cspj.dart';
 import '../data/worlds.dart';
 import '../l10n.dart';
@@ -26,6 +28,7 @@ class CspjScreen extends StatelessWidget {
     final p = Progress.instance;
     return Scaffold(
       appBar: AppBar(
+          actions: const [MusicButton()],
           title:
               Text('🐾 ${l.pick('El Camino del Bigote', 'The Whisker Path')}')),
       body: AnimatedBuilder(

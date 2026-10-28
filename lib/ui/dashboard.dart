@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/worlds.dart';
 import '../l10n.dart';
 import '../data/profe_talks.dart';
@@ -28,6 +30,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.dispose();
   }
 
+  /// Erasing everything needs typing BORRAR, so it can't happen by a slip.
+  Future<void> _confirmReset(BuildContext context, L l) async {
+    final word = l.pick('BORRAR', 'ERASE');
+    final ctl = TextEditingController();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (c) => StatefulBuilder(
+        builder: (c, set) => AlertDialog(
+          title: Text('⚠️ ${l.t('reset_progress')}'),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(l.t('reset_confirm')),
+            const SizedBox(height: 10),
+            Text(l.pick(
+                'Para confirmar, escribí $word:', 'To confirm, type $word:')),
+            TextField(
+                controller: ctl, autofocus: true, onChanged: (_) => set(() {})),
+          ]),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(c, false),
+                child: Text(l.t('cancel'))),
+            FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: ctl.text.trim().toUpperCase() == word
+                    ? () => Navigator.pop(c, true)
+                    : null,
+                child: Text(l.t('reset_progress'))),
+          ],
+        ),
+      ),
+    );
+    ctl.dispose();
+    if (ok == true) await Progress.instance.reset();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = L.instance;
@@ -44,6 +81,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       animation: p,
       builder: (context, _) => Scaffold(
         appBar: AppBar(
+          actions: const [MusicButton()],
           title: Text(l.t('dashboard'),
               style: const TextStyle(fontWeight: FontWeight.w800)),
         ),
@@ -125,6 +163,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     for (final w in kWorlds) _worldRow(l, p, w),
                   ],
                 ),
+              ),
+              const SizedBox(height: 40),
+              // ---- danger zone (hidden at the very bottom) ------------------
+              ExpansionTile(
+                leading: const Icon(Icons.warning_amber, color: Colors.white38),
+                title: Text(l.pick('Zona peligrosa', 'Danger zone'),
+                    style: const TextStyle(color: Colors.white38)),
+                children: [
+                  Tooltip(
+                    message: l.t('tip_reset'),
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.redAccent),
+                      icon: const Icon(Icons.delete_forever),
+                      label: Text(l.t('reset_progress')),
+                      onPressed: () => _confirmReset(context, l),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
               ),
             ],
           ),

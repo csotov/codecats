@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/coach_problems.dart';
 import '../l10n.dart';
 import '../services/cloud.dart';
@@ -41,6 +43,7 @@ class _CoachScreenState extends State<CoachScreen> {
     final l = L.instance;
     return Scaffold(
       appBar: AppBar(
+          actions: const [MusicButton()],
           title: Text(
               '🧑‍🏫 ${l.pick('Problemas del entrenador', 'Coach problems')}')),
       body: AnimatedBuilder(

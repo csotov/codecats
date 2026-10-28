@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/phases.dart';
 import '../data/worlds.dart';
 import '../l10n.dart';
@@ -99,6 +101,7 @@ class _PhaseExamScreenState extends State<PhaseExamScreen> {
         title: Text(
             '🎓 ${l.pick('Examen para saltar a la Fase', 'Skip exam to Phase')} ${widget.phase.n}'),
         actions: [
+          const MusicButton(),
           Center(
               child: Text(
                   '⏱ ${mm.toString().padLeft(2, '0')}:${ss.toString().padLeft(2, '0')}  ',

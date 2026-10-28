@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import 'sound_panel.dart';
+
 import '../data/math_gym.dart';
 import '../data/tracks_models.dart';
 import '../l10n.dart';
@@ -29,6 +31,7 @@ class MathGymScreen extends StatelessWidget {
     final l = L.instance;
     return Scaffold(
       appBar: AppBar(
+          actions: const [MusicButton()],
           title: Text('🧮 ${l.pick('Gimnasio de matemática', 'Math gym')}')),
       body: AnimatedBuilder(
         animation: Progress.instance,
@@ -386,6 +389,7 @@ class _MathTopicScreenState extends State<MathTopicScreen> {
     );
     return Scaffold(
       appBar: AppBar(
+          actions: const [MusicButton()],
           toolbarHeight: land ? 40 : null,
           title: Text(l.pick(t.titleEs, t.titleEn))),
       body: KeyboardScroll(
