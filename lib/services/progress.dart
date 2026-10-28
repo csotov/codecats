@@ -317,6 +317,15 @@ class Progress extends ChangeNotifier {
     return earned;
   }
 
+  /// One-off Profe talks (e.g. the Departamental pep talk) stored under
+  /// `talk_<id>` so they sync with the rest of the progress.
+  bool talkSeen(String id) => mathGym.containsKey('talk_$id');
+
+  void markTalkSeen(String id) {
+    mathGym['talk_$id'] = [1, 0];
+    _save();
+  }
+
   /// Memory gym lessons reuse [mathGym] under `mem_<deck>`:
   /// [lessons finished, best first-try score].
   List<int> memStats(String deck) => mathGym['mem_$deck'] ?? const [0, 0];

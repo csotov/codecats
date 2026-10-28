@@ -40,6 +40,7 @@ import 'theme.dart';
 import 'widgets.dart';
 import 'badge_shop.dart';
 import 'recall_screen.dart';
+import 'departamental_talk.dart';
 import '../data/badges.dart';
 import 'dart:async';
 
@@ -87,6 +88,8 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
+  bool _talkQueued = false;
+
   @override
   void dispose() {
     _badgeTick?.cancel();
@@ -111,6 +114,20 @@ class _MapScreenState extends State<MapScreen> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
               maybeRunBlitz(context);
+            }
+          });
+        }
+        if (DepartamentalTalk.relevant &&
+            !progress.talkSeen(DepartamentalTalk.id) &&
+            !_talkQueued) {
+          _talkQueued = true;
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted &&
+                (ModalRoute.of(context)?.isCurrent ?? false) &&
+                !progress.talkSeen(DepartamentalTalk.id)) {
+              DepartamentalTalk.show(context);
+            } else {
+              _talkQueued = false;
             }
           });
         }
@@ -353,6 +370,15 @@ class _MapScreenState extends State<MapScreen> {
                 context,
                 MaterialPageRoute(builder: (_) => LevelScreen(level: daily)),
               ),
+            ),
+          ],
+          if (DepartamentalTalk.relevant) ...[
+            const SizedBox(height: 6),
+            _missionRow(
+              '🎤 ${l.pick('Charla del Profe', 'Profe talk')}',
+              l.pick('tu primer examen: la Departamental',
+                  'your first exam: the Departamental'),
+              () => DepartamentalTalk.show(context),
             ),
           ],
           if (rec != null) ...[

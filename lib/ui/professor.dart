@@ -498,7 +498,9 @@ class _ProfessorSaysState extends State<ProfessorSays> {
 /// like talking to a character in an RPG.
 class ProfessorDialog {
   static Future<void> show(BuildContext context, List<String> lines,
-      {Speaker speaker = Speaker.profe, String? lastLabel}) {
+      {Speaker speaker = Speaker.profe,
+      String? lastLabel,
+      void Function(int line)? onLine}) {
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -513,7 +515,7 @@ class ProfessorDialog {
         ),
       ),
       pageBuilder: (_, __, ___) => _ConversationView(
-          lines: lines, speaker: speaker, lastLabel: lastLabel),
+          lines: lines, speaker: speaker, lastLabel: lastLabel, onLine: onLine),
     );
   }
 }
@@ -615,10 +617,14 @@ class _QuizViewState extends State<_QuizView> {
 
 class _ConversationView extends StatefulWidget {
   const _ConversationView(
-      {required this.lines, required this.speaker, this.lastLabel});
+      {required this.lines,
+      required this.speaker,
+      this.lastLabel,
+      this.onLine});
   final List<String> lines;
   final Speaker speaker;
   final String? lastLabel;
+  final void Function(int line)? onLine;
 
   @override
   State<_ConversationView> createState() => _ConversationViewState();
@@ -627,9 +633,16 @@ class _ConversationView extends StatefulWidget {
 class _ConversationViewState extends State<_ConversationView> {
   int _i = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    widget.onLine?.call(0);
+  }
+
   void _next() {
     if (_i < widget.lines.length - 1) {
       setState(() => _i++);
+      widget.onLine?.call(_i);
     } else {
       Navigator.of(context).pop();
     }
