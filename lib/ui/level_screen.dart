@@ -30,6 +30,7 @@ import 'level_intro.dart';
 import 'meme_player.dart';
 import '../data/complexity.dart';
 import '../data/profe_talks.dart';
+import '../data/hint_quiz.dart';
 import '../data/challenges.dart';
 import 'golden_card.dart';
 import '../data/halloween.dart';
@@ -87,6 +88,20 @@ class _LevelScreenState extends State<LevelScreen>
   /// advancing: only active seconds (an edit or run in the last minute)
   /// count, and passing more tests or the sample resets the clock.
   static const _stuckLimit = 180;
+
+  /// Short levels wait longer (5 min) and ask a quick question first.
+  static const _stuckLimitShort = 300;
+
+  bool get _isLong {
+    final lv = widget.level;
+    return lv.boss ||
+        (lv.storyEs.length +
+                lv.statementEs.length +
+                lv.inputEs.length +
+                lv.outputEs.length) >=
+            500;
+  }
+
   static const _activeWindow = Duration(seconds: 60);
   int _stuckSec = 0;
   int _bestPassed = 0;
@@ -344,7 +359,7 @@ class _LevelScreenState extends State<LevelScreen>
     if (DateTime.now().difference(_lastActivity) > _activeWindow) return;
     _stuckSec += sec;
     // Never interrupt a run, a dialog or another screen: wait for later.
-    if (_stuckSec < _stuckLimit ||
+    if (_stuckSec < (_isLong ? _stuckLimit : _stuckLimitShort) ||
         _busy ||
         ModalRoute.of(context)?.isCurrent != true) {
       return;
@@ -411,7 +426,29 @@ class _LevelScreenState extends State<LevelScreen>
       levelId: lv.id,
       data: {'accepted': yes == true, 'kind': h.kind},
     );
-    if (yes != true) return;
+    if (yes != true || !mounted) return;
+    if (!_isLong) {
+      final q =
+          kHintQuiz[Progress.instance.nextRot('hintquiz', kHintQuiz.length)];
+      final ok = await ProfessorQuizDialog.show(context, q,
+          intro: l.pick(
+              '🧠 Para ganarte la pista, una preguntita de programación:',
+              '🧠 To earn the hint, a quick programming question:'));
+      Cloud.instance
+          .log('free_hint_quiz', levelId: lv.id, data: {'right': ok == true});
+      if (!mounted) return;
+      if (ok != true) {
+        // Not lost: the offer comes back in about a minute.
+        _freeHints--;
+        _stuckSec = _stuckLimitShort - 60;
+        await ProfessorDialog.show(context, [
+          l.pick('¡Casi! En un minuto te pregunto otra y vas por la pista. 😺',
+              'Almost! In a minute I will ask another one for the hint. 😺'),
+        ]);
+        return;
+      }
+    }
+    if (!mounted) return;
     await ProfessorDialog.show(context, [l.pick(h.tip.es, h.tip.en)]);
   }
 
