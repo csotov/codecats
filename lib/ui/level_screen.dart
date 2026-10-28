@@ -1,3 +1,5 @@
+import '../data/expert_solutions.dart';
+import 'expert_screen.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -931,6 +933,17 @@ class _LevelScreenState extends State<LevelScreen>
         context,
         mentalTalk(MentalEvent.winAfterFails),
       );
+    }
+    final expert = expertFor(widget.level.id);
+    final expertKey = 'exp_${widget.level.id}';
+    if (expert != null &&
+        mounted &&
+        !widget.examMode &&
+        !Progress.instance.talkSeen(expertKey)) {
+      Progress.instance.markTalkSeen(expertKey);
+      Cloud.instance.log('expert_open', levelId: widget.level.id);
+      await ExpertScreen.show(context, expert);
+      if (!mounted) return;
     }
     // Celebrar gatos nuevos DESPUÉS de la victoria — uno por uno.
     for (final c in newCats) {
