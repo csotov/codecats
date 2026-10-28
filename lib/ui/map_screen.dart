@@ -80,6 +80,25 @@ class _MapScreenState extends State<MapScreen> {
         _badgePopup = false;
         return;
       }
+      // Goal cats (e.g. 50 stars) arrive on the map too, without
+      // waiting for the next win.
+      final goalCats = Progress.instance.checkCatUnlocks(milestonesOnly: true);
+      if (goalCats.isNotEmpty) {
+        _badgePopup = true;
+        final more = goalCats.length - 1;
+        await MemeBurst.show(
+          context,
+          goalCats.first,
+          captionEs: more == 0
+              ? '¡Meta cumplida! Gato nuevo en tu Gatoteca'
+              : '¡Meta cumplida! Gato nuevo y $more más en tu Gatoteca',
+          captionEn: more == 0
+              ? 'Goal reached! New cat in your Cat-dex'
+              : 'Goal reached! New cat and $more more in your Cat-dex',
+        );
+        _badgePopup = false;
+        return;
+      }
       final fresh = checkGoalBadges(Progress.instance);
       if (fresh.isEmpty) return;
       _badgePopup = true;
