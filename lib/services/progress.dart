@@ -86,18 +86,27 @@ class LevelProgress {
 /// A player slot: independent progress so several kids can share a
 /// device (or one player can start from zero without losing the old run).
 class Profile {
-  Profile({required this.id, required this.name, required this.emoji});
+  Profile(
+      {required this.id,
+      required this.name,
+      required this.emoji,
+      this.acct = ''});
 
   final String id;
   String name;
   String emoji;
 
-  Map<String, dynamic> toJson() => {'id': id, 'n': name, 'e': emoji};
+  /// Cloud account (user id) this slot syncs with; only that slot pushes.
+  String acct;
+
+  Map<String, dynamic> toJson() =>
+      {'id': id, 'n': name, 'e': emoji, if (acct.isNotEmpty) 'a': acct};
 
   factory Profile.fromJson(Map<String, dynamic> j) => Profile(
         id: j['id'] as String,
         name: j['n'] as String? ?? 'Jugador',
         emoji: j['e'] as String? ?? '🐯',
+        acct: j['a'] as String? ?? '',
       );
 }
 
@@ -581,16 +590,65 @@ class Progress extends ChangeNotifier {
         'ct': contestIds,
         'cte': contestEndMs,
         'lv': levels.map((k, v) => MapEntry(k, v.toJson())),
+        'pn': active?.name ?? '',
+        'pe': active?.emoji ?? '',
       };
 
   Timer? _cloudTimer;
 
+  bool get _activeLinked {
+    final uid = Cloud.instance.user?.id;
+    return uid != null && active?.acct == uid;
+  }
+
   /// Cloud copy, at most once every few seconds (saves are frequent).
   void _scheduleCloudPush() {
-    if (!Cloud.instance.signedIn) return;
+    if (!_activeLinked) return;
     _cloudTimer?.cancel();
-    _cloudTimer = Timer(const Duration(seconds: 4),
-        () => Cloud.instance.pushSnapshot(toSnapshot()));
+    _cloudTimer = Timer(const Duration(seconds: 4), _syncCloud);
+  }
+
+  /// Pull, merge and push, so two devices never overwrite each other.
+  Future<void> _syncCloud() async {
+    if (!_activeLinked) return;
+    final d = await Cloud.instance.pullSnapshot();
+    if (d != null) {
+      _mergeFrom(d);
+      await _saveLocal();
+      notifyListeners();
+    }
+    await Cloud.instance.pushSnapshot(toSnapshot());
+  }
+
+  /// Picks the local slot that belongs to the signed-in account (by link,
+  /// then by the cloud profile name), creating it on a new device, and
+  /// merges the cloud progress into it.
+  Future<void> linkAccount() async {
+    final uid = Cloud.instance.user?.id;
+    if (uid == null) return;
+    await ensureLoaded();
+    final d = await Cloud.instance.pullSnapshot();
+    var p = profiles.where((e) => e.acct == uid).firstOrNull;
+    if (p == null) {
+      var name = (d?['pn'] as String? ?? '').trim();
+      if (name.isEmpty) name = Cloud.instance.displayName.trim();
+      final key = name.toLowerCase();
+      p = name.isEmpty
+          ? null
+          : profiles
+              .where((e) => e.acct.isEmpty && e.name.toLowerCase() == key)
+              .firstOrNull;
+      if (p == null && name.isNotEmpty && d != null) {
+        p = await createProfile(name, d['pe'] as String? ?? '🐯');
+      }
+      p ??= active!;
+      p.acct = uid;
+      await _saveProfiles();
+    }
+    if (active?.id != p.id) await _loadProfile(p.id, save: false);
+    if (d != null) _mergeFrom(d);
+    await _save();
+    notifyListeners();
   }
 
   /// Merge the cloud snapshot into the active profile (keeps the best of
@@ -601,6 +659,12 @@ class Progress extends ChangeNotifier {
       await Cloud.instance.pushSnapshot(toSnapshot());
       return;
     }
+    _mergeFrom(d);
+    await _save();
+    notifyListeners();
+  }
+
+  void _mergeFrom(Map<String, dynamic> d) {
     xp = math.max(xp, (d['xp'] as num?)?.toInt() ?? 0);
     coins = math.max(coins, (d['mc'] as num?)?.toInt() ?? 0);
     dayStreak = math.max(dayStreak, (d['dsk'] as num?)?.toInt() ?? 0);
@@ -650,13 +714,16 @@ class Progress extends ChangeNotifier {
         p.starMask |= r.starMask;
       });
     }
-    await _save();
-    notifyListeners();
   }
 
   Future<void> _save() async {
     if (active == null) return;
     _scheduleCloudPush();
+    await _saveLocal();
+  }
+
+  Future<void> _saveLocal() async {
+    if (active == null) return;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
         _keyFor(active!.id),
