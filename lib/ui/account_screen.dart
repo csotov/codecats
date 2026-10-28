@@ -51,7 +51,7 @@ class _AccountScreenState extends State<AccountScreen> {
       err = await Cloud.instance.signIn(email, pass);
     }
     if (err == null && Cloud.instance.signedIn) {
-      await Progress.instance.adoptCloudSnapshot();
+      await Progress.instance.linkAccount();
       Cloud.instance.log('sign_in', data: {'signup': _signup});
     }
     if (!mounted) return;

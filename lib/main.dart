@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'data/grader_specs.dart';
 import 'ui/olympiad_screens.dart';
 import 'data/coach_problems.dart';
@@ -17,6 +18,7 @@ Future<void> main() async {
   BlitzClock.start();
   Cloud.instance.addListener(CoachStore.instance.load);
   await Progress.instance.ensureLoaded();
+  if (Cloud.instance.signedIn) unawaited(Progress.instance.linkAccount());
   await GraderPref.load();
   runApp(const CodeCatsApp());
   Sfx.menu(); // fire-and-forget; browsers may delay audio until first tap
