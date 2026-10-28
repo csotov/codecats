@@ -39,6 +39,7 @@ import 'meme_player.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'badge_shop.dart';
+import 'recall_screen.dart';
 import 'departamental_talk.dart';
 import '../data/badges.dart';
 import 'dart:async';
@@ -456,6 +457,16 @@ class _MapScreenState extends State<MapScreen> {
               MaterialPageRoute(builder: (_) => const MemoryGymScreen()),
             ),
           ),
+          const SizedBox(height: 6),
+          _missionRow(
+            '✍️ ${l.pick('Escribir de memoria', 'Write from memory')}',
+            l.pick('mirá un pedacito de código y escribilo sin mirar',
+                'look at a piece of code, then write it without looking'),
+            () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const RecallScreen()),
+            ),
+          ),
           if (mathTopicsFor(p).isNotEmpty) ...[
             const SizedBox(height: 6),
             _missionRow(
@@ -727,6 +738,9 @@ class _MapScreenState extends State<MapScreen> {
           case 'ioi':
             Navigator.push(
                 context, MaterialPageRoute(builder: (_) => const IoiScreen()));
+          case 'recall':
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const RecallScreen()));
           case 'memory':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const MemoryGymScreen()));
@@ -774,6 +788,8 @@ class _MapScreenState extends State<MapScreen> {
         item('ioi', Icons.military_tech_outlined,
             l.pick('Problemas de olimpiada', 'Olympiad problems')),
         item('memory', Icons.bolt, l.pick('Memoria rápida', 'Quick recall')),
+        item('recall', Icons.keyboard_outlined,
+            l.pick('Escribir de memoria', 'Write from memory')),
         item('math', Icons.calculate_outlined,
             l.pick('Gimnasio de matemática', 'Math gym')),
         item('coder', Icons.build_outlined,

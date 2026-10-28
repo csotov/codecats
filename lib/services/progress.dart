@@ -294,6 +294,29 @@ class Progress extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Write-from-memory drills reuse [mathGym] under `rec_<id>`:
+  /// [times written right, best seconds].
+  List<int> recallStats(String id) => mathGym['rec_$id'] ?? const [0, 0];
+
+  /// Records a correct write-up; returns the coins earned (5 the first
+  /// time, 2 for beating the best time).
+  int recallDone(String id, int seconds) {
+    final m = [...recallStats(id)];
+    var earned = 0;
+    if (m[0] == 0) {
+      earned = 5;
+    } else if (seconds < m[1]) {
+      earned = 2;
+    }
+    m[0]++;
+    if (m[1] == 0 || seconds < m[1]) m[1] = seconds;
+    mathGym['rec_$id'] = m;
+    coins += earned;
+    _save();
+    notifyListeners();
+    return earned;
+  }
+
   /// One-off Profe talks (e.g. the Departamental pep talk) stored under
   /// `talk_<id>` so they sync with the rest of the progress.
   bool talkSeen(String id) => mathGym.containsKey('talk_$id');
