@@ -99,72 +99,56 @@ long long contar(long long n)
 ''';
 
 final _steps = <_Step>[
-  _Step(
-      0,
-      (s) => s._kSig,
-      'Paso 1 de 12 · En la OBI no escribís un programa entero: completás UNA '
-      'función. Esta es contar(n): recibe n entre los paréntesis y '
-      'devuelve la respuesta con return.'),
-  _Step(
-      0,
-      (s) => s._kExamples,
-      'Paso 2 · Los ejemplos: el .in es lo que el grader lee y le pasa a tu '
-      'función. El .out es lo que tiene que salir.'),
-  _Step(
-      0,
-      (s) => s._kSubtasks,
-      'Paso 3 · Las subtareas son el mismo problema con "regalos": n ≤ 10 y '
-      'n ≤ 1 000 000 son regalos. La última NO tiene regalos: es la más '
-      'difícil. Hoy vamos a juntar los regalos.'),
-  _Step(0, (s) => s._kTabs[1], 'Paso 4 · Tocá la pestaña "Mi archivo".',
-      _Act.tab1),
-  _Step(
-      1,
-      (s) => s._kFileBar,
-      'Paso 5 · grader.cpp y multiplos.h ya vienen hechos y NO se tocan. '
-      'Vos escribís solamente multiplos.cpp.'),
+  _Step(0, (s) => s._kSig,
+      '¡Miau! 🐱 En la OBI no escribís todo el programa. Solo completás UNA función.'),
+  _Step(0, (s) => s._kSig,
+      'Esta es la función contar. Recibe n entre los paréntesis 📦 y devuelve la respuesta con return 🎾.'),
+  _Step(0, (s) => s._kExamples,
+      'Estos son los ejemplos. El .in es lo que entra, como la comida al plato 🍽️.'),
+  _Step(0, (s) => s._kExamples,
+      'El .out es lo que tiene que salir. Si tu respuesta es igual: ¡purrfecto! 😺'),
+  _Step(0, (s) => s._kSubtasks,
+      'Las subtareas son el mismo problema, pero con regalos 🎁.'),
+  _Step(0, (s) => s._kSubtasks,
+      'n ≤ 10 y n ≤ 1 000 000 son regalos: números chicos. ¡Fácil como dormir la siesta! 😴'),
+  _Step(0, (s) => s._kSubtasks,
+      'La última dice "sin restricciones adicionales": sin regalos. ¡Es el jefe final! 🐉'),
+  _Step(0, (s) => s._kTabs[1], 'Tocá la pestaña "Mi archivo" 👆', _Act.tab1),
+  _Step(1, (s) => s._kFileBar,
+      'grader.cpp y multiplos.h ya vienen hechos. ¡No se tocan! 🙀'),
+  _Step(1, (s) => s._kFileBar, 'Vos escribís solo en multiplos.cpp ✍️'),
+  _Step(1, (s) => s._kEditor,
+      'Acá no va cin ni cout 🚫. n ya llega solito y la respuesta sale con return.'),
   _Step(
       1,
       (s) => s._kEditor,
-      'Paso 6 · Adentro de la función escribí un for de 1 a n que cuente los '
-      'múltiplos de 3 o de 5, y al final return c;\n'
-      'Sin cin ni cout: n llega por los paréntesis y la respuesta sale con '
-      'return.',
+      'Escribí acá un for de 1 a n que cuente los múltiplos de 3 o de 5. Al final: return c; 🎾',
       _Act.code),
-  _Step(1, (s) => s._kTabs[2], 'Paso 7 · Ahora tocá la pestaña "Terminal".',
-      _Act.tab2),
+  _Step(1, (s) => s._kTabs[2], '¡Bien! Ahora tocá "Terminal" 💻', _Act.tab2),
   _Step(
       2,
       (s) => s._kCompile,
-      'Paso 8 · Tocá Compilar: junta grader.cpp con tu archivo y arma el '
-      'programa multiplos.exe.',
+      'Tocá Compilar 🔨: junta el grader con tu archivo y arma el programa.',
       _Act.compile),
-  _Step(
-      2,
-      (s) => s._kSample,
-      'Paso 9 · Tocá Ejemplo 1: el grader lee 0-01.in, llama a tu función y '
-      'escribe lo que devolvió.',
-      _Act.sample),
-  _Step(
-      2,
-      (s) => s._kTermOut,
-      'Paso 10 · Si ves ✔, tu salida es igual al .out. Si ves ✘, volvé a '
-      '"Mi archivo", corregí y compilá de nuevo.'),
-  _Step(
-      2, (s) => s._kTabs[3], 'Paso 11 · Tocá la pestaña "Envíos".', _Act.tab3),
+  _Step(2, (s) => s._kSample,
+      'Tocá Ejemplo 1 🧪: prueba tu función con el primer .in.', _Act.sample),
+  _Step(2, (s) => s._kTermOut, '¿Ves ✔? ¡Salió igual que el .out! 🎉'),
+  _Step(2, (s) => s._kTermOut,
+      'Si ves ✘, tranqui: volvé a "Mi archivo", arreglá y compilá de nuevo. Hasta los gatos se caen 🐈.'),
+  _Step(2, (s) => s._kTabs[3], 'Ahora tocá "Envíos" 📤', _Act.tab3),
   _Step(
       3,
       (s) => s._kSubmit,
-      'Paso 12 · Tocá Enviar: el juez prueba tu función con casos ocultos de '
-      'cada subtarea.',
+      'Tocá Enviar 🚀: el juez prueba tu función con casos secretos.',
       _Act.submit),
   _Step(
-      3,
-      (s) => s._kScore,
-      '¡Así se suman los puntos! S1 y S2 ✅ son los regalos (n chico, el for '
-      'alcanza). S3 ❌: con n = 10^18 el for tardaría siglos. Por eso la '
-      'subtarea sin restricciones es la más difícil: pide una idea más '
-      'fuerte. Pista: n/3 + n/5 − n/15. ¡Probalo vos!'),
+      3, (s) => s._kScore, '¡Mirá! S1 y S2 ✅: los regalos. El for alcanzó 😸'),
+  _Step(3, (s) => s._kScore,
+      'S3 ❌: con n = 10^18 el for tarda más que un gato en querer bañarse... ¡o sea, nunca! 🛁'),
+  _Step(3, (s) => s._kScore,
+      'Por eso la última subtarea es la más difícil: pide una idea más fuerte 💪'),
+  _Step(3, (s) => s._kScore,
+      'Pista 🐾: n/3 + n/5 − n/15. ¡Probala vos y sacá 100!'),
 ];
 
 class _ObiSimScreenState extends State<ObiSimScreen>
@@ -238,9 +222,9 @@ class _ObiSimScreenState extends State<ObiSimScreen>
     final i = _step;
     if (i == null || _steps[i].act != a) return;
     if (!ok && a == _Act.compile) {
-      _go(3,
-          note: 'No compiló. Leé el error en la terminal, volvé a "Mi archivo" '
-              'y revisá tu código.');
+      _go(_steps.indexWhere((s) => s.act == _Act.tab1),
+          note: '¡Ups, no compiló! 😿 Mirá el error, volvé a "Mi archivo" y '
+              'arreglalo.');
       return;
     }
     _go(i + 1 < _steps.length ? i + 1 : null);
@@ -259,9 +243,9 @@ class _ObiSimScreenState extends State<ObiSimScreen>
     if (!RegExp(r'\bfor\b').hasMatch(c) ||
         !RegExp(r'return\s+\w').hasMatch(c) ||
         RegExp(r'return\s+0\s*;').hasMatch(c)) {
-      setState(() => _tutNote =
-          'Todavía falta: un for de 1 a n y un return con tu contador '
-              '(no return 0). Si querés, tocá "Escribilo por mí" y miralo.');
+      setState(() =>
+          _tutNote = 'Falta algo 🐾: un for de 1 a n y return c (no return 0). '
+              '¿Ayudita? Tocá "Escribilo por mí".');
       return;
     }
     _advance(_Act.code);
@@ -546,6 +530,11 @@ class _ObiSimScreenState extends State<ObiSimScreen>
                             color: Color(0xFFC62828),
                             fontWeight: FontWeight.w700)),
                   ),
+                Text('Paso ${_step! + 1} de ${_steps.length}',
+                    style: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700)),
                 Text(st.text,
                     style: const TextStyle(
                         color: Colors.black87, fontSize: 15, height: 1.35)),
