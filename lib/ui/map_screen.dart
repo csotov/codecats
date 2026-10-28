@@ -89,6 +89,33 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   bool _talkQueued = false;
+  bool _missionsOpen = false;
+
+  /// Shows only the first few mission rows; the rest fold behind a
+  /// toggle so the map (the game) stays in view.
+  List<Widget> _fold(List<Widget> rows) {
+    const keep = 6; // 3 rows, each with its spacer
+    if (rows.length <= keep + 2) return rows;
+    final l = L.instance;
+    final hidden = (rows.length - keep) ~/ 2;
+    return [
+      ...rows.take(keep),
+      if (_missionsOpen) ...rows.skip(keep),
+      const SizedBox(height: 4),
+      Tooltip(
+        message: _missionsOpen
+            ? l.pick('Esconder la lista', 'Hide the list')
+            : l.pick('Ver todas las actividades', 'See all activities'),
+        child: TextButton.icon(
+          onPressed: () => setState(() => _missionsOpen = !_missionsOpen),
+          icon: Icon(_missionsOpen ? Icons.expand_less : Icons.expand_more),
+          label: Text(_missionsOpen
+              ? l.pick('Ver menos', 'Show less')
+              : l.pick('Ver $hidden más', 'Show $hidden more')),
+        ),
+      ),
+    ];
+  }
 
   @override
   void dispose() {
@@ -147,6 +174,7 @@ class _MapScreenState extends State<MapScreen> {
               ],
             ),
             actions: [
+              const StarBadge(),
               const CoinBadge(),
               _profileChip(),
               if (Halloween.active)
@@ -353,168 +381,176 @@ class _MapScreenState extends State<MapScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            losing ? l.t('rival_ahead') : l.t('rival_behind'),
+            losing
+                ? '${l.t('rival_ahead')} (${ghost - you} ${l.pick('nivel(es) de ventaja', 'level(s) ahead')})'
+                : ghost == you
+                    ? l.pick(
+                        '¡empate! El que gane el próximo nivel pasa adelante 🏁',
+                        "it's a tie! Whoever wins the next level takes the lead 🏁")
+                    : l.t('rival_behind'),
             style: const TextStyle(color: AppTheme.textLo, fontSize: 11),
           ),
-          if (daily != null) ...[
-            const SizedBox(height: 10),
-            _missionRow(
-              '🎯 ${l.t('daily_challenge')}',
-              l.pick(daily.titleEs, daily.titleEn),
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => LevelScreen(level: daily)),
-              ),
-            ),
-          ],
-          if (DepartamentalTalk.relevant) ...[
-            const SizedBox(height: 6),
-            _missionRow(
-              '🎤 ${l.pick('Charla del Profe', 'Profe talk')}',
-              l.pick('tu primer examen: la Departamental',
-                  'your first exam: the Departamental'),
-              () => DepartamentalTalk.show(context),
-            ),
-          ],
-          if (rec != null) ...[
-            const SizedBox(height: 6),
-            _missionRow(
-              '👉 ${l.t('recommended')}',
-              l.pick(rec.titleEs, rec.titleEn),
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => LevelScreen(level: rec)),
-              ),
-            ),
-          ],
-          if (CoachStore.instance.problems
-              .any((c) => !p.of(c.levelId).solved)) ...[
-            const SizedBox(height: 6),
-            _missionRow(
-              '🧑‍🏫 ${l.pick('Del entrenador', 'From your coach')}',
-              '${CoachStore.instance.problems.where((c) => !p.of(c.levelId).solved).length} ${l.pick('problemas nuevos', 'new problems')}',
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CoachScreen()),
-              ),
-            ),
-          ],
-          if (traceExercisesFor(p).any((t) => !p.of(t.levelId).solved)) ...[
-            const SizedBox(height: 6),
-            _missionRow(
-              '🧠 ${l.pick('Sé la computadora', 'Be the computer')}',
-              '${traceExercisesFor(p).where((t) => !p.of(t.levelId).solved).length} ${l.pick('tablas para completar', 'tables to fill')}',
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const TraceListScreen()),
-              ),
-            ),
-          ],
-          for (final w in openClosings(p))
-            if (kClosing.any((c) => c.$1 == w && !p.of(c.$3.id).solved)) ...[
-              const SizedBox(height: 6),
+          ..._fold([
+            if (daily != null) ...[
+              const SizedBox(height: 10),
               _missionRow(
-                '🏁 ${l.pick('Cierre del Mundo $w', 'World $w closing')}',
-                '${kClosing.where((c) => c.$1 == w && !p.of(c.$3.id).solved).length} ${l.pick('problemas: parecidos, combinados y de olimpiada', 'problems: look-alikes, combined and olympiad')}',
+                '🎯 ${l.t('daily_challenge')}',
+                l.pick(daily.titleEs, daily.titleEn),
                 () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => ClosingScreen(world: w)),
+                  MaterialPageRoute(builder: (_) => LevelScreen(level: daily)),
                 ),
               ),
             ],
-          const SizedBox(height: 6),
-          _missionRow(
-            '🐾 ${l.pick('El Camino del Bigote', 'The Whisker Path')}',
-            l.pick('18 paradas para volverte campeón',
-                '18 stops to become a champion'),
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CspjScreen()),
-            ),
-          ),
-          const SizedBox(height: 6),
-          _missionRow(
-            '🏅 ${l.pick('Problemas de olimpiada', 'Olympiad problems')}',
-            l.pick('problemas oficiales, de a una subtarea por vez',
-                'official problems, one subtask at a time'),
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const IoiScreen()),
-            ),
-          ),
-          const SizedBox(height: 6),
-          _missionRow(
-            '⚡ ${l.pick('Memoria rápida', 'Quick recall')}',
-            l.pick('lecciones cortas: contar casos, potencias de 2 y más',
-                'short lessons: counting, powers of 2 and more'),
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const MemoryGymScreen()),
-            ),
-          ),
-          const SizedBox(height: 6),
-          _missionRow(
-            '✍️ ${l.pick('Escribir de memoria', 'Write from memory')}',
-            l.pick('mirá un pedacito de código y escribilo sin mirar',
-                'look at a piece of code, then write it without looking'),
-            () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const RecallScreen()),
-            ),
-          ),
-          if (mathTopicsFor(p).isNotEmpty) ...[
-            const SizedBox(height: 6),
-            _missionRow(
-              '🧮 ${l.pick('Gimnasio de matemática', 'Math gym')}',
-              l.pick('conteo, %, divisibilidad y más para olimpiada',
-                  'counting, %, divisibility and more for olympiads'),
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const MathGymScreen()),
+            if (DepartamentalTalk.relevant) ...[
+              const SizedBox(height: 6),
+              _missionRow(
+                '🎤 ${l.pick('Charla del Profe', 'Profe talk')}',
+                l.pick('tu primer examen: la Departamental',
+                    'your first exam: the Departamental'),
+                () => DepartamentalTalk.show(context),
               ),
-            ),
-          ],
-          if (coderTasksFor(p).any((t) => !p.of(t.levelId).solved)) ...[
-            const SizedBox(height: 6),
-            _missionRow(
-              '🛠️ ${l.pick('Ronda Coder', 'Coder round')}',
-              '${coderTasksFor(p).where((t) => !p.of(t.levelId).solved).length} ${l.pick('para arreglar, completar o romper', 'to fix, complete or break')}',
-              () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CoderListScreen()),
-              ),
-            ),
-          ],
-          if (bonus != null) ...[
-            const SizedBox(height: 6),
-            Tooltip(
-              message: l.t('tip_bonus'),
-              child: _missionRow(
-                '🏆 ${l.t('bonus_level')}',
-                l.pick(bonus.titleEs, bonus.titleEn),
+            ],
+            if (rec != null) ...[
+              const SizedBox(height: 6),
+              _missionRow(
+                '👉 ${l.t('recommended')}',
+                l.pick(rec.titleEs, rec.titleEn),
                 () => Navigator.push(
                   context,
-                  bonusRoute(bonus),
+                  MaterialPageRoute(builder: (_) => LevelScreen(level: rec)),
                 ),
               ),
-            ),
-          ] else if (p.unsolvedFails.isNotEmpty) ...[
+            ],
+            if (CoachStore.instance.problems
+                .any((c) => !p.of(c.levelId).solved)) ...[
+              const SizedBox(height: 6),
+              _missionRow(
+                '🧑‍🏫 ${l.pick('Del entrenador', 'From your coach')}',
+                '${CoachStore.instance.problems.where((c) => !p.of(c.levelId).solved).length} ${l.pick('problemas nuevos', 'new problems')}',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CoachScreen()),
+                ),
+              ),
+            ],
+            if (traceExercisesFor(p).any((t) => !p.of(t.levelId).solved)) ...[
+              const SizedBox(height: 6),
+              _missionRow(
+                '🧠 ${l.pick('Sé la computadora', 'Be the computer')}',
+                '${traceExercisesFor(p).where((t) => !p.of(t.levelId).solved).length} ${l.pick('tablas para completar', 'tables to fill')}',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const TraceListScreen()),
+                ),
+              ),
+            ],
+            for (final w in openClosings(p))
+              if (kClosing.any((c) => c.$1 == w && !p.of(c.$3.id).solved)) ...[
+                const SizedBox(height: 6),
+                _missionRow(
+                  '🏁 ${l.pick('Cierre del Mundo $w', 'World $w closing')}',
+                  '${kClosing.where((c) => c.$1 == w && !p.of(c.$3.id).solved).length} ${l.pick('problemas: parecidos, combinados y de olimpiada', 'problems: look-alikes, combined and olympiad')}',
+                  () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => ClosingScreen(world: w)),
+                  ),
+                ),
+              ],
             const SizedBox(height: 6),
             _missionRow(
-              '📓 ${l.t('notebook')}',
-              '${p.unsolvedFails.length} ${l.pick('para volver a intentar', 'to try again')}',
+              '🐾 ${l.pick('El Camino del Bigote', 'The Whisker Path')}',
+              l.pick('18 paradas para volverte campeón',
+                  '18 stops to become a champion'),
               () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const ReviewScreen()),
+                MaterialPageRoute(builder: (_) => const CspjScreen()),
               ),
             ),
-          ],
-          if (pending.isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(
-                '⚠️ ${pending.length} ${l.t('pending')} — ${l.t('pending_tip')}',
-                style: const TextStyle(color: AppTheme.bad, fontSize: 11)),
-          ],
+            _missionRow(
+              '🏅 ${l.pick('Problemas de olimpiada', 'Olympiad problems')}',
+              l.pick('problemas oficiales, de a una subtarea por vez',
+                  'official problems, one subtask at a time'),
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const IoiScreen()),
+              ),
+            ),
+            const SizedBox(height: 6),
+            _missionRow(
+              '⚡ ${l.pick('Memoria rápida', 'Quick recall')}',
+              l.pick('lecciones cortas: contar casos, potencias de 2 y más',
+                  'short lessons: counting, powers of 2 and more'),
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MemoryGymScreen()),
+              ),
+            ),
+            const SizedBox(height: 6),
+            _missionRow(
+              '✍️ ${l.pick('Escribir de memoria', 'Write from memory')}',
+              l.pick('mirá un pedacito de código y escribilo sin mirar',
+                  'look at a piece of code, then write it without looking'),
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const RecallScreen()),
+              ),
+            ),
+            if (mathTopicsFor(p).isNotEmpty) ...[
+              const SizedBox(height: 6),
+              _missionRow(
+                '🧮 ${l.pick('Gimnasio de matemática', 'Math gym')}',
+                l.pick('conteo, %, divisibilidad y más para olimpiada',
+                    'counting, %, divisibility and more for olympiads'),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MathGymScreen()),
+                ),
+              ),
+            ],
+            if (coderTasksFor(p).any((t) => !p.of(t.levelId).solved)) ...[
+              const SizedBox(height: 6),
+              _missionRow(
+                '🛠️ ${l.pick('Ronda Coder', 'Coder round')}',
+                '${coderTasksFor(p).where((t) => !p.of(t.levelId).solved).length} ${l.pick('para arreglar, completar o romper', 'to fix, complete or break')}',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CoderListScreen()),
+                ),
+              ),
+            ],
+            if (bonus != null) ...[
+              const SizedBox(height: 6),
+              Tooltip(
+                message: l.t('tip_bonus'),
+                child: _missionRow(
+                  '🏆 ${l.t('bonus_level')}',
+                  l.pick(bonus.titleEs, bonus.titleEn),
+                  () => Navigator.push(
+                    context,
+                    bonusRoute(bonus),
+                  ),
+                ),
+              ),
+            ] else if (p.unsolvedFails.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              _missionRow(
+                '📓 ${l.t('notebook')}',
+                '${p.unsolvedFails.length} ${l.pick('para volver a intentar', 'to try again')}',
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ReviewScreen()),
+                ),
+              ),
+            ],
+            if (pending.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                  '⚠️ ${pending.length} ${l.t('pending')} — ${l.t('pending_tip')}',
+                  style: const TextStyle(color: AppTheme.bad, fontSize: 11)),
+            ],
+          ]),
         ],
       ),
     );
@@ -770,7 +806,7 @@ class _MapScreenState extends State<MapScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Tooltip(
-        message: L.instance.t('tip_profile'),
+        message: '${p?.name ?? 'Jugador'} · ${L.instance.t('tip_profile')}',
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
           onTap: () => ProfilePicker.show(context),
@@ -789,16 +825,20 @@ class _MapScreenState extends State<MapScreen> {
                   const SizedBox(width: 4),
                   BadgeArt(worn, size: 22),
                 ],
-                const SizedBox(width: 6),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 90),
-                  child: Text(
-                    p?.name ?? 'Jugador',
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w700),
+                // Phones: the name lives in the tooltip, so the stars and
+                // Miaudólares fit next to the title.
+                if (MediaQuery.sizeOf(context).width >= 480) ...[
+                  const SizedBox(width: 6),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 90),
+                    child: Text(
+                      p?.name ?? 'Jugador',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(width: 4),
                 const Icon(Icons.swap_horiz, size: 14, color: AppTheme.textLo),
               ],

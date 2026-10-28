@@ -132,6 +132,46 @@ class CoinBadge extends StatelessWidget {
   }
 }
 
+/// Total campaign stars, shown next to the Miaudólares.
+class StarBadge extends StatelessWidget {
+  const StarBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L.instance;
+    final p = Progress.instance;
+    return AnimatedBuilder(
+      animation: p,
+      builder: (context, _) => Tooltip(
+        message: l.pick('Estrellas ganadas en total', 'Stars earned in total'),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFE066).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFFFE066)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('⭐', style: TextStyle(fontSize: 13)),
+                const SizedBox(width: 3),
+                Text('${p.totalStars}',
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFFFFE066))),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Inline "10 [coin]" price tag.
 class CoinPrice extends StatelessWidget {
   const CoinPrice(this.amount, {super.key, this.size = 14, this.color});

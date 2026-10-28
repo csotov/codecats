@@ -1,5 +1,7 @@
 import '../data/expert_solutions.dart';
 import 'expert_screen.dart';
+import 'hat_celebration.dart';
+import '../data/problem_texts.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -240,6 +242,8 @@ class _LevelScreenState extends State<LevelScreen>
   /// What the engine runs: the player's functions plus the hidden grader.
   String get _runCode => _grader?.wrap(_currentCode) ?? _currentCode;
   bool get _usesBlocks => !_codeOnly;
+  late final ProblemText? _problem = problemTextFor(widget.level.id);
+  List<String> get _hintsEs => _problem?.hints ?? widget.level.hintsEs;
   bool get _hybrid => widget.level.mode == EditorMode.hybrid && _grader == null;
 
   @override
@@ -421,7 +425,7 @@ class _LevelScreenState extends State<LevelScreen>
       sampleInput: sample?.input ?? '',
       sampleOutput: sample?.output ?? '',
       lastReport: _lastReport,
-      hintsEs: lv.hintsEs,
+      hintsEs: _hintsEs,
       hintsEn: lv.hintsEn,
       hintsShown: _hintsShown,
     );
@@ -853,8 +857,9 @@ class _LevelScreenState extends State<LevelScreen>
       boss: widget.level.boss,
       mask: mask,
     );
-    final newCats =
-        rewardCat ? Progress.instance.checkCatUnlocks() : const <CatMeme>[];
+    final newCats = rewardCat
+        ? Progress.instance.checkCatUnlocks()
+        : Progress.instance.checkCatUnlocks(milestonesOnly: true);
     // Gorrito Gatuno: 3 stars on the first battle of the visit.
     final hat = stars == 3 &&
         _attemptsThisSession == 1 &&
@@ -898,12 +903,8 @@ class _LevelScreenState extends State<LevelScreen>
       },
     );
     if (hat && mounted) {
-      await ProfessorDialog.show(context, [
-        L.instance.pick(
-          '🧢 ¡GORRITO GATUNO! 3 estrellas al primer combate. Ese código está más fino que gato en caja de cartón. +${Progress.kHatCoins} Miaudólares (llevás ${Progress.instance.hats} 🧢).',
-          '🧢 CAT CAP! 3 stars on the first battle. That code fits like a cat in a box. +${Progress.kHatCoins} Meowdollars (${Progress.instance.hats} 🧢 so far).',
-        ),
-      ]);
+      await HatCelebration.show(context,
+          coins: Progress.kHatCoins, total: Progress.instance.hats);
       if (!mounted) return;
     }
     if (Progress.instance.lastChallengeBonus > 0 && mounted) {
@@ -945,14 +946,19 @@ class _LevelScreenState extends State<LevelScreen>
       await ExpertScreen.show(context, expert);
       if (!mounted) return;
     }
-    // Celebrar gatos nuevos DESPUÉS de la victoria — uno por uno.
-    for (final c in newCats) {
-      if (!mounted) return;
+    // New cats AFTER the victory: one video, the rest are summed up
+    // so a pile of pop-ups never covers the game.
+    if (newCats.isNotEmpty && mounted) {
+      final more = newCats.length - 1;
       await MemeBurst.show(
         context,
-        c,
-        captionEs: '¡Gato nuevo en tu Gatoteca!',
-        captionEn: 'New cat in your Cat-dex!',
+        newCats.first,
+        captionEs: more == 0
+            ? '¡Gato nuevo en tu Gatoteca!'
+            : '¡Gato nuevo! Y $more más te esperan en la Gatoteca',
+        captionEn: more == 0
+            ? 'New cat in your Cat-dex!'
+            : 'New cat! And $more more are waiting in your Cat-dex',
       );
     }
   }
@@ -966,17 +972,20 @@ class _LevelScreenState extends State<LevelScreen>
   /// "Explain it to the Profe": pick what the code prints for sample 1.
   Future<bool> _habitQuiz() async {
     final l = L.instance;
+    final pt = _problem;
+    if (pt != null && l.isEs && pt.opts.length >= 3) return _reasonQuiz(pt);
     final s = widget.level.samples.first;
     final right = s.output.trim();
     final n = int.tryParse(right);
     final reversed = right.split('').reversed.join();
-    final wrong = n != null
-        ? '${n + (math.Random().nextBool() ? 1 : -1)}'
-        : reversed != right
-            ? reversed
-            : null;
-    if (wrong == null) return true;
-    final opts = [right, wrong]..shuffle();
+    final wrongs = n != null
+        ? ['${n + 1}', '${n - 1}', '${n * 2 == n ? n + 2 : n * 2}']
+        : [
+            if (reversed != right) reversed,
+            if (right.toLowerCase() != right) right.toLowerCase(),
+          ];
+    if (wrongs.isEmpty) return true;
+    final opts = {right, ...wrongs}.toList()..shuffle();
     final pick = await showDialog<String>(
       context: context,
       barrierDismissible: false,
@@ -1019,6 +1028,140 @@ class _LevelScreenState extends State<LevelScreen>
       ]);
     }
     return ok;
+  }
+
+  /// "¿Qué hace tu código?": pick the sentence that describes it (3–4
+  /// text options) or, if he prefers, write how he reasoned.
+  Future<bool> _reasonQuiz(ProblemText pt) async {
+    const write = '\u0000write';
+    final right = pt.opts.first;
+    final opts = [...pt.opts]..shuffle();
+    final pick = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => AlertDialog(
+        title: const Text('🐱 ¿Qué hace tu código?'),
+        content: SizedBox(
+          width: 420,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                    'Contale al Profe qué hace tu código. Elegí la frase que '
+                    'mejor lo describe:'),
+                const SizedBox(height: 10),
+                for (final o in opts)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Tooltip(
+                      message: 'Elegir esta respuesta',
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                        ),
+                        onPressed: () => Navigator.pop(c, o),
+                        child: Text(o, style: const TextStyle(fontSize: 14)),
+                      ),
+                    ),
+                  ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Tooltip(
+                    message: 'Escribir con tus palabras cómo lo pensaste',
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(c, write),
+                      child: const Text('✍️ Prefiero escribirlo'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (!mounted) return false;
+    if (pick == write) {
+      final text = await _writeReasoning();
+      final ok = text != null;
+      Cloud.instance.log('habit_quiz', levelId: widget.level.id, data: {
+        'ok': ok,
+        'mode': 'write',
+        if (text != null) 'len': text.length,
+      });
+      if (ok && mounted) {
+        await ProfessorDialog.show(context, [
+          '¡Miau! Me encanta que lo expliques con tus palabras 😺. '
+              'Así lo hacen los campeones: entienden su código antes de '
+              'mandarlo.',
+        ]);
+      }
+      return ok;
+    }
+    final ok = pick == right;
+    Cloud.instance.log('habit_quiz', levelId: widget.level.id, data: {
+      'ok': ok,
+      'mode': 'pick',
+      'pick': pt.opts.indexOf(pick ?? ''),
+    });
+    if (!ok && mounted) {
+      await ProfessorDialog.show(context, [
+        'Casi, michi 😼. Tu código hace esto: "$right". Seguí tu código '
+            'paso a paso con el dedo, como gato persiguiendo un láser.',
+      ]);
+    }
+    return ok;
+  }
+
+  Future<String?> _writeReasoning() {
+    final ctrl = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) => StatefulBuilder(
+        builder: (c, setD) {
+          final ready = ctrl.text.trim().length >= 15;
+          return AlertDialog(
+            title: const Text('✍️ ¿Cómo lo pensaste?'),
+            content: SizedBox(
+              width: 420,
+              child: TextField(
+                controller: ctrl,
+                autofocus: true,
+                minLines: 3,
+                maxLines: 6,
+                maxLength: 300,
+                onChanged: (_) => setD(() {}),
+                decoration: const InputDecoration(
+                  hintText: 'Por ejemplo: primero junto..., después...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            actions: [
+              Tooltip(
+                message: 'Volver sin escribir (no gana esta estrella)',
+                child: TextButton(
+                    onPressed: () => Navigator.pop(c),
+                    child: const Text('Mejor no')),
+              ),
+              Tooltip(
+                message: 'Escribí al menos una frase',
+                child: FilledButton(
+                  onPressed:
+                      ready ? () => Navigator.pop(c, ctrl.text.trim()) : null,
+                  child: const Text('Listo'),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   int _polyaForHint = -1;
@@ -1258,22 +1401,24 @@ class _LevelScreenState extends State<LevelScreen>
         children: [
           _bigOChip(),
           if (!widget.examMode) _starRules(),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
-            l.pick(
-                _grader?.storyEs ?? lv.storyEs, _grader?.storyEn ?? lv.storyEn),
+            l.pick(_problem?.es ?? (_grader?.storyEs ?? lv.storyEs),
+                _grader?.storyEn ?? lv.storyEn),
             style: const TextStyle(
-              fontStyle: FontStyle.italic,
-              color: AppTheme.textLo,
-              fontSize: 13,
+              fontSize: 16,
+              height: 1.45,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textHi,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             _grader != null
                 ? l.pick(_grader.es, _grader.en)
                 : l.pick(lv.statementEs, lv.statementEn),
-            style: const TextStyle(fontSize: 14, height: 1.4),
+            style: const TextStyle(
+                fontSize: 13, height: 1.35, color: AppTheme.textLo),
           ),
           if (_grader != null) ...[
             const SizedBox(height: 8),
@@ -1386,7 +1531,7 @@ class _LevelScreenState extends State<LevelScreen>
 
   Widget _hintsCard() {
     final l = L.instance;
-    final hints = l.pickList(widget.level.hintsEs, widget.level.hintsEn);
+    final hints = l.pickList(_hintsEs, widget.level.hintsEn);
     if (hints.isEmpty) return const SizedBox.shrink();
     final shown = math.min(_hintsShown, hints.length);
     final speech = shown == 0
@@ -1652,7 +1797,7 @@ class _LevelScreenState extends State<LevelScreen>
   Future<void> _runTutorial() async {
     final l = L.instance;
     final lv = widget.level;
-    final hints = l.pickList(lv.hintsEs, lv.hintsEn);
+    final hints = l.pickList(_hintsEs, lv.hintsEn);
     String? gift;
     if (_hintsShown < hints.length) {
       Progress.instance.giftHint(lv.id);

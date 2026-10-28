@@ -943,11 +943,14 @@ class Progress extends ChangeNotifier {
     ghostStartDay = ghostStartDay == 0 ? _epochDay(now) : ghostStartDay;
   }
 
-  /// Ghost rival: a steady ~1 level every 2 days since the first
-  /// solve — a gentle race to keep daily practice going.
-  int get ghostSolved => ghostStartDay == 0
-      ? 0
-      : ((_epochDay(DateTime.now()) - ghostStartDay) * 0.5).floor();
+  /// Ghost rival: 2 levels a day since the first solve, but always
+  /// close to the player (2 behind to 3 ahead) so the race stays alive.
+  int get ghostSolved {
+    if (ghostStartDay == 0) return 0;
+    final raw = (_epochDay(DateTime.now()) - ghostStartDay) * 2 + 1;
+    final you = solvedCount;
+    return raw.clamp(math.max(0, you - 2), you + 3);
+  }
 
   /// Upsolving queue: attempted but never beaten.
   List<String> get pendingIds => [
@@ -1048,7 +1051,39 @@ class Progress extends ChangeNotifier {
     return fresh;
   }
 
-  List<CatMeme> checkCatUnlocks() {
+  /// Cats with an announced goal ("Consigue 50 estrellas"): once the
+  /// goal is met they are always given, never left to the draw.
+  static const _milestoneTriggers = {
+    CatTrigger.starsN,
+    CatTrigger.solvedN,
+    CatTrigger.solved10,
+    CatTrigger.solved25,
+    CatTrigger.solved50,
+    CatTrigger.allStarsW1,
+    CatTrigger.rankGold,
+    CatTrigger.rankIoi,
+  };
+
+  List<CatMeme> checkCatUnlocks({bool milestonesOnly = false}) {
+    final promised = [
+      for (final c in kCats)
+        if (!unlockedCats.contains(c.id) &&
+            _milestoneTriggers.contains(c.trigger) &&
+            _catMet(c.trigger, c.need))
+          c
+    ];
+    if (promised.isNotEmpty || milestonesOnly) {
+      unlockedCats.addAll(promised.map((c) => c.id));
+      for (final c in promised) {
+        _noteCatOrigin(c.id);
+      }
+      if (promised.isNotEmpty) {
+        _save();
+        notifyListeners();
+      }
+      _lastSolve = null;
+      return promised;
+    }
     final fresh = <CatMeme>[];
     int rank(CatMeme c) => c.trigger == CatTrigger.halloweenN
         ? 0
@@ -1138,9 +1173,9 @@ class Progress extends ChangeNotifier {
       case CatTrigger.solved50:
         return solvedCount >= 50;
       case CatTrigger.rankGold:
-        return xp >= 5000;
+        return xp >= kRanks[2].minXp;
       case CatTrigger.rankIoi:
-        return xp >= 20000;
+        return xp >= kRanks.last.minXp;
       case CatTrigger.allStarsW1:
         final w1 = kWorlds.first;
         return w1.levels.every((lv) => (levels[lv.id]?.stars ?? 0) >= 3);
@@ -1398,10 +1433,11 @@ class Rank {
 const kRanks = [
   Rank('rank_bronze', 0, 0xFFCD7F32),
   Rank('rank_silver', 2000, 0xFFC0C0C0),
-  Rank('rank_gold', 5000, 0xFFFFD700),
-  Rank('rank_platinum', 9000, 0xFF7FE7DC),
-  Rank('rank_diamond', 14000, 0xFF6EC6FF),
-  Rank('rank_ioi', 20000, 0xFFFF5252),
+  // Gold and above are meant to take months of steady practice.
+  Rank('rank_gold', 12000, 0xFFFFD700),
+  Rank('rank_platinum', 20000, 0xFF7FE7DC),
+  Rank('rank_diamond', 30000, 0xFF6EC6FF),
+  Rank('rank_ioi', 45000, 0xFFFF5252),
 ];
 
 Rank rankForXp(int xp) {
