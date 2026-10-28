@@ -160,62 +160,67 @@ class _BurstDialogState extends State<_BurstDialog>
     final size = MediaQuery.sizeOf(context);
     final side = (size.shortestSide * 0.62).clamp(200.0, 420.0);
     return GestureDetector(
-      // Taps can't skip the meme before its minimum on-screen time.
-      onTap: () {
-        if (_shown.elapsed >= widget.minDuration) _close();
-      },
+      // A tap outside the clip always closes it.
+      behavior: HitTestBehavior.opaque,
+      onTap: _close,
       child: Material(
         type: MaterialType.transparency,
         child: Center(
-          child: ScaleTransition(
-            scale: CurvedAnimation(parent: _pop, curve: Curves.elasticOut),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: side,
-                  height: side,
-                  decoration: BoxDecoration(
-                    color: AppTheme.bgAlt,
-                    borderRadius: BorderRadius.circular(22),
-                    border:
-                        Border.all(color: widget.cat.rarity.color, width: 3),
-                    boxShadow: [
-                      BoxShadow(
-                          color: widget.cat.rarity.color.withOpacity(0.5),
-                          blurRadius: 30,
-                          spreadRadius: 2),
-                    ],
+          child: GestureDetector(
+            // Taps on the clip can't skip it before its minimum time.
+            onTap: () {
+              if (_shown.elapsed >= widget.minDuration) _close();
+            },
+            child: ScaleTransition(
+              scale: CurvedAnimation(parent: _pop, curve: Curves.elasticOut),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: side,
+                    height: side,
+                    decoration: BoxDecoration(
+                      color: AppTheme.bgAlt,
+                      borderRadius: BorderRadius.circular(22),
+                      border:
+                          Border.all(color: widget.cat.rarity.color, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                            color: widget.cat.rarity.color.withOpacity(0.5),
+                            blurRadius: 30,
+                            spreadRadius: 2),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: _ready && _vc != null
+                        ? FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: _vc!.value.size.width,
+                              height: _vc!.value.size.height,
+                              child: VideoPlayer(_vc!),
+                            ),
+                          )
+                        : const Center(
+                            child: CircularProgressIndicator(strokeWidth: 2)),
                   ),
-                  clipBehavior: Clip.antiAlias,
-                  child: _ready && _vc != null
-                      ? FittedBox(
-                          fit: BoxFit.cover,
-                          child: SizedBox(
-                            width: _vc!.value.size.width,
-                            height: _vc!.value.size.height,
-                            child: VideoPlayer(_vc!),
-                          ),
-                        )
-                      : const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2)),
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.card,
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: widget.cat.rarity.color),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.card,
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: widget.cat.rarity.color),
+                    ),
+                    child: Text(
+                      cap == null ? name : '$name — $cap',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w900, fontSize: 15),
+                    ),
                   ),
-                  child: Text(
-                    cap == null ? name : '$name — $cap',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w900, fontSize: 15),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

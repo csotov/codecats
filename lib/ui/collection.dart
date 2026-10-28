@@ -6,10 +6,12 @@ import 'sound_panel.dart';
 
 import '../data/cats.dart';
 import '../data/worlds.dart';
+import '../models.dart';
 import '../l10n.dart';
 import '../services/progress.dart';
 import '../services/sfx.dart';
 import 'keyboard_scroll.dart';
+import 'level_intro.dart';
 import 'meme_player.dart';
 import 'theme.dart';
 
@@ -29,6 +31,62 @@ String catHow(CatMeme cat, L l) {
     return l.pick('3 estrellas en $where', '3 stars on $where');
   }
   return '$base · ${l.pick('en', 'on')} $where';
+}
+
+/// The campaign problem that helps to earn [cat] (or, once owned, the
+/// one that gave it). Null when no single problem leads to it.
+Level? catTargetLevel(CatMeme cat) {
+  final p = Progress.instance;
+  final o = p.catOrigin[cat.id]?.split('|');
+  if (p.unlockedCats.contains(cat.id) && o != null && o[0].isNotEmpty) {
+    final lv = levelById(o[0]);
+    if (lv != null) return lv;
+  }
+  Level? firstWhere(bool Function(Level l, World w) ok) {
+    for (final w in kWorlds) {
+      for (final l in w.levels) {
+        if (p.isUnlocked(l, w) && ok(l, w)) return l;
+      }
+    }
+    return null;
+  }
+
+  switch (cat.trigger) {
+    case CatTrigger.always:
+    case CatTrigger.coinsN:
+    case CatTrigger.halloweenN:
+    case CatTrigger.fail:
+      return null;
+    case CatTrigger.perfect:
+      return firstWhere((l, _) => p.of(l.id).stars < 3);
+    case CatTrigger.worldBoss:
+      return firstWhere((l, _) => l.boss && !p.of(l.id).solved) ??
+          recommendedLevel();
+    case CatTrigger.worldUnlock:
+      return firstWhere((l, w) =>
+              w.levels.first == l && !w.levels.any((x) => p.of(x.id).solved)) ??
+          recommendedLevel();
+    case CatTrigger.allStarsW1:
+      return kWorlds.first.levels
+              .where((l) => p.isUnlocked(l, kWorlds.first))
+              .where((l) => p.of(l.id).stars < 3)
+              .firstOrNull ??
+          recommendedLevel();
+    default:
+      return recommendedLevel();
+  }
+}
+
+String _levelName(Level lv, L l) {
+  final w = worldOf(lv);
+  final n = w == null ? 0 : w.levels.indexOf(lv) + 1;
+  return w == null
+      ? l.pick(lv.titleEs, lv.titleEn)
+      : l.pick('nivel $n de ${w.titleEs}', 'level $n of ${w.titleEn}');
+}
+
+void _goToLevel(BuildContext context, Level lv) {
+  Navigator.push(context, levelRoute(lv));
 }
 
 /// The day [cat] was won (yyyy-mm-dd → dd/mm/yyyy), if recorded.
@@ -113,11 +171,20 @@ class _CollectionScreenState extends State<CollectionScreen> {
     return Tooltip(
       message: owned
           ? '${l.t('tip_watch_cat')}\n${catHow(cat, l)}'
-          : l.pick(cat.hintEs, cat.hintEn),
+          : catTargetLevel(cat) == null
+              ? l.pick(cat.hintEs, cat.hintEn)
+              : '${l.pick(cat.hintEs, cat.hintEn)}\n'
+                  '${l.pick('Tocá para ir al problema', 'Tap to go to the problem')}: '
+                  '${_levelName(catTargetLevel(cat)!, l)}',
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: owned ? () => _showCat(context, cat) : null,
+          onTap: owned
+              ? () => _showCat(context, cat)
+              : () {
+                  final lv = catTargetLevel(cat);
+                  if (lv != null) _goToLevel(context, lv);
+                },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -194,6 +261,14 @@ class _CollectionScreenState extends State<CollectionScreen> {
                         color: owned ? AppTheme.textHi : AppTheme.textLo,
                       ),
                     ),
+                    if (!owned && catTargetLevel(cat) != null)
+                      Text(
+                        l.pick('▶ Ir al problema', '▶ Go to problem'),
+                        style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: AppTheme.accent2),
+                      ),
                   ],
                 ),
               ),
@@ -262,6 +337,21 @@ class _CollectionScreenState extends State<CollectionScreen> {
                         '${catWhen(cat) == null ? '' : ' (${catWhen(cat)})'}',
                         textAlign: TextAlign.center,
                         style: const TextStyle(fontSize: 13)),
+                    if (catTargetLevel(cat) case final lv?) ...[
+                      const SizedBox(height: 8),
+                      Tooltip(
+                        message: _levelName(lv, l),
+                        child: FilledButton.icon(
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          label: Text(l.pick(
+                              'Ir a ese problema', 'Go to that problem')),
+                          onPressed: () {
+                            Navigator.pop(c);
+                            _goToLevel(context, lv);
+                          },
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
