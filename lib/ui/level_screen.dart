@@ -9,6 +9,7 @@ import 'olympiad_screens.dart';
 import '../data/worlds.dart';
 import '../engine/blocks.dart';
 import '../engine/blocks_vm.dart';
+import '../engine/adaptive_hint.dart';
 import '../engine/coach.dart';
 import '../engine/complexity.dart';
 import '../engine/cpp_runner.dart';
@@ -29,6 +30,7 @@ import 'level_intro.dart';
 import 'meme_player.dart';
 import '../data/complexity.dart';
 import '../data/profe_talks.dart';
+import '../data/hint_quiz.dart';
 import '../data/challenges.dart';
 import 'golden_card.dart';
 import '../data/halloween.dart';
@@ -86,6 +88,20 @@ class _LevelScreenState extends State<LevelScreen>
   /// advancing: only active seconds (an edit or run in the last minute)
   /// count, and passing more tests or the sample resets the clock.
   static const _stuckLimit = 180;
+
+  /// Short levels wait longer (5 min) and ask a quick question first.
+  static const _stuckLimitShort = 300;
+
+  bool get _isLong {
+    final lv = widget.level;
+    return lv.boss ||
+        (lv.storyEs.length +
+                lv.statementEs.length +
+                lv.inputEs.length +
+                lv.outputEs.length) >=
+            500;
+  }
+
   static const _activeWindow = Duration(seconds: 60);
   int _stuckSec = 0;
   int _bestPassed = 0;
@@ -343,13 +359,97 @@ class _LevelScreenState extends State<LevelScreen>
     if (DateTime.now().difference(_lastActivity) > _activeWindow) return;
     _stuckSec += sec;
     // Never interrupt a run, a dialog or another screen: wait for later.
-    if (_stuckSec < _stuckLimit ||
+    if (_stuckSec < (_isLong ? _stuckLimit : _stuckLimitShort) ||
         _busy ||
         ModalRoute.of(context)?.isCurrent != true) {
       return;
     }
     _stuckSec = 0;
-    _nudge();
+    if (_freeHints < _maxFreeHints) {
+      _offerFreeHint();
+    } else {
+      _nudge();
+    }
+  }
+
+  /// Stuck for a while: offer a free hint built from what was tried.
+  Future<void> _offerFreeHint() async {
+    if (!mounted || _won) return;
+    _freeHints++;
+    final l = L.instance;
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.pick('¿Una pista gratis? 🐾', 'A free hint? 🐾')),
+        content: Text(l.pick(
+          'El Profe vio que estás peleando con este problema. Mira lo que intentaste y te dice qué revisar, sin darte la solución.',
+          'The Profe saw you are fighting this problem. He looks at what you tried and tells you what to check, without giving away the solution.',
+        )),
+        actions: [
+          Tooltip(
+            message: l.pick('Seguir sin ayuda', 'Keep going alone'),
+            child: TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(l.pick('No, sigo solo', 'No, I got this')),
+            ),
+          ),
+          Tooltip(
+            message: l.pick('Pista gratis, no cuesta Miaudólares',
+                'Free hint, costs no coins'),
+            child: FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child:
+                  Text(l.pick('¡Sí, dame una pista!', 'Yes, give me a hint!')),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    final lv = widget.level;
+    final sample = lv.samples.isNotEmpty ? lv.samples.first : null;
+    final h = AdaptiveHint.analyze(
+      code: _currentCode,
+      starter: _starter,
+      sigs: _grader?.sigs ?? const [],
+      lastRun: _lastRun,
+      lastRunMatched: _lastRunMatched,
+      sampleInput: sample?.input ?? '',
+      sampleOutput: sample?.output ?? '',
+      lastReport: _lastReport,
+      hintsEs: lv.hintsEs,
+      hintsEn: lv.hintsEn,
+      hintsShown: _hintsShown,
+    );
+    Cloud.instance.log(
+      'free_hint',
+      levelId: lv.id,
+      data: {'accepted': yes == true, 'kind': h.kind},
+    );
+    if (yes != true || !mounted) return;
+    if (!_isLong) {
+      final q =
+          kHintQuiz[Progress.instance.nextRot('hintquiz', kHintQuiz.length)];
+      final ok = await ProfessorQuizDialog.show(context, q,
+          intro: l.pick(
+              '🧠 Para ganarte la pista, una preguntita de programación:',
+              '🧠 To earn the hint, a quick programming question:'));
+      Cloud.instance
+          .log('free_hint_quiz', levelId: lv.id, data: {'right': ok == true});
+      if (!mounted) return;
+      if (ok != true) {
+        // Not lost: the offer comes back in about a minute.
+        _freeHints--;
+        _stuckSec = _stuckLimitShort - 60;
+        await ProfessorDialog.show(context, [
+          l.pick('¡Casi! En un minuto te pregunto otra y vas por la pista. 😺',
+              'Almost! In a minute I will ask another one for the hint. 😺'),
+        ]);
+        return;
+      }
+    }
+    if (!mounted) return;
+    await ProfessorDialog.show(context, [l.pick(h.tip.es, h.tip.en)]);
   }
 
   Future<void> _nudge() async {
@@ -524,6 +624,9 @@ class _LevelScreenState extends State<LevelScreen>
     );
     if (!mounted) return;
     _markActive();
+    _lastRun = res;
+    _lastRunMatched =
+        res.ok && sample != null && outputsMatch(res.output, sample.output);
     if (!_sampleOk &&
         res.ok &&
         sample != null &&
@@ -580,6 +683,7 @@ class _LevelScreenState extends State<LevelScreen>
     if (!mounted) return;
     setState(() => _busy = false);
     _markActive();
+    _lastReport = report;
     if (report.passedCount > _bestPassed) {
       _bestPassed = report.passedCount;
       _advanced();
@@ -977,6 +1081,13 @@ class _LevelScreenState extends State<LevelScreen>
   }
 
   ({String es, String en})? _lastTip;
+
+  /// What the player last tried, for the adaptive free hint.
+  RunOutput? _lastRun;
+  bool _lastRunMatched = false;
+  JudgeReport? _lastReport;
+  int _freeHints = 0;
+  static const _maxFreeHints = 2;
 
   // Spotlight targets for the professor's tutorial.
   final _missionKey = GlobalKey();
