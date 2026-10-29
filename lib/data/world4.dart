@@ -225,7 +225,7 @@ final world4 = World(
       tests: [
         ['programacion', '12'],
         ['ioi', '3'],
-        ['supercalifragilistico', '20']
+        ['supercalifragilistico', '21']
       ],
       hEs: [
         'char s[105]; cin >> s; cout << strlen(s) << endl;',
