@@ -310,10 +310,10 @@ class _MapScreenState extends State<MapScreen> {
                     '🥋 You earned stripe $s of 4 on your ${b.en}! +${10 * n} coins.'),
                 s == 4
                     ? l.pick(
-                        'Con las 4 franjas ya podés dar el examen de cinturón: arriba del mapa está el botón. Sin pistas y con reloj, como en la olimpiada.',
-                        'With 4 stripes you can take the belt exam: the button is at the top of the map.')
+                        '¡Con las 4 franjas podés ganar una cinta nueva! Arriba del mapa está el botón 🥋 Desafío. Es sin pistas y con reloj, como en la olimpiada.',
+                        'With 4 stripes you can win a new belt: tap 🥋 Belt challenge at the top of the map.')
                     : l.pick(
-                        'Así entrenan los campeones: de a poco y todos los días. Con 4 franjas das el examen para el cinturón siguiente.',
+                        'Así entrenan los campeones: de a poco y todos los días. Con 4 franjas te espera el desafío para ganar una cinta nueva.',
                         'Champions train like this: a bit every day. With 4 stripes you take the exam for the next belt.'),
               ]);
             }
