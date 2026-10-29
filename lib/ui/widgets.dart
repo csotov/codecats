@@ -29,7 +29,8 @@ class StarsRow extends StatelessWidget {
   }
 }
 
-/// Current belt with its 4 stripes and progress toward the belt exam.
+/// XP rank (Bronce, Plata, Oro…) with its bar; below, the belt as an extra
+/// prize with its 4 stripes and the belt exam.
 class RankXpBar extends StatelessWidget {
   const RankXpBar({super.key});
 
@@ -46,17 +47,42 @@ class RankXpBar extends StatelessWidget {
     final missing = levelsToNextStripe(belt, p);
     final top = p.belt >= kBelts.length - 1;
     final resume = p.examActive && p.examPhase == kBeltExamBase + belt.n;
+    final rank = rankForXp(p.xp);
+    final next = nextRank(p.xp);
+    final span = next == null ? 1 : (next.minXp - rank.minXp);
+    final rFrac =
+        next == null ? 1.0 : ((p.xp - rank.minXp) / span).clamp(0.0, 1.0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const BeltChip(),
+            RankChip(rank: rank),
             const SizedBox(width: 8),
             Text('${p.xp} ${l.t('xp')}',
                 style: const TextStyle(color: AppTheme.textLo, fontSize: 12)),
           ],
         ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: rFrac,
+            minHeight: 6,
+            backgroundColor: AppTheme.cardEdge,
+            valueColor: AlwaysStoppedAnimation(Color(rank.color)),
+          ),
+        ),
+        if (next != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              '${l.t('rank')}: ${l.t(next.key)} → ${next.minXp} ${l.t('xp')}',
+              style: const TextStyle(color: AppTheme.textLo, fontSize: 11),
+            ),
+          ),
+        const SizedBox(height: 10),
+        const BeltChip(),
         if (!top) ...[
           const SizedBox(height: 6),
           ClipRRect(

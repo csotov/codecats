@@ -15,6 +15,7 @@ import '../services/sfx.dart';
 import 'keyboard_scroll.dart';
 import 'level_screen.dart';
 import 'professor.dart';
+import 'belt_award.dart';
 import 'theme.dart';
 
 /// Duolingo-style skip exam: pass 80% of the problems in time to open
@@ -109,6 +110,15 @@ class _PhaseExamScreenState extends State<PhaseExamScreen> {
           : l.pick('$_solved de ${_problems.length}',
               '$_solved of ${_problems.length}');
       final needTxt = _usaco ? '$_needPts' : '$_need';
+      if (passed) {
+        Sfx.victory();
+        await BeltAward.show(context,
+            color: Color(next.color),
+            title: l.pick('🥋 ¡${next.es}!', '🥋 ${next.en}!'),
+            subtitle: l.pick('El Profe te entrega tu cinturón nuevo',
+                'The coach hands you your new belt'));
+        if (!mounted) return;
+      }
       await ProfessorDialog.show(context, [
         passed
             ? l.pick(

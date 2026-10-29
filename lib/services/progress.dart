@@ -1450,9 +1450,9 @@ class Progress extends ChangeNotifier {
       case CatTrigger.solved50:
         return solvedCount >= 50;
       case CatTrigger.rankGold:
-        return belt >= 2;
+        return xp >= kRanks[2].minXp;
       case CatTrigger.rankIoi:
-        return belt >= 6;
+        return xp >= kRanks.last.minXp;
       case CatTrigger.allStarsW1:
         final w1 = kWorlds.first;
         return w1.levels.every((lv) => (levels[lv.id]?.stars ?? 0) >= 3);

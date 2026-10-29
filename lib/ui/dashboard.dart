@@ -113,6 +113,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 style: const TextStyle(
                                     fontSize: 18, fontWeight: FontWeight.w800)),
                             const SizedBox(height: 4),
+                            RankChip(rank: rankForXp(p.xp)),
+                            const SizedBox(height: 4),
                             const BeltChip(),
                           ],
                         ),

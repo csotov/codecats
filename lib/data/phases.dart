@@ -27,20 +27,19 @@ const kPhases = [
       ['w1', 'w2', 'w3', 'w4']),
   Phase(
       2,
-      'Rumbo al Bronce USACO',
-      'Toward USACO Bronze',
+      'Plata I',
+      'Silver I',
       'Funciones, ordenar y buscar, estructuras y técnicas de olimpiada.',
       'Functions, sorting and searching, structures and olympiad techniques.',
       ['w5', 'w15', 'w6', 'w7', 'w8']),
   Phase(
       3,
-      'Rumbo a la Plata USACO',
-      'Toward USACO Silver',
+      'Plata II',
+      'Silver II',
       'Grafos, números, programación dinámica y búsqueda binaria.',
       'Graphs, number theory, dynamic programming and binary search.',
       ['w9', 'w10', 'w11', 'w12', 'w13', 'w14']),
-  Phase(4, 'Rumbo al Oro USACO', 'Toward USACO Gold', 'Próximamente.',
-      'Coming soon.', []),
+  Phase(4, 'Oro', 'Gold', 'Próximamente.', 'Coming soon.', []),
   Phase(5, 'Olimpiada', 'Olympiad', 'Próximamente.', 'Coming soon.', []),
 ];
 
