@@ -201,8 +201,8 @@ const kCats = <CatMeme>[
     nameEn: 'Maxwell',
     rarity: CatRarity.epico,
     trigger: CatTrigger.rankGold,
-    hintEs: 'Llega al cinturón naranja',
-    hintEn: 'Reach the orange belt',
+    hintEs: 'Llega a rango Oro',
+    hintEn: 'Reach Gold rank',
   ),
   CatMeme(
     id: 'chipi',
@@ -237,8 +237,8 @@ const kCats = <CatMeme>[
     nameEn: 'Bongo Cat',
     rarity: CatRarity.legendario,
     trigger: CatTrigger.rankIoi,
-    hintEs: 'Llega al cinturón morado',
-    hintEn: 'Reach the purple belt',
+    hintEs: 'Llega a rango IOI',
+    hintEn: 'Reach IOI rank',
   ),
   CatMeme(
     id: 'polite',

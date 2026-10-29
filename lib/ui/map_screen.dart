@@ -4,6 +4,7 @@ import 'mode_intro.dart';
 import '../data/belts.dart';
 import '../data/phases.dart';
 import 'phase_exam.dart';
+import 'belt_award.dart';
 import 'math_gym_screen.dart';
 import 'memory_screen.dart';
 import 'atcoder_screen.dart';
@@ -297,6 +298,12 @@ class _MapScreenState extends State<MapScreen> {
             final b = kBelts[progress.belt];
             final s = beltStripes(b, progress);
             if (n > 0) {
+              await BeltAward.show(context,
+                  color: Color(b.color),
+                  title: l.pick('🥋 ¡Franja $s de 4!', '🥋 Stripe $s of 4!'),
+                  subtitle: l.pick('${b.es} · +${10 * n} Miaudólares',
+                      '${b.en} · +${10 * n} coins'));
+              if (!mounted) return;
               await ProfessorDialog.show(context, [
                 l.pick(
                     '🥋 ¡Ganaste la franja $s de 4 de tu ${b.es}! +${10 * n} Miaudólares.',
