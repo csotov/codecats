@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import 'sound_panel.dart';
 
+import '../data/blitz_facts.dart';
+import '../data/profe_talks.dart';
 import '../data/olympiad_tracks.dart';
 import '../data/tracks_models.dart';
 import '../data/worlds.dart';
@@ -557,6 +559,8 @@ class BlitzClock {
 bool _blitzOpen = false;
 
 /// Shows 1 question (2 once the player got 6 right) and pays per answer.
+String? _lastBlitz;
+
 Future<void> maybeRunBlitz(BuildContext context) async {
   final p = Progress.instance;
   if (_blitzOpen || p.blitzMin < Progress.kBlitzEvery) return;
@@ -565,26 +569,38 @@ Future<void> maybeRunBlitz(BuildContext context) async {
   final n = p.blitzOk >= 6 ? 2 : 1;
   var right = 0;
   for (var i = 0; i < n; i++) {
-    // Retrieval practice: 3 of 4 questions recall programming concepts
-    // from levels already won (spaced by Leitner boxes); 1 of 4 is a
-    // contest habit (precedence, integer division, overflow, brute force).
+    // Retrieval practice with Leitner boxes: even rounds drill a
+    // must-know contest fact (2-3 variants each), odd rounds recall a
+    // concept from a level already won.
     final unlocked = [
       for (final c in kConceptCards)
         if (p.of(c.levelId).solved) c.id
     ];
-    final cardId = p.blitzSeq % 4 == 3 ? null : p.nextBlitzCard(unlocked);
+    final cardId =
+        p.blitzSeq.isEven ? null : p.nextBlitzCard(unlocked, skip: _lastBlitz);
     final card =
         cardId == null ? null : kConceptCards.firstWhere((c) => c.id == cardId);
-    final q = card?.quiz ?? kBlitz[p.nextRot('blitz', kBlitz.length)];
+    final String key;
+    final ProfeQuiz q;
+    if (card != null) {
+      key = card.id;
+      q = card.quiz;
+    } else {
+      key = p.nextBlitzCard([for (final f in kBlitzFacts) 'f:${f.id}'],
+          skip: _lastBlitz)!;
+      final fact = kBlitzFacts.firstWhere((f) => 'f:${f.id}' == key);
+      final box = p.blitzCards[key]?[0] ?? 0;
+      q = fact.variants[(box + p.blitzSeq) % fact.variants.length];
+    }
+    _lastBlitz = key;
     if (!context.mounted) break;
     final ok = await ProfessorQuizDialog.show(context, q,
         intro: l.pick('⚡ ¡Pregunta relámpago! (${i + 1}/$n)',
             '⚡ Lightning question! (${i + 1}/$n)'));
     if (ok == true) right++;
-    if (card != null) p.answerBlitzCard(card.id, ok == true);
+    p.answerBlitzCard(key, ok == true);
     p.blitzSeq++;
-    Cloud.instance
-        .log('blitz_q', data: {'card': card?.id ?? 'math', 'ok': ok == true});
+    Cloud.instance.log('blitz_q', data: {'card': key, 'ok': ok == true});
   }
   Cloud.instance.log('blitz', data: {'right': right, 'of': n});
   p.finishBlitz(right);
