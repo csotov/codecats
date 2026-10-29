@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/expert_solutions.dart';
+import '../data/worked_examples.dart';
 import 'theme.dart';
 
 const _orange = Color(0xFFFF8A1F);
@@ -9,12 +10,17 @@ const _orange = Color(0xFFFF8A1F);
 /// Step-by-step tour of an expert solution: the current lines glow,
 /// the rest dims, and the Profe explains the idea.
 class ExpertScreen extends StatefulWidget {
-  const ExpertScreen({super.key, required this.sol});
+  const ExpertScreen({super.key, required this.sol, this.example});
   final ExpertSolution sol;
 
-  static Future<void> show(BuildContext context, ExpertSolution sol) =>
+  /// Set for an "Ejemplo resuelto" shown before the level.
+  final WorkedExample? example;
+
+  static Future<void> show(BuildContext context, ExpertSolution sol,
+          {WorkedExample? example}) =>
       Navigator.of(context).push(MaterialPageRoute<void>(
-          fullscreenDialog: true, builder: (_) => ExpertScreen(sol: sol)));
+          fullscreenDialog: true,
+          builder: (_) => ExpertScreen(sol: sol, example: example)));
 
   @override
   State<ExpertScreen> createState() => _ExpertScreenState();
@@ -127,7 +133,9 @@ class _ExpertScreenState extends State<ExpertScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('🎓 Así lo resolvió un experto'),
+          title: Text(widget.example != null
+              ? '📘 Ejemplo resuelto: así se programa'
+              : '🎓 Así lo resolvió un experto'),
           actions: [
             Tooltip(
               message: 'Cerrar el tutorial',
@@ -154,6 +162,38 @@ class _ExpertScreenState extends State<ExpertScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            if (widget.example != null) ...[
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1F3A5F),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border:
+                                      Border.all(color: Colors.lightBlueAccent),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                        '📝 Problema de ejemplo (parecido al nivel)',
+                                        style: TextStyle(
+                                            color: Colors.lightBlueAccent,
+                                            fontWeight: FontWeight.w900)),
+                                    const SizedBox(height: 6),
+                                    Text(widget.example!.statement,
+                                        style: const TextStyle(
+                                            fontSize: 16, height: 1.35)),
+                                    const SizedBox(height: 6),
+                                    Text('Ejemplo: ${widget.example!.sample}',
+                                        style: const TextStyle(
+                                            fontFamily: 'monospace',
+                                            color: Colors.white70)),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
                             Text('💡 ${sol.trick}',
                                 style: const TextStyle(
                                     color: _orange,
@@ -190,7 +230,9 @@ class _ExpertScreenState extends State<ExpertScreen> {
                       child: FilledButton(
                           onPressed: () => _go(1),
                           child: Text(last
-                              ? '¡Entendido! 🐾'
+                              ? (widget.example != null
+                                  ? '¡A programar! 🐾'
+                                  : '¡Entendido! 🐾')
                               : (narrow ? 'Sigue ▶' : 'Siguiente ▶'))),
                     ),
                   ],

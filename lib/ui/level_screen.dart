@@ -1,4 +1,5 @@
 import '../data/expert_solutions.dart';
+import '../data/worked_examples.dart';
 import 'expert_screen.dart';
 import 'hat_celebration.dart';
 import '../data/problem_texts.dart';
@@ -295,6 +296,18 @@ class _LevelScreenState extends State<LevelScreen>
           'tweak_harder': true,
       },
     );
+    final ex = workedExampleFor(widget.level.id);
+    final exKey = 'wex_${widget.level.id}';
+    if (ex != null &&
+        !widget.examMode &&
+        !Progress.instance.of(widget.level.id).solved &&
+        !Progress.instance.talkSeen(exKey)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Progress.instance.markTalkSeen(exKey);
+        _showExample(ex, auto: true);
+      });
+    }
     _modeTick = Timer.periodic(const Duration(seconds: 5), (_) {
       _tickStuck(5);
       if (_inCodeMode) {
@@ -1417,6 +1430,13 @@ class _LevelScreenState extends State<LevelScreen>
               ],
             ),
             actions: [
+              if (workedExampleFor(lv.id) != null && !widget.examMode)
+                IconButton(
+                  tooltip: l.pick(
+                      'Ver el ejemplo resuelto', 'See the worked example'),
+                  icon: const Text('📘', style: TextStyle(fontSize: 20)),
+                  onPressed: () => _showExample(workedExampleFor(lv.id)!),
+                ),
               const MusicButton(),
               const CoinBadge(),
               IconButton(
@@ -2046,6 +2066,12 @@ class _LevelScreenState extends State<LevelScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _showExample(WorkedExample ex, {bool auto = false}) {
+    Cloud.instance.log('worked_example_open',
+        levelId: widget.level.id, data: {'auto': auto});
+    return ExpertScreen.show(context, ex.sol, example: ex);
   }
 
   void _promoteToCode() {
