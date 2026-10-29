@@ -8,6 +8,7 @@ import '../l10n.dart';
 import '../services/cloud.dart';
 import '../services/progress.dart';
 import 'keyboard_scroll.dart';
+import 'mode_intro.dart';
 import 'professor.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -31,9 +32,16 @@ class TraceListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = L.instance;
     return Scaffold(
-      appBar: AppBar(
-          actions: const [MusicButton()],
-          title: Text('🧠 ${l.pick('Sé la computadora', 'Be the computer')}')),
+      appBar: AppBar(actions: [
+        Tooltip(
+          message: L.instance
+              .pick('Ver el tutorial otra vez', 'Replay the tutorial'),
+          child: IconButton(
+              icon: const Icon(Icons.help_outline),
+              onPressed: () => showModeIntro(context, 'trace', force: true)),
+        ),
+        const MusicButton(),
+      ], title: Text('🧠 ${l.pick('Sé la computadora', 'Be the computer')}')),
       body: AnimatedBuilder(
         animation: Progress.instance,
         builder: (context, _) {
@@ -147,9 +155,16 @@ class _TraceScreenState extends State<TraceScreen> {
     final l = L.instance;
     final t = widget.exercise;
     return Scaffold(
-      appBar: AppBar(
-          actions: const [MusicButton()],
-          title: Text(l.pick(t.titleEs, t.titleEn))),
+      appBar: AppBar(actions: [
+        Tooltip(
+          message: L.instance
+              .pick('Ver el tutorial otra vez', 'Replay the tutorial'),
+          child: IconButton(
+              icon: const Icon(Icons.help_outline),
+              onPressed: () => showModeIntro(context, 'trace', force: true)),
+        ),
+        const MusicButton(),
+      ], title: Text(l.pick(t.titleEs, t.titleEn))),
       body: KeyboardScroll(
         controller: _scroll,
         child: ListView(

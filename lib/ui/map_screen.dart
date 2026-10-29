@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'mode_intro.dart';
 import '../data/phases.dart';
 import 'phase_exam.dart';
 import 'math_gym_screen.dart';
@@ -462,7 +463,9 @@ class _MapScreenState extends State<MapScreen> {
                 '${traceExercisesFor(p).where((t) => !p.of(t.levelId).solved).length} ${l.pick('tablas para completar', 'tables to fill')}',
                 () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const TraceListScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const ModeIntro(
+                          id: 'trace', child: TraceListScreen())),
                 ),
               ),
             ],
@@ -485,7 +488,9 @@ class _MapScreenState extends State<MapScreen> {
                   '18 stops to become a champion'),
               () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const CspjScreen()),
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const ModeIntro(id: 'cspj', child: CspjScreen())),
               ),
             ),
             const SizedBox(height: 6),
@@ -495,7 +500,9 @@ class _MapScreenState extends State<MapScreen> {
                   'official problems, one subtask at a time'),
               () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const IoiScreen()),
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const ModeIntro(id: 'ioi', child: IoiScreen())),
               ),
             ),
             const SizedBox(height: 6),
@@ -505,7 +512,9 @@ class _MapScreenState extends State<MapScreen> {
                   'short lessons: counting, powers of 2 and more'),
               () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const MemoryGymScreen()),
+                MaterialPageRoute(
+                    builder: (_) => const ModeIntro(
+                        id: 'memory', child: MemoryGymScreen())),
               ),
             ),
             const SizedBox(height: 6),
@@ -515,7 +524,9 @@ class _MapScreenState extends State<MapScreen> {
                   'look at a piece of code, then write it without looking'),
               () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const RecallScreen()),
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const ModeIntro(id: 'recall', child: RecallScreen())),
               ),
             ),
             if (mathTopicsFor(p).isNotEmpty) ...[
@@ -526,7 +537,9 @@ class _MapScreenState extends State<MapScreen> {
                     'counting, %, divisibility and more for olympiads'),
                 () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const MathGymScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const ModeIntro(
+                          id: 'mathgym', child: MathGymScreen())),
                 ),
               ),
             ],
@@ -537,7 +550,9 @@ class _MapScreenState extends State<MapScreen> {
                 '${coderTasksFor(p).where((t) => !p.of(t.levelId).solved).length} ${l.pick('para arreglar, completar o romper', 'to fix, complete or break')}',
                 () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const CoderListScreen()),
+                  MaterialPageRoute(
+                      builder: (_) => const ModeIntro(
+                          id: 'coder', child: CoderListScreen())),
                 ),
               ),
             ],
@@ -733,29 +748,53 @@ class _MapScreenState extends State<MapScreen> {
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const CoachScreen()));
           case 'trace':
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const TraceListScreen()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ModeIntro(
+                        id: 'trace', child: TraceListScreen())));
           case 'atcoder':
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const AtcoderScreen()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ModeIntro(
+                        id: 'atcoder', child: AtcoderScreen())));
           case 'cspj':
             Navigator.push(
-                context, MaterialPageRoute(builder: (_) => const CspjScreen()));
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const ModeIntro(id: 'cspj', child: CspjScreen())));
           case 'ioi':
             Navigator.push(
-                context, MaterialPageRoute(builder: (_) => const IoiScreen()));
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const ModeIntro(id: 'ioi', child: IoiScreen())));
           case 'recall':
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const RecallScreen()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) =>
+                        const ModeIntro(id: 'recall', child: RecallScreen())));
           case 'memory':
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const MemoryGymScreen()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ModeIntro(
+                        id: 'memory', child: MemoryGymScreen())));
           case 'math':
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const MathGymScreen()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ModeIntro(
+                        id: 'mathgym', child: MathGymScreen())));
           case 'coder':
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const CoderListScreen()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const ModeIntro(
+                        id: 'coder', child: CoderListScreen())));
           case 'notebook':
             Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const ReviewScreen()));
