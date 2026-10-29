@@ -1133,7 +1133,20 @@ class _LevelScreenState extends State<LevelScreen>
     final l = L.instance;
     final pt = _problem;
     if (pt != null && l.isEs && pt.opts.length >= 3) return _reasonQuiz(pt);
-    final s = widget.level.samples.first;
+    // Use a test he hasn't seen: asking about the sample is pointless,
+    // he just compared it on screen.
+    final seen = widget.level.samples.map((t) => t.input.trim()).toSet();
+    final fresh = widget.level.tests
+        .where((t) =>
+            !seen.contains(t.input.trim()) &&
+            t.input.trim().length <= 60 &&
+            '\n'.allMatches(t.input.trim()).length < 4 &&
+            t.output.trim().isNotEmpty &&
+            t.output.trim().length <= 30 &&
+            !t.output.trim().contains('\n'))
+        .toList();
+    if (fresh.isEmpty) return true;
+    final s = fresh[math.Random().nextInt(fresh.length)];
     final right = s.output.trim();
     final n = int.tryParse(right);
     final reversed = right.split('').reversed.join();
@@ -1156,8 +1169,9 @@ class _LevelScreenState extends State<LevelScreen>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l.pick('Si a tu código le doy esta entrada, ¿qué escribe?',
-                  'If your code gets this input, what does it print?')),
+              Text(l.pick(
+                  'Ahora le doy a tu código una entrada nueva, distinta del ejemplo. ¿Qué escribe?',
+                  'Now your code gets a new input, not the sample. What does it print?')),
               const SizedBox(height: 8),
               SelectableText(s.input.trim().isEmpty ? '(—)' : s.input.trim(),
                   style: const TextStyle(fontFamily: 'monospace')),
@@ -1177,8 +1191,8 @@ class _LevelScreenState extends State<LevelScreen>
       ),
     );
     final ok = pick == right;
-    Cloud.instance
-        .log('habit_quiz', levelId: widget.level.id, data: {'ok': ok});
+    Cloud.instance.log('habit_quiz',
+        levelId: widget.level.id, data: {'ok': ok, 'input': s.input.trim()});
     if (!ok && mounted) {
       await ProfessorDialog.show(context, [
         l.pick(
