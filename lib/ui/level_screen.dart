@@ -2296,6 +2296,9 @@ class _LevelScreenState extends State<LevelScreen>
 /// vector, string, sort, set, map and struct need it.
 bool autoRemoteJudge(Level level) {
   if (level.mode != EditorMode.code) return false;
+  // USACO problems need vector/string/<algorithm>, which the browser
+  // engine lacks: always judge them with real g++.
+  if (RegExp(r'^u[be]\d').hasMatch(level.id)) return true;
   final m = RegExp(r'^w(\d+)l').firstMatch(level.id);
   return m != null && int.parse(m.group(1)!) >= 6;
 }
