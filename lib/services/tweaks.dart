@@ -17,7 +17,8 @@ List<String> levelTopics(String id) {
 
 /// Coaching decisions applied from the admin report (table coach_tweaks).
 /// Actions: 'hint1' shows hint 1 free from the start; 'harder' turns off
-/// the automatic free hint. Topic is a concept, 'mundo N' or 'level:ID'.
+/// the automatic free hint; 'early_help' offers it at half the time;
+/// 'example' shows the worked example before every attempt. Topic is a concept, 'mundo N' or 'level:ID'.
 class Tweaks extends ChangeNotifier {
   Tweaks._();
   static final instance = Tweaks._();
