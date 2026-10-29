@@ -134,6 +134,12 @@ class Progress extends ChangeNotifier {
   static const kStartCoins = 30;
   static const kHintCost = 10;
 
+  /// Up to 5 hints per level; each one costs more than the previous.
+  static const kMaxHints = 5;
+  static const kHintCosts = [10, 15, 25, 40, 60];
+  static int hintCost(int bought) =>
+      kHintCosts[math.min(bought, kHintCosts.length - 1)];
+
   final Map<String, LevelProgress> levels = {};
 
   /// Cat-meme collection: ids of unlocked cats (see data/cats.dart).
@@ -1054,12 +1060,13 @@ class Progress extends ChangeNotifier {
           {required bool firstSolve, required int stars, bool boss = false}) =>
       firstSolve ? 10 + 5 * stars + (boss ? 20 : 0) : 3;
 
-  /// Pay [kHintCost] for the next hint of [levelId]. Returns false
+  /// Pay [hintCost] for the next hint of [levelId]. Returns false
   /// (and charges nothing) when the purse is too light.
   bool buyHint(String levelId) {
-    if (coins < kHintCost) return false;
     final p = of(levelId);
-    coins -= kHintCost;
+    final cost = hintCost(p.hintsBought);
+    if (coins < cost) return false;
+    coins -= cost;
     p.hintsBought++;
     p.hintUsed = true;
     _save();

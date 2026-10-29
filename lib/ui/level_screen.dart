@@ -41,7 +41,6 @@ import 'level_intro.dart';
 import 'meme_player.dart';
 import '../data/complexity.dart';
 import '../data/profe_talks.dart';
-import '../data/hint_quiz.dart';
 import '../data/challenges.dart';
 import 'golden_card.dart';
 import '../data/halloween.dart';
@@ -332,6 +331,55 @@ class _LevelScreenState extends State<LevelScreen>
   bool get _usesBlocks => !_codeOnly;
   late final ProblemText? _problem = problemTextFor(widget.level.id);
   List<String> get _hintsEs => _problem?.hints ?? widget.level.hintsEs;
+
+  /// Code-based tip (see [_hintList]).
+  String? _dynHint;
+
+  /// The level's own hints, topped up to [Progress.kMaxHints] with extra
+  /// ones: a tip about the current code, a hand walk-through of the
+  /// sample, what to read/print, and a read-compute-print plan.
+  List<String> _hintList(L l) {
+    final lv = widget.level;
+    final own = l.pickList(_hintsEs, lv.hintsEn);
+    final out = [...own];
+    // Follows the code until revealed, then stays frozen.
+    if (out.length < Progress.kMaxHints && _hintsShown <= own.length) {
+      final sample = lv.samples.isNotEmpty ? lv.samples.first : null;
+      _dynHint = () {
+        final h = AdaptiveHint.analyze(
+          code: _currentCode,
+          starter: _starter,
+          sigs: _grader?.sigs ?? const [],
+          lastRun: _lastRun,
+          lastRunMatched: _lastRunMatched,
+          sampleInput: sample?.input ?? '',
+          sampleOutput: sample?.output ?? '',
+          lastReport: _lastReport,
+          hintsEs: _hintsEs,
+          hintsEn: lv.hintsEn,
+          hintsShown: _hintsShown,
+        );
+        return l.pick(h.tip.es, h.tip.en);
+      }();
+    }
+    if (_dynHint != null) out.add(_dynHint!);
+    for (final s in lv.samples.take(1)) {
+      out.add(l.pick(
+          'Hacelo a mano con el ejemplo: entra «${s.input.trim()}» y tiene que salir «${s.output.trim()}». Anotá qué pasos hiciste y escribilos en código, uno por línea.',
+          'Do the sample by hand: input «${s.input.trim()}» must give «${s.output.trim()}». Write down your steps and turn each into a line of code.'));
+    }
+    final inp = l.pick(lv.inputEs, lv.inputEn).trim();
+    final outp = l.pick(lv.outputEs, lv.outputEn).trim();
+    if (inp.isNotEmpty || outp.isNotEmpty) {
+      out.add(l.pick('Lo que leés: $inp\nLo que imprimís: $outp',
+          'What you read: $inp\nWhat you print: $outp'));
+    }
+    out.add(l.pick(
+        'Plan en 3 pasos: 1) leé los datos (cin o los parámetros de la función), 2) hacé la cuenta o el recorrido, 3) mostrá o devolvé el resultado. Probá con Correr después de cada paso.',
+        'Plan in 3 steps: 1) read the data (cin or the function parameters), 2) do the computation or loop, 3) print or return the result. Use Run after each step.'));
+    return out.take(Progress.kMaxHints).toList();
+  }
+
   bool get _hybrid => widget.level.mode == EditorMode.hybrid && _grader == null;
 
   @override
@@ -559,27 +607,6 @@ class _LevelScreenState extends State<LevelScreen>
       data: {'accepted': yes == true, 'kind': h.kind},
     );
     if (yes != true || !mounted) return;
-    if (!_isLong) {
-      final q =
-          kHintQuiz[Progress.instance.nextRot('hintquiz', kHintQuiz.length)];
-      final ok = await ProfessorQuizDialog.show(context, q,
-          intro: l.pick(
-              '🧠 Para ganarte la pista, una preguntita de programación:',
-              '🧠 To earn the hint, a quick programming question:'));
-      Cloud.instance
-          .log('free_hint_quiz', levelId: lv.id, data: {'right': ok == true});
-      if (!mounted) return;
-      if (ok != true) {
-        // Not lost: the offer comes back in about a minute.
-        _freeHints--;
-        _stuckSec = _stuckLimitShort - 60;
-        await ProfessorDialog.show(context, [
-          l.pick('¡Casi! En un minuto te pregunto otra y vas por la pista. 😺',
-              'Almost! In a minute I will ask another one for the hint. 😺'),
-        ]);
-        return;
-      }
-    }
     if (!mounted) return;
     await ProfessorDialog.show(context, [l.pick(h.tip.es, h.tip.en)]);
   }
@@ -1296,8 +1323,6 @@ class _LevelScreenState extends State<LevelScreen>
     );
   }
 
-  int _polyaForHint = -1;
-
   /// The three star rules, visible before playing; earned ones lit.
   Widget _starRules() {
     final l = L.instance;
@@ -1724,15 +1749,17 @@ class _LevelScreenState extends State<LevelScreen>
 
   Widget _hintsCard() {
     final l = L.instance;
-    final hints = l.pickList(_hintsEs, widget.level.hintsEn);
+    final hints = _hintList(l);
     if (hints.isEmpty) return const SizedBox.shrink();
     final shown = math.min(_hintsShown, hints.length);
     final speech = shown == 0
         ? l.pick(
-            '¿Te trabaste? Te vendo una pista por ${Progress.kHintCost} '
-                'Miaudólares. ¡Palabra de gato!',
-            'Stuck? I will sell you a hint for ${Progress.kHintCost} '
-                'Meowdollars. Cat\'s honor!',
+            '¿Te trabaste? Te vendo hasta ${hints.length} pistas: la primera '
+                'cuesta ${Progress.hintCost(0)} Miaudólares y cada una sale '
+                'más cara. ¡Palabra de gato!',
+            'Stuck? I sell up to ${hints.length} hints: the first costs '
+                '${Progress.hintCost(0)} Meowdollars and each one costs more. '
+                'Cat\'s honor!',
           )
         : hints[shown - 1];
     return SectionCard(
@@ -1777,7 +1804,11 @@ class _LevelScreenState extends State<LevelScreen>
                           Text(
                             '${l.t('buy_hint')} (${shown + 1}/${hints.length})  ',
                           ),
-                          const CoinPrice(Progress.kHintCost, size: 13),
+                          CoinPrice(
+                              Progress.hintCost(Progress.instance
+                                  .of(widget.level.id)
+                                  .hintsBought),
+                              size: 13),
                         ],
                       ),
                     ),
@@ -1943,25 +1974,15 @@ class _LevelScreenState extends State<LevelScreen>
       levelId: widget.level.id,
       data: {
         'coins': Progress.instance.coins,
-        'ok': Progress.instance.coins >= Progress.kHintCost,
+        'n': Progress.instance.of(widget.level.id).hintsBought + 1,
+        'cost': Progress.hintCost(
+            Progress.instance.of(widget.level.id).hintsBought),
+        'ok': Progress.instance.coins >=
+            Progress.hintCost(
+                Progress.instance.of(widget.level.id).hintsBought),
       },
     );
     final l = L.instance;
-    // Now and then (not every time) the professor adds a short coach
-    // question, then the hint opens right away: the kid already asked.
-    if (_polyaForHint != _hintsShown &&
-        !widget.examMode &&
-        math.Random().nextInt(3) == 0) {
-      _polyaForHint = _hintsShown;
-      final q = kPolyaQuestions[Progress.instance.nextRot(
-        'polya',
-        kPolyaQuestions.length,
-      )];
-      await ProfessorDialog.show(context, [
-        l.pick(q[0], q[1]),
-      ]);
-      if (!mounted) return;
-    }
     if (!Progress.instance.buyHint(widget.level.id)) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(l.t('no_coins'))));
@@ -1984,7 +2005,7 @@ class _LevelScreenState extends State<LevelScreen>
   Future<void> _runTutorial() async {
     final l = L.instance;
     final lv = widget.level;
-    final hints = l.pickList(_hintsEs, lv.hintsEn);
+    final hints = _hintList(l);
     String? gift;
     if (_hintsShown < hints.length) {
       Progress.instance.giftHint(lv.id);
