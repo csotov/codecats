@@ -228,6 +228,7 @@ class _MapScreenState extends State<MapScreen> {
                   icon: const Icon(Icons.fitness_center),
                   onPressed: _openPractice,
                 ),
+                _moreMenu(l, games: true),
                 if (CoachStore.instance.problems.isNotEmpty)
                   IconButton(
                     tooltip:
@@ -691,7 +692,9 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   /// Everything the wide app bar shows as icons, as one menu for phones.
-  Widget _moreMenu(L l) {
+  /// With [games], only the mini-games and practice modes (wide screens
+  /// show the rest as icons).
+  Widget _moreMenu(L l, {bool games = false}) {
     final p = Progress.instance;
     final due = p.unsolvedFails.length + (p.bonusLevelId == null ? 0 : 1);
     PopupMenuItem<String> item(String v, IconData i, String text) =>
@@ -704,12 +707,16 @@ class _MapScreenState extends State<MapScreen> {
           ]),
         );
     return PopupMenuButton<String>(
-      tooltip: l.pick('Más opciones', 'More options'),
-      icon: Badge(
-        isLabelVisible: due > 0,
-        label: Text('$due'),
-        child: const Icon(Icons.menu),
-      ),
+      tooltip: games
+          ? l.pick('Minijuegos y prácticas', 'Mini-games and practice')
+          : l.pick('Más opciones', 'More options'),
+      icon: games
+          ? const Icon(Icons.sports_esports_outlined)
+          : Badge(
+              isLabelVisible: due > 0,
+              label: Text('$due'),
+              child: const Icon(Icons.menu),
+            ),
       onSelected: (v) {
         switch (v) {
           case 'contest':
@@ -767,41 +774,56 @@ class _MapScreenState extends State<MapScreen> {
         }
       },
       itemBuilder: (c) => [
-        item('contest', Icons.emoji_events_outlined, l.t('tip_contest')),
-        item('collection', Icons.catching_pokemon, l.t('tip_collection')),
-        item('shop', Icons.storefront_outlined,
-            l.pick('Tienda de insignias', 'Badge shop')),
-        item('practice', Icons.fitness_center, l.t('tip_practice')),
-        if (CoachStore.instance.problems.isNotEmpty)
-          item('coach', Icons.assignment_outlined,
-              l.pick('Problemas del entrenador', 'Coach problems')),
-        item('trace', Icons.table_chart_outlined,
-            l.pick('Sé la computadora', 'Be the computer')),
-        item('cspj', Icons.route_outlined,
-            l.pick('El Camino del Bigote', 'The Whisker Path')),
-        item('atcoder', Icons.public,
-            l.pick('Problemas reales de AtCoder', 'Real AtCoder problems')),
-        item('ioi', Icons.military_tech_outlined,
-            l.pick('Problemas de olimpiada', 'Olympiad problems')),
-        item('memory', Icons.bolt, l.pick('Memoria rápida', 'Quick recall')),
-        item('recall', Icons.keyboard_outlined,
-            l.pick('Escribir de memoria', 'Write from memory')),
-        item('math', Icons.calculate_outlined,
-            l.pick('Gimnasio de matemática', 'Math gym')),
-        item('coder', Icons.build_outlined,
-            l.pick('Ronda Coder', 'Coder round')),
-        item('notebook', Icons.menu_book_outlined,
-            '${l.t('notebook')}${due > 0 ? ' ($due)' : ''}'),
-        item('dashboard', Icons.leaderboard_outlined, l.t('tip_dashboard')),
-        if (Cloud.configured)
-          item('account', Icons.account_circle_outlined, l.t('tip_account')),
-        if (Cloud.configured && Cloud.instance.isAdmin)
-          item('admin', Icons.admin_panel_settings_outlined, l.t('tip_admin')),
-        item('sound', Icons.music_note_outlined, l.t('sound_title')),
-        item('lang', Icons.translate, l.isEs ? 'English' : 'Español'),
+        for (final e in [
+          item('contest', Icons.emoji_events_outlined, l.t('tip_contest')),
+          item('collection', Icons.catching_pokemon, l.t('tip_collection')),
+          item('shop', Icons.storefront_outlined,
+              l.pick('Tienda de insignias', 'Badge shop')),
+          item('practice', Icons.fitness_center, l.t('tip_practice')),
+          if (CoachStore.instance.problems.isNotEmpty)
+            item('coach', Icons.assignment_outlined,
+                l.pick('Problemas del entrenador', 'Coach problems')),
+          item('trace', Icons.table_chart_outlined,
+              l.pick('Sé la computadora', 'Be the computer')),
+          item('cspj', Icons.route_outlined,
+              l.pick('El Camino del Bigote', 'The Whisker Path')),
+          item('atcoder', Icons.public,
+              l.pick('Problemas reales de AtCoder', 'Real AtCoder problems')),
+          item('ioi', Icons.military_tech_outlined,
+              l.pick('Problemas de olimpiada', 'Olympiad problems')),
+          item('memory', Icons.bolt, l.pick('Memoria rápida', 'Quick recall')),
+          item('recall', Icons.keyboard_outlined,
+              l.pick('Escribir de memoria', 'Write from memory')),
+          item('math', Icons.calculate_outlined,
+              l.pick('Gimnasio de matemática', 'Math gym')),
+          item('coder', Icons.build_outlined,
+              l.pick('Ronda Coder', 'Coder round')),
+          item('notebook', Icons.menu_book_outlined,
+              '${l.t('notebook')}${due > 0 ? ' ($due)' : ''}'),
+          item('dashboard', Icons.leaderboard_outlined, l.t('tip_dashboard')),
+          if (Cloud.configured)
+            item('account', Icons.account_circle_outlined, l.t('tip_account')),
+          if (Cloud.configured && Cloud.instance.isAdmin)
+            item(
+                'admin', Icons.admin_panel_settings_outlined, l.t('tip_admin')),
+          item('sound', Icons.music_note_outlined, l.t('sound_title')),
+          item('lang', Icons.translate, l.isEs ? 'English' : 'Español'),
+        ])
+          if (!games || _gameItems.contains(e.value)) e,
       ],
     );
   }
+
+  static const _gameItems = {
+    'trace',
+    'cspj',
+    'atcoder',
+    'ioi',
+    'memory',
+    'recall',
+    'math',
+    'coder',
+  };
 
   Widget _langButton() {
     final l = L.instance;

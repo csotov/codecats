@@ -1754,26 +1754,20 @@ class _LevelScreenState extends State<LevelScreen>
       },
     );
     final l = L.instance;
-    // Dose hints: before each one, the professor asks a guiding question;
-    // the hint is sold only on the next tap, after thinking.
-    if (_polyaForHint != _hintsShown && !widget.examMode) {
+    // Now and then (not every time) the professor adds a short coach
+    // question, then the hint opens right away: the kid already asked.
+    if (_polyaForHint != _hintsShown &&
+        !widget.examMode &&
+        math.Random().nextInt(3) == 0) {
       _polyaForHint = _hintsShown;
       final q = kPolyaQuestions[Progress.instance.nextRot(
         'polya',
         kPolyaQuestions.length,
       )];
       await ProfessorDialog.show(context, [
-        l.pick(
-          'Antes de la pista, una pregunta de entrenador:',
-          'Before the hint, a coach question:',
-        ),
         l.pick(q[0], q[1]),
-        l.pick(
-          'Pensalo un minuto. Si igual querés la pista, tocá "Comprar pista" otra vez.',
-          'Think about it for a minute. If you still want the hint, tap "Buy hint" again.',
-        ),
       ]);
-      return;
+      if (!mounted) return;
     }
     if (!Progress.instance.buyHint(widget.level.id)) {
       ScaffoldMessenger.of(context)

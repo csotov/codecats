@@ -136,4 +136,36 @@ const kPolyaQuestions = <List<String>>[
     'Mirá la salida esperada y la tuya: ¿en qué es distinta? ¿Un espacio, una línea, un número?',
     'Compare the expected output with yours: how is it different? A space, a line, a number?'
   ],
+  [
+    'Tip de entrenador: antes de leer la pista, mirá el último ejemplo. ¿Qué número cambia y por qué?',
+    'Coach tip: before reading the hint, look at the last example. Which number changes, and why?'
+  ],
+  [
+    'Mientras leés la pista, preguntate: ¿qué variable necesito guardar para no olvidarme de nada?',
+    'While you read the hint, ask yourself: which variable do I need to keep so I don\'t forget anything?'
+  ],
+  [
+    'Los campeones prueban un caso raro: ¿qué pasa si n vale 0 o 1 en tu código?',
+    'Champions try an odd case: what happens in your code if n is 0 or 1?'
+  ],
+  [
+    'Después de la pista, cambiá una sola cosa y volvé a probar. De a poquito se llega lejos 🐾',
+    'After the hint, change just one thing and test again. Step by step goes a long way 🐾'
+  ],
+  [
+    '¿Tu función devuelve algo en todos los caminos? Mirá cada if y cada else.',
+    'Does your function return something on every path? Check each if and else.'
+  ],
+  [
+    'Leé la pista y después explicale a tu gato imaginario qué vas a cambiar. Si se la explicás, la entendiste.',
+    'Read the hint, then explain to your imaginary cat what you\'ll change. If you can explain it, you got it.'
+  ],
+  [
+    'Truco de olimpiada: si un for no anda, escribí en papel qué vale la variable en cada vuelta.',
+    'Olympiad trick: if a for loop fails, write on paper what the variable is on each turn.'
+  ],
+  [
+    '¿El resultado puede ser muy grande? A veces el problema es el tipo de dato, no la idea.',
+    'Can the result get very big? Sometimes the problem is the data type, not the idea.'
+  ],
 ];
