@@ -50,7 +50,6 @@ class DepartamentalTalk {
   static Future<void> show(BuildContext context) async {
     final l = L.instance;
     final lines = l.pick(_es.join('\n'), _en.join('\n')).split('\n');
-    final lang = l.pick('es-419', 'en-US');
     Progress.instance.markTalkSeen(id);
     Sfx.holdMusic();
     try {
@@ -58,9 +57,6 @@ class DepartamentalTalk {
         context,
         lines,
         lastLabel: l.pick('¡Vamos! 💪', 'Let\'s go! 💪'),
-        onLine: (i) {
-          if (!Sfx.muted) speak(lines[i], lang: lang);
-        },
       );
     } finally {
       stopSpeaking();

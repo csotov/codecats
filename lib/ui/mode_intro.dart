@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import '../l10n.dart';
 import '../services/cloud.dart';
 import '../services/progress.dart';
+import '../services/sfx.dart';
+import '../services/speech.dart';
 import 'professor.dart';
 import 'theme.dart';
 
@@ -202,7 +204,24 @@ class _IntroDialogState extends State<_IntroDialog> {
   bool get _end => _i >= widget.steps.length;
 
   @override
+  void initState() {
+    super.initState();
+    _say();
+  }
+
+  void _say() {
+    if (Sfx.muted || _end) {
+      stopSpeaking();
+      return;
+    }
+    final s = widget.steps[_i];
+    speak(L.instance.pick(s.textEs, s.textEn).replaceAll('`', ''),
+        lang: L.instance.pick('es-419', 'en-US'));
+  }
+
+  @override
   void dispose() {
+    stopSpeaking();
     _focus.dispose();
     super.dispose();
   }
@@ -212,6 +231,7 @@ class _IntroDialogState extends State<_IntroDialog> {
       Navigator.pop(context, true);
     } else {
       setState(() => _i++);
+      _say();
     }
   }
 
@@ -232,6 +252,7 @@ class _IntroDialogState extends State<_IntroDialog> {
             e.logicalKey == LogicalKeyboardKey.arrowLeft &&
             _i > 0) {
           setState(() => _i--);
+          _say();
         }
       },
       child: AlertDialog(
@@ -309,7 +330,10 @@ class _IntroDialogState extends State<_IntroDialog> {
             Tooltip(
               message: l.pick('Paso anterior (←)', 'Previous step (←)'),
               child: TextButton(
-                  onPressed: () => setState(() => _i--),
+                  onPressed: () {
+                    setState(() => _i--);
+                    _say();
+                  },
                   child: Text(l.pick('Atrás', 'Back'))),
             ),
           Tooltip(

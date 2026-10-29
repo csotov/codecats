@@ -8,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n.dart';
 import '../data/profe_talks.dart';
 import '../services/progress.dart';
+import '../services/sfx.dart';
+import '../services/speech.dart';
 import '../data/complexity.dart';
 import '../data/halloween.dart';
 import 'theme.dart';
@@ -475,6 +477,9 @@ class _BubblePainter extends CustomPainter {
 }
 
 /// Avatar + name + speech bubble, side by side.
+/// Professor texts this long are also read aloud.
+const kVoiceMinChars = 80;
+
 class ProfessorSays extends StatefulWidget {
   const ProfessorSays({
     super.key,
@@ -483,8 +488,12 @@ class ProfessorSays extends StatefulWidget {
     this.avatarSize = 64,
     this.typewriter = true,
     this.speaker = Speaker.profe,
+    this.voice,
   });
   final String text;
+
+  /// Read aloud too; by default only long texts ([kVoiceMinChars]+).
+  final bool? voice;
   final Widget? footer;
   final double avatarSize;
   final bool typewriter;
@@ -496,11 +505,36 @@ class ProfessorSays extends StatefulWidget {
 
 class _ProfessorSaysState extends State<ProfessorSays> {
   late bool _talking = widget.typewriter;
+  bool _spoke = false;
+
+  bool get _voice => widget.voice ?? widget.text.length >= kVoiceMinChars;
+
+  void _say() {
+    if (!_voice || Sfx.muted) return;
+    _spoke = true;
+    speak(widget.text.replaceAll('`', ''),
+        lang: L.instance.pick('es-419', 'en-US'));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _say();
+  }
 
   @override
   void didUpdateWidget(ProfessorSays old) {
     super.didUpdateWidget(old);
-    if (old.text != widget.text && widget.typewriter) _talking = true;
+    if (old.text != widget.text) {
+      if (widget.typewriter) _talking = true;
+      _say();
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_spoke) stopSpeaking();
+    super.dispose();
   }
 
   @override
@@ -525,6 +559,20 @@ class _ProfessorSaysState extends State<ProfessorSays> {
                         fontWeight: FontWeight.w800,
                         color: widget.speaker.color)),
               ),
+              if (_voice)
+                Tooltip(
+                  message: L.instance.pick('Escuchar de nuevo', 'Listen again'),
+                  child: IconButton(
+                    visualDensity: VisualDensity.compact,
+                    iconSize: 18,
+                    onPressed: () {
+                      _spoke = true;
+                      speak(widget.text.replaceAll('`', ''),
+                          lang: L.instance.pick('es-419', 'en-US'));
+                    },
+                    icon: const Icon(Icons.volume_up),
+                  ),
+                ),
             ],
           ),
         ),
@@ -719,6 +767,7 @@ class _ConversationViewState extends State<_ConversationView> {
               child: ProfessorSays(
                 key: ValueKey(_i),
                 text: widget.lines[_i],
+                voice: true,
                 avatarSize: 110,
                 speaker: widget.speaker,
                 footer: Row(
