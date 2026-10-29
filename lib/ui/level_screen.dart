@@ -27,6 +27,7 @@ import '../models.dart';
 import '../data/cats.dart';
 import '../services/cloud.dart';
 import '../services/progress.dart';
+import '../services/songs.dart';
 import '../services/sfx.dart';
 import 'blocks_editor.dart';
 import 'code_editor.dart';
@@ -295,7 +296,12 @@ class _LevelScreenState extends State<LevelScreen>
     } else if (isEvent) {
       Sfx.spooky();
     } else {
-      Sfx.battle();
+      final w = worldOf(widget.level);
+      if (w == null) {
+        Sfx.battle();
+      } else {
+        Sfx.level(w.id, w.levels.indexOf(widget.level));
+      }
     }
     // Every visit (or retry) starts clean: no leftover code from
     // the previous attempt. Paid hints stay unlocked.
@@ -1307,6 +1313,11 @@ class _LevelScreenState extends State<LevelScreen>
       canPop: false,
       onPopInvokedWithResult: _onPopInvoked,
       child: Scaffold(
+        backgroundColor: switch (worldMood(w?.id ?? '')) {
+          WorldMood.water => const Color(0xFF071F33),
+          WorldMood.cave => const Color(0xFF17120E),
+          WorldMood.normal => null,
+        },
         appBar: AppBar(
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(3),
@@ -1754,26 +1765,20 @@ class _LevelScreenState extends State<LevelScreen>
       },
     );
     final l = L.instance;
-    // Dose hints: before each one, the professor asks a guiding question;
-    // the hint is sold only on the next tap, after thinking.
-    if (_polyaForHint != _hintsShown && !widget.examMode) {
+    // Now and then (not every time) the professor adds a short coach
+    // question, then the hint opens right away: the kid already asked.
+    if (_polyaForHint != _hintsShown &&
+        !widget.examMode &&
+        math.Random().nextInt(3) == 0) {
       _polyaForHint = _hintsShown;
       final q = kPolyaQuestions[Progress.instance.nextRot(
         'polya',
         kPolyaQuestions.length,
       )];
       await ProfessorDialog.show(context, [
-        l.pick(
-          'Antes de la pista, una pregunta de entrenador:',
-          'Before the hint, a coach question:',
-        ),
         l.pick(q[0], q[1]),
-        l.pick(
-          'Pensalo un minuto. Si igual querés la pista, tocá "Comprar pista" otra vez.',
-          'Think about it for a minute. If you still want the hint, tap "Buy hint" again.',
-        ),
       ]);
-      return;
+      if (!mounted) return;
     }
     if (!Progress.instance.buyHint(widget.level.id)) {
       ScaffoldMessenger.of(context)

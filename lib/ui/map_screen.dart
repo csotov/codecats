@@ -17,6 +17,7 @@ import '../l10n.dart';
 import '../models.dart';
 import '../services/cloud.dart';
 import '../services/progress.dart';
+import '../services/songs.dart';
 import 'account_screen.dart';
 import 'admin_screen.dart';
 import '../services/sfx.dart';
@@ -228,6 +229,7 @@ class _MapScreenState extends State<MapScreen> {
                   icon: const Icon(Icons.fitness_center),
                   onPressed: _openPractice,
                 ),
+                _moreMenu(l, games: true),
                 if (CoachStore.instance.problems.isNotEmpty)
                   IconButton(
                     tooltip:
@@ -691,7 +693,9 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   /// Everything the wide app bar shows as icons, as one menu for phones.
-  Widget _moreMenu(L l) {
+  /// With [games], only the mini-games and practice modes (wide screens
+  /// show the rest as icons).
+  Widget _moreMenu(L l, {bool games = false}) {
     final p = Progress.instance;
     final due = p.unsolvedFails.length + (p.bonusLevelId == null ? 0 : 1);
     PopupMenuItem<String> item(String v, IconData i, String text) =>
@@ -704,12 +708,16 @@ class _MapScreenState extends State<MapScreen> {
           ]),
         );
     return PopupMenuButton<String>(
-      tooltip: l.pick('Más opciones', 'More options'),
-      icon: Badge(
-        isLabelVisible: due > 0,
-        label: Text('$due'),
-        child: const Icon(Icons.menu),
-      ),
+      tooltip: games
+          ? l.pick('Minijuegos y prácticas', 'Mini-games and practice')
+          : l.pick('Más opciones', 'More options'),
+      icon: games
+          ? const Icon(Icons.sports_esports_outlined)
+          : Badge(
+              isLabelVisible: due > 0,
+              label: Text('$due'),
+              child: const Icon(Icons.menu),
+            ),
       onSelected: (v) {
         switch (v) {
           case 'contest':
@@ -767,41 +775,56 @@ class _MapScreenState extends State<MapScreen> {
         }
       },
       itemBuilder: (c) => [
-        item('contest', Icons.emoji_events_outlined, l.t('tip_contest')),
-        item('collection', Icons.catching_pokemon, l.t('tip_collection')),
-        item('shop', Icons.storefront_outlined,
-            l.pick('Tienda de insignias', 'Badge shop')),
-        item('practice', Icons.fitness_center, l.t('tip_practice')),
-        if (CoachStore.instance.problems.isNotEmpty)
-          item('coach', Icons.assignment_outlined,
-              l.pick('Problemas del entrenador', 'Coach problems')),
-        item('trace', Icons.table_chart_outlined,
-            l.pick('Sé la computadora', 'Be the computer')),
-        item('cspj', Icons.route_outlined,
-            l.pick('El Camino del Bigote', 'The Whisker Path')),
-        item('atcoder', Icons.public,
-            l.pick('Problemas reales de AtCoder', 'Real AtCoder problems')),
-        item('ioi', Icons.military_tech_outlined,
-            l.pick('Problemas de olimpiada', 'Olympiad problems')),
-        item('memory', Icons.bolt, l.pick('Memoria rápida', 'Quick recall')),
-        item('recall', Icons.keyboard_outlined,
-            l.pick('Escribir de memoria', 'Write from memory')),
-        item('math', Icons.calculate_outlined,
-            l.pick('Gimnasio de matemática', 'Math gym')),
-        item('coder', Icons.build_outlined,
-            l.pick('Ronda Coder', 'Coder round')),
-        item('notebook', Icons.menu_book_outlined,
-            '${l.t('notebook')}${due > 0 ? ' ($due)' : ''}'),
-        item('dashboard', Icons.leaderboard_outlined, l.t('tip_dashboard')),
-        if (Cloud.configured)
-          item('account', Icons.account_circle_outlined, l.t('tip_account')),
-        if (Cloud.configured && Cloud.instance.isAdmin)
-          item('admin', Icons.admin_panel_settings_outlined, l.t('tip_admin')),
-        item('sound', Icons.music_note_outlined, l.t('sound_title')),
-        item('lang', Icons.translate, l.isEs ? 'English' : 'Español'),
+        for (final e in [
+          item('contest', Icons.emoji_events_outlined, l.t('tip_contest')),
+          item('collection', Icons.catching_pokemon, l.t('tip_collection')),
+          item('shop', Icons.storefront_outlined,
+              l.pick('Tienda de insignias', 'Badge shop')),
+          item('practice', Icons.fitness_center, l.t('tip_practice')),
+          if (CoachStore.instance.problems.isNotEmpty)
+            item('coach', Icons.assignment_outlined,
+                l.pick('Problemas del entrenador', 'Coach problems')),
+          item('trace', Icons.table_chart_outlined,
+              l.pick('Sé la computadora', 'Be the computer')),
+          item('cspj', Icons.route_outlined,
+              l.pick('El Camino del Bigote', 'The Whisker Path')),
+          item('atcoder', Icons.public,
+              l.pick('Problemas reales de AtCoder', 'Real AtCoder problems')),
+          item('ioi', Icons.military_tech_outlined,
+              l.pick('Problemas de olimpiada', 'Olympiad problems')),
+          item('memory', Icons.bolt, l.pick('Memoria rápida', 'Quick recall')),
+          item('recall', Icons.keyboard_outlined,
+              l.pick('Escribir de memoria', 'Write from memory')),
+          item('math', Icons.calculate_outlined,
+              l.pick('Gimnasio de matemática', 'Math gym')),
+          item('coder', Icons.build_outlined,
+              l.pick('Ronda Coder', 'Coder round')),
+          item('notebook', Icons.menu_book_outlined,
+              '${l.t('notebook')}${due > 0 ? ' ($due)' : ''}'),
+          item('dashboard', Icons.leaderboard_outlined, l.t('tip_dashboard')),
+          if (Cloud.configured)
+            item('account', Icons.account_circle_outlined, l.t('tip_account')),
+          if (Cloud.configured && Cloud.instance.isAdmin)
+            item(
+                'admin', Icons.admin_panel_settings_outlined, l.t('tip_admin')),
+          item('sound', Icons.music_note_outlined, l.t('sound_title')),
+          item('lang', Icons.translate, l.isEs ? 'English' : 'Español'),
+        ])
+          if (!games || _gameItems.contains(e.value)) e,
       ],
     );
   }
+
+  static const _gameItems = {
+    'trace',
+    'cspj',
+    'atcoder',
+    'ioi',
+    'memory',
+    'recall',
+    'math',
+    'coder',
+  };
 
   Widget _langButton() {
     final l = L.instance;
@@ -929,69 +952,110 @@ class _MapScreenState extends State<MapScreen> {
     final worldUnlocked = w.levels.any((lv) => progress.isUnlocked(lv, w)) &&
         (ph == null || phaseOpen(ph, progress));
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppTheme.card,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.cardEdge),
-                ),
-                child: Text(w.icon,
-                    style:
-                        const TextStyle(fontSize: 17, color: AppTheme.accent2)),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(l.pick(w.titleEs, w.titleEn),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 15)),
-                    Text(l.pick(w.descEs, w.descEn),
-                        style: const TextStyle(
-                            color: AppTheme.textLo, fontSize: 12)),
-                  ],
-                ),
-              ),
-              Text('$solvedInWorld/${w.levels.length}',
-                  style: const TextStyle(color: AppTheme.textLo, fontSize: 12)),
-            ],
+    final mood = worldMood(w.id);
+    final section = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (mood != WorldMood.normal)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              mood == WorldMood.water
+                  ? l.pick(
+                      '🌊 🫧 Zona acuática: bucles que van y vuelven como olas',
+                      '🌊 🫧 Water zone: loops that come and go like waves')
+                  : l.pick(
+                      '🦇 🪨 Zona de la cueva: el laberinto suena distinto',
+                      '🦇 🪨 Cave zone: the maze sounds different'),
+              style: TextStyle(
+                  color: mood == WorldMood.water
+                      ? const Color(0xFF8BE9FF)
+                      : const Color(0xFFD9C3A0),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12),
+            ),
           ),
-          const SizedBox(height: 10),
-          if (!worldUnlocked)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
+        Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppTheme.card,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.cardEdge),
+              ),
+              child: Text(w.icon,
+                  style:
+                      const TextStyle(fontSize: 17, color: AppTheme.accent2)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.lock, size: 14, color: AppTheme.textLo),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(l.t('world_locked_msg'),
-                        style: const TextStyle(
-                            color: AppTheme.textLo, fontSize: 12)),
-                  ),
+                  Text(l.pick(w.titleEs, w.titleEn),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 15)),
+                  Text(l.pick(w.descEs, w.descEn),
+                      style: const TextStyle(
+                          color: AppTheme.textLo, fontSize: 12)),
                 ],
               ),
             ),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              for (var i = 0; i < w.levels.length; i++) _levelNode(w, i),
-            ],
+            Text('$solvedInWorld/${w.levels.length}',
+                style: const TextStyle(color: AppTheme.textLo, fontSize: 12)),
+          ],
+        ),
+        const SizedBox(height: 10),
+        if (!worldUnlocked)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              children: [
+                const Icon(Icons.lock, size: 14, color: AppTheme.textLo),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(l.t('world_locked_msg'),
+                      style: const TextStyle(
+                          color: AppTheme.textLo, fontSize: 12)),
+                ),
+              ],
+            ),
           ),
-        ],
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            for (var i = 0; i < w.levels.length; i++) _levelNode(w, i),
+          ],
+        ),
+      ],
+    );
+    if (mood == WorldMood.normal) {
+      return Padding(
+          padding: const EdgeInsets.only(bottom: 18), child: section);
+    }
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: mood == WorldMood.water
+              ? const [Color(0xFF0B4F73), Color(0xFF06283F)]
+              : const [Color(0xFF3A2E24), Color(0xFF1C1612)],
+        ),
+        border: Border.all(
+            color: mood == WorldMood.water
+                ? const Color(0xFF4DC8FF)
+                : const Color(0xFF8A7458),
+            width: 1.4),
       ),
+      child: section,
     );
   }
 
@@ -1021,7 +1085,17 @@ class _MapScreenState extends State<MapScreen> {
           width: 108,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
           decoration: BoxDecoration(
-            color: unlocked ? AppTheme.card : AppTheme.bgAlt,
+            color: unlocked
+                ? switch (worldMood(world.id)) {
+                    WorldMood.water => const Color(0xFF0F5E85),
+                    WorldMood.cave => const Color(0xFF4A3C2F),
+                    WorldMood.normal => AppTheme.card,
+                  }
+                : switch (worldMood(world.id)) {
+                    WorldMood.water => const Color(0xFF0A3550),
+                    WorldMood.cave => const Color(0xFF2B231C),
+                    WorldMood.normal => AppTheme.bgAlt,
+                  },
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: p.solved
