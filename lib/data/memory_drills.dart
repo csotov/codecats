@@ -99,7 +99,7 @@ Puzzle _single(Random r, String prompt, String template, String right,
         {String? visual}) =>
     _blanks(r, prompt, template, [right], wrong, why, visual: visual);
 
-/// `▢ · ▢ = ▢`-style: the first group takes [factors] in any order, the last
+/// `▢ * ▢ = ▢`-style: the first group takes [factors] in any order, the last
 /// slot takes [result].
 Puzzle _factors(Random r, String prompt, List<String> factors, String op,
     String result, Iterable<String> wrong, String why,
@@ -192,7 +192,7 @@ Puzzle _comb(Random r, int lv, bool es) {
               ? 'Tengo $n gatos y los quiero poner en fila para la foto. ¿De cuántas formas distintas puedo ordenarlos? Armá la cuenta.'
               : 'I have $n cats and want to line them up for a photo. In how many different orders can I place them? Build the product.',
           _nums(f),
-          '·',
+          '*',
           fmtInt(_fact(n)),
           _nums([n * n, _fact(n) + n, n + 1]),
           es
@@ -207,12 +207,12 @@ Puzzle _comb(Random r, int lv, bool es) {
               ? 'Tengo $a gorros y $b moños. Un look es 1 gorro + 1 moño. ¿Cuántos looks distintos puedo armar?'
               : 'I have $a hats and $b bows. A look is 1 hat + 1 bow. How many different looks can I make?',
           _nums([a, b]),
-          '·',
+          '*',
           fmtInt(a * b),
           _nums([a + b, a * b + 1, a * b + 2]),
           es
-              ? 'Regla del producto: por cada gorro hay $b moños posibles → $a · $b = ${a * b}.'
-              : 'Product rule: each hat pairs with $b bows → $a · $b = ${a * b}.',
+              ? 'Regla del producto: por cada gorro hay $b moños posibles → $a * $b = ${a * b}.'
+              : 'Product rule: each hat pairs with $b bows → $a * $b = ${a * b}.',
           visual: '${'🎩' * a}   ${'🎀' * b}');
     case 2:
       final n = 2 + r.nextInt(3 + lv);
@@ -237,12 +237,12 @@ Puzzle _comb(Random r, int lv, bool es) {
           es
               ? '$n gatos se saludan todos con todos, una vez por pareja. ¿Cuántos saludos hay en total?'
               : '$n cats all greet each other, once per pair. How many greetings in total?',
-          '$n · ${n - 1} / 2 = ▢',
+          '$n * ${n - 1} / 2 = ▢',
           fmtInt(v),
           _nums([n * (n - 1), v + n, v + 1]),
           es
-              ? 'Cada gato saluda a ${n - 1}, pero cada saludo se contó 2 veces: $n·${n - 1}/2 = $v. Es C($n, 2).'
-              : 'Each cat greets ${n - 1}, but every greeting was counted twice: $n·${n - 1}/2 = $v. That is C($n, 2).',
+              ? 'Cada gato saluda a ${n - 1}, pero cada saludo se contó 2 veces: $n*${n - 1}/2 = $v. Es C($n, 2).'
+              : 'Each cat greets ${n - 1}, but every greeting was counted twice: $n*${n - 1}/2 = $v. That is C($n, 2).',
           visual: '${'🐱' * n}  🤝');
     case 4:
       final n = 4 + r.nextInt(4);
@@ -252,12 +252,12 @@ Puzzle _comb(Random r, int lv, bool es) {
               ? 'Entre $n gatos elijo primero un capitán y después un subcapitán (no puede ser el mismo). ¿Cuántas formas hay?'
               : 'Among $n cats I pick a captain and then a vice-captain (not the same cat). How many ways?',
           _nums([n, n - 1]),
-          '·',
+          '*',
           fmtInt(n * (n - 1)),
           _nums([n * (n - 1) ~/ 2, n * n, n + n - 1]),
           es
-              ? 'Capitán: $n opciones. Subcapitán: quedan ${n - 1}. Importa el orden → $n · ${n - 1} = ${n * (n - 1)}.'
-              : 'Captain: $n choices. Vice: ${n - 1} left. Order matters → $n · ${n - 1} = ${n * (n - 1)}.',
+              ? 'Capitán: $n opciones. Subcapitán: quedan ${n - 1}. Importa el orden → $n * ${n - 1} = ${n * (n - 1)}.'
+              : 'Captain: $n choices. Vice: ${n - 1} left. Order matters → $n * ${n - 1} = ${n * (n - 1)}.',
           visual: '${'🐱' * n}  →  🥇 🥈');
     case 5:
       final n = 4 + r.nextInt(4), k = 2 + r.nextInt(2);
@@ -271,8 +271,8 @@ Puzzle _comb(Random r, int lv, bool es) {
           fmtInt(c),
           _nums([c * _fact(k), _choose(n, k - 1), n * k]),
           es
-              ? 'C($n,$k) = $n! / ($k! · ${n - k}!) = $c. También es la fila $n del triángulo de Pascal.'
-              : 'C($n,$k) = $n! / ($k! · ${n - k}!) = $c. It is also row $n of Pascal\'s triangle.',
+              ? 'C($n,$k) = $n! / ($k! * ${n - k}!) = $c. También es la fila $n del triángulo de Pascal.'
+              : 'C($n,$k) = $n! / ($k! * ${n - k}!) = $c. It is also row $n of Pascal\'s triangle.',
           visual: '${'🐱' * n}  →  ${'⭐' * k}');
     default:
       final d = 2 + r.nextInt(3), len = 2 + r.nextInt(2);
@@ -376,40 +376,40 @@ Puzzle _types(Random r, int lv, bool es) {
   final kind = r.nextInt(lv >= 2 ? 6 : 4);
   switch (kind) {
     case 0:
-      const fits = ['10⁵', '2·10⁶', '10⁸', '10⁹', '2·10⁹'];
-      const big = ['3·10⁹', '10¹⁰', '10¹²', '10¹⁵', '10¹⁸'];
+      const fits = ['10⁵', '2*10⁶', '10⁸', '10⁹', '2*10⁹'];
+      const big = ['3*10⁹', '10¹⁰', '10¹²', '10¹⁵', '10¹⁸'];
       final a = [...fits]..shuffle(r);
       final b = [...big]..shuffle(r);
       return _bins(
           r,
           es
-              ? 'Arrastrá cada número a la caja más chica donde entra. int guarda hasta 2.147.483.647 (≈ 2·10⁹); long long hasta ≈ 9·10¹⁸.'
-              : 'Drag each number into the smallest box it fits in. int holds up to 2,147,483,647 (≈ 2·10⁹); long long up to ≈ 9·10¹⁸.',
+              ? 'Arrastrá cada número a la caja más chica donde entra. int guarda hasta 2.147.483.647 (≈ 2*10⁹); long long hasta ≈ 9*10¹⁸.'
+              : 'Drag each number into the smallest box it fits in. int holds up to 2,147,483,647 (≈ 2*10⁹); long long up to ≈ 9*10¹⁸.',
           [
             ('int', a.take(2).toList()),
             ('long long', b.take(2).toList()),
           ],
           es
-              ? 'int llega a ≈ 2·10⁹. Todo lo que pase de ahí necesita long long.'
-              : 'int reaches ≈ 2·10⁹. Anything beyond needs long long.');
+              ? 'int llega a ≈ 2*10⁹. Todo lo que pase de ahí necesita long long.'
+              : 'int reaches ≈ 2*10⁹. Anything beyond needs long long.');
     case 1:
       final a = 4 + r.nextInt(3), b = 4 + r.nextInt(3);
       final needs = a + b > 9;
       return _single(
           r,
           es
-              ? 'a puede valer hasta 10^$a y b hasta 10^$b. Quiero guardar a · b, que puede llegar a 10^${a + b}. ¿Qué tipo tengo que usar?'
-              : 'a can be up to 10^$a and b up to 10^$b. I want to store a · b, which can reach 10^${a + b}. Which type do I need?',
+              ? 'a puede valer hasta 10^$a y b hasta 10^$b. Quiero guardar a * b, que puede llegar a 10^${a + b}. ¿Qué tipo tengo que usar?'
+              : 'a can be up to 10^$a and b up to 10^$b. I want to store a * b, which can reach 10^${a + b}. Which type do I need?',
           '▢ c = a * b;',
           needs ? 'long long' : 'int',
           [needs ? 'int' : 'long long', 'double', 'string', 'char'],
           needs
               ? (es
-                  ? '10^${a + b} es más que 2·10⁹, así que int se desborda: hace falta long long.'
-                  : '10^${a + b} is more than 2·10⁹, so int overflows: long long needed.')
+                  ? '10^${a + b} es más que 2*10⁹, así que int se desborda: hace falta long long.'
+                  : '10^${a + b} is more than 2*10⁹, so int overflows: long long needed.')
               : (es
-                  ? '10^${a + b} es menos que 2·10⁹, así que int alcanza.'
-                  : '10^${a + b} is less than 2·10⁹, so int is enough.'));
+                  ? '10^${a + b} es menos que 2*10⁹, así que int alcanza.'
+                  : '10^${a + b} is less than 2*10⁹, so int is enough.'));
     case 2:
       return _single(
           r,
@@ -443,8 +443,8 @@ Puzzle _types(Random r, int lv, bool es) {
           '-1',
           ['2', '1', '-2', '0'],
           es
-              ? '-7 = 3 · (-2) − 1, así que -7 % 3 = -1. Para un resto siempre positivo: ((a % m) + m) % m.'
-              : '-7 = 3 · (-2) − 1, so -7 % 3 = -1. For an always-positive remainder: ((a % m) + m) % m.');
+              ? '-7 = 3 * (-2) − 1, así que -7 % 3 = -1. Para un resto siempre positivo: ((a % m) + m) % m.'
+              : '-7 = 3 * (-2) − 1, so -7 % 3 = -1. For an always-positive remainder: ((a % m) + m) % m.');
     default:
       return _single(
           r,

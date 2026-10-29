@@ -10,6 +10,8 @@ import '../data/memory_drills.dart';
 import '../l10n.dart';
 import '../services/cloud.dart';
 import '../services/progress.dart';
+import '../services/sfx.dart';
+import '../services/speech.dart';
 import 'keyboard_scroll.dart';
 import 'olympiad_screens.dart';
 import 'professor.dart';
@@ -162,7 +164,6 @@ class _MemLessonScreenState extends State<MemLessonScreen> {
   bool _intro = true;
   bool _solved = false;
   bool _wrongFlash = false;
-  bool _showPrompt = false;
   int _shakeSeq = 0;
   int? _hoverTile;
   int _crownBefore = 0;
@@ -188,6 +189,7 @@ class _MemLessonScreenState extends State<MemLessonScreen> {
 
   @override
   void dispose() {
+    stopSpeaking();
     _timer?.cancel();
     _scroll.dispose();
     _focus.dispose();
@@ -196,6 +198,19 @@ class _MemLessonScreenState extends State<MemLessonScreen> {
 
   MemDeck get _deck => _queue.first.$1;
   Puzzle get _puzzle => _queue.first.$2;
+
+  int _spokenSeq = -1;
+
+  void _say(Puzzle q) {
+    if (Sfx.muted) return;
+    speak(q.prompt.replaceAll('^', ' elevado a ').replaceAll('*', ' por '),
+        lang: L.instance.isEs ? 'es-419' : 'en-US');
+  }
+
+  bool _usesPower(Puzzle q) =>
+      q.prompt.contains('^') ||
+      q.prompt.contains('elevado') ||
+      q.lines.any((l) => l.any((p) => !p.isSlot && p.text.contains('^')));
 
   /// Slot i (reading order) -> its group.
   List<int> get _slotGroups => [
@@ -271,7 +286,6 @@ class _MemLessonScreenState extends State<MemLessonScreen> {
       _placed.clear();
       _solved = false;
       _misses = 0;
-      _showPrompt = false;
       _seq++;
       if (_queue.isEmpty) _finish();
     });
@@ -464,6 +478,10 @@ class _MemLessonScreenState extends State<MemLessonScreen> {
   Widget _boardPanel(L l) {
     final d = _deck;
     final q = _puzzle;
+    if (_spokenSeq != _seq) {
+      _spokenSeq = _seq;
+      _say(q);
+    }
     final groups = _slotGroups;
     var slotIdx = 0;
     return Column(
@@ -472,26 +490,33 @@ class _MemLessonScreenState extends State<MemLessonScreen> {
         Text('${d.emoji} ${l.pick(d.titleEs, d.titleEn)}',
             style: const TextStyle(color: AppTheme.textLo)),
         const SizedBox(height: 6),
-        if (_showPrompt || _misses >= 1)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Text(q.prompt,
-                style:
-                    const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-          )
-        else
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Tooltip(
-              message: l.pick(
-                  'Mostrar la consigna en palabras', 'Show the task in words'),
-              child: TextButton.icon(
-                onPressed: () => setState(() => _showPrompt = true),
-                icon: const Icon(Icons.chat_bubble_outline, size: 18),
-                label: Text(l.pick('¿Qué hay que hacer?', 'What do I do?')),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(q.prompt,
+                  style: const TextStyle(
+                      fontSize: 17, fontWeight: FontWeight.w700)),
+            ),
+            Tooltip(
+              message: l.pick('Escuchar la consigna', 'Listen to the task'),
+              child: IconButton(
+                onPressed: () => _say(q),
+                icon: const Icon(Icons.volume_up),
               ),
             ),
+          ],
+        ),
+        if (_usesPower(q))
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+                l.pick(
+                    '💡 a^b es a multiplicado por sí mismo b veces. Ejemplo: 2^6 = 2 * 2 * 2 * 2 * 2 * 2 = 64.',
+                    '💡 a^b means a multiplied by itself b times. Example: 2^6 = 2 * 2 * 2 * 2 * 2 * 2 = 64.'),
+                style: const TextStyle(color: AppTheme.textLo, fontSize: 13)),
           ),
+        const SizedBox(height: 10),
         const SizedBox(height: 6),
         _Shake(
           key: ValueKey(_shakeSeq),
