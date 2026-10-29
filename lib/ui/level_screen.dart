@@ -151,6 +151,17 @@ class _LevelScreenState extends State<LevelScreen>
   DateTime? _lastKeyAt, _lastFailAt;
   static const _postFailSecs = 90;
   static const _hesitMs = 2500;
+  // Replay + fluency: edit ops [ms since entering, pos, deleted, inserted]
+  // (the admin replays them like a video), active typing time between
+  // close keystrokes (speed), delay before the first key (planning),
+  // pastes, runs before each battle and rereading the statement after
+  // losing.
+  final _ops = <List<Object>>[];
+  String? _opsStart;
+  int _typeMs = 0, _pastes = 0, _pasteChars = 0, _runsSinceFight = 0;
+  int? _firstKeyMs;
+  bool _firstSent = false, _rereadAfterFail = false;
+  static const _typeGapMs = 5000;
   Timer? _modeTick;
   bool get _inCodeMode =>
       _codeOnly || (_promotedToCode && _tabController.index == 1);
@@ -165,6 +176,7 @@ class _LevelScreenState extends State<LevelScreen>
     final last = _lastKeyAt;
     if (last != null) {
       final gap = now.difference(last).inMilliseconds;
+      if (gap <= _typeGapMs) _typeMs += gap;
       if (gap > _hesitMs) {
         _hesit++;
         if (gap > _maxGapMs) _maxGapMs = gap;
@@ -194,6 +206,16 @@ class _LevelScreenState extends State<LevelScreen>
       }
       final del = old.substring(pre, old.length - suf);
       final ins = code.substring(pre, code.length - suf);
+      if (del.isNotEmpty || ins.isNotEmpty) {
+        _firstKeyMs ??= now.difference(_enteredAt).inMilliseconds;
+        _opsStart ??= old;
+        _ops.add(
+            [now.difference(_enteredAt).inMilliseconds, pre, del.length, ins]);
+      }
+      if (ins.length >= 25 && code != _starter) {
+        _pastes++;
+        _pasteChars += ins.length;
+      }
       if (del.isNotEmpty) {
         _delRunStart ??= old;
         _delRunFail |= afterFail;
@@ -219,6 +241,19 @@ class _LevelScreenState extends State<LevelScreen>
     _persist();
   }
 
+  /// Scrolling back to the statement soon after losing = rereading it.
+  void _onScrollRead() {
+    final f = _lastFailAt;
+    if (f == null ||
+        DateTime.now().difference(f).inSeconds > _postFailSecs ||
+        !mounted) {
+      return;
+    }
+    final wide = MediaQuery.sizeOf(context).width >= 1100;
+    final h = _missionKey.currentContext?.size?.height ?? 0;
+    if (wide || _scroll.offset < h) _rereadAfterFail = true;
+  }
+
   void _endDelRun(String now) {
     final start = _delRunStart;
     if (start == null) return;
@@ -232,6 +267,19 @@ class _LevelScreenState extends State<LevelScreen>
 
   void _flushTyping() {
     _endDelRun(_prevCode);
+    if (_ops.isNotEmpty) {
+      Cloud.instance.log(
+        'code_replay',
+        levelId: widget.level.id,
+        data: {
+          't0': _enteredAt.toUtc().toIso8601String(),
+          's': _opsStart ?? '',
+          'ops': List.of(_ops),
+        },
+      );
+      _ops.clear();
+      _opsStart = null;
+    }
     if (_keys == 0 && _backspaces == 0) return;
     Cloud.instance.log(
       'typing',
@@ -249,8 +297,16 @@ class _LevelScreenState extends State<LevelScreen>
         'tokDF': Map.of(_tokDeletedFail),
         'hesit': _hesit,
         'gap': _maxGapMs,
+        'tms': _typeMs,
+        'paste': _pastes,
+        'pasteCh': _pasteChars,
+        if (!_firstSent && _firstKeyMs != null) 'first': _firstKeyMs,
       },
     );
+    if (_firstKeyMs != null) _firstSent = true;
+    _typeMs = 0;
+    _pastes = 0;
+    _pasteChars = 0;
     _keys = 0;
     _backspaces = 0;
     _added.clear();
@@ -280,6 +336,7 @@ class _LevelScreenState extends State<LevelScreen>
   @override
   void initState() {
     super.initState();
+    _scroll.addListener(_onScrollRead);
     ProfessorAvatar.underwater.value =
         worldMood(worldOf(widget.level)?.id ?? '') == WorldMood.water;
     _runner = createRunner();
@@ -682,6 +739,7 @@ class _LevelScreenState extends State<LevelScreen>
   Future<void> _runSample() async {
     if (_busy) return;
     _triedSample = true;
+    _runsSinceFight++;
     final l = L.instance;
     setState(() {
       _busy = true;
@@ -774,8 +832,12 @@ class _LevelScreenState extends State<LevelScreen>
         'code_mode': !_usesBlocks || _promotedToCode,
         'remote_judge': _remoteJudge,
         'compile_error': report.compileError != null,
+        'runs_before': _runsSinceFight,
+        if (_lastFailAt != null) 'reread': _rereadAfterFail,
       },
     );
+    _runsSinceFight = 0;
+    _rereadAfterFail = false;
     if (report.compileError != null) {
       Cloud.instance.log(
         'compile_error',
