@@ -80,18 +80,19 @@ void main() {
     expect(p.earlyDeadlineAt, isNull);
   });
 
-  test('admin can move today\'s window to start later', () async {
+  test('admin can fix today\'s deadline earlier', () async {
     SharedPreferences.setMockInitialValues({});
     final p = Progress.instance;
     await p.ensureLoaded();
     await p.reset();
-    final now = DateTime.now();
+    final now = DateTime(2026, 11, 5, 14, 20);
     expect(p.offerEarlyToday(now), isTrue);
-    final from = now.add(const Duration(hours: 1));
-    expect(p.offerEarlyToday(now, from: from), isTrue);
-    expect(p.offerEarlyToday(now, from: from), isFalse);
-    p.recordSolve('w1l1', 10, 1);
-    expect(p.earlyWon, isFalse, reason: 'wins before the window don\'t count');
+    expect(p.earlyDeadlineAt, DateTime(2026, 11, 5, 16, 20));
+    final until = DateTime(2026, 11, 5, 15, 30);
+    expect(p.offerEarlyToday(now, until: until), isTrue);
+    expect(p.offerEarlyToday(now, until: until), isFalse);
+    expect(p.earlyDeadlineAt, until);
+    expect(p.claimEarly(DateTime(2026, 11, 5, 15, 31)), 'missed');
   });
 }
 

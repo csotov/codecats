@@ -177,12 +177,12 @@ class _MapScreenState extends State<MapScreen> {
     final ymd = now.year * 10000 + now.month * 100 + now.day;
     final adminToday = Tweaks.instance.applied.where((t) =>
         '${t['action']}'.startsWith('early_today') && t['topic'] == 'day:$ymd');
-    final from = adminToday
-        .map((t) => earlyTodayFrom('${t['action']}', now))
+    final until = adminToday
+        .map((t) => earlyTodayUntil('${t['action']}', now))
         .whereType<DateTime>()
         .fold<DateTime?>(null, (a, b) => a == null || b.isAfter(a) ? b : a);
     if (!(adminToday.isNotEmpty
-        ? p.offerEarlyToday(now, from: from)
+        ? p.offerEarlyToday(now, until: until)
         : p.offerEarly(now))) {
       return false;
     }
@@ -1481,8 +1481,8 @@ class _EarlyCountdownState extends State<_EarlyCountdown> {
   }
 }
 
-/// 'early_today@1530' → today at 15:30; plain 'early_today' → null.
-DateTime? earlyTodayFrom(String action, DateTime now) {
+/// 'early_today@1530' → deadline today at 15:30; plain 'early_today' → null.
+DateTime? earlyTodayUntil(String action, DateTime now) {
   final m = RegExp(r'@(\d\d)(\d\d)$').firstMatch(action);
   if (m == null) return null;
   return DateTime(
