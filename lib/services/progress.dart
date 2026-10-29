@@ -1406,7 +1406,13 @@ class Progress extends ChangeNotifier {
       final r = rank(a) - rank(b);
       return r != 0 ? r : order[a.id]! - order[b.id]!;
     });
-    if (eligible.isNotEmpty) fresh.add(eligible.first);
+    // Event cats unlocked by the same win all come together (e.g. the
+    // two Halloween cats for 5 event levels).
+    if (eligible.isNotEmpty) {
+      fresh.addAll(rank(eligible.first) == 0
+          ? eligible.where((c) => rank(c) == 0)
+          : [eligible.first]);
+    }
     if (fresh.isNotEmpty) {
       final give = rank(fresh.first) < 2 ||
           fresh.first.trigger == CatTrigger.coinsN ||
