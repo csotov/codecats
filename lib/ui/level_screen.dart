@@ -407,7 +407,9 @@ class _LevelScreenState extends State<LevelScreen>
       Sfx.spooky();
     } else {
       final w = worldOf(widget.level);
-      if (w == null) {
+      // Normal worlds keep the classic battle loop; only the special
+      // worlds (water, cave) have their own songs.
+      if (w == null || worldMood(w.id) == WorldMood.normal) {
         Sfx.battle();
       } else {
         Sfx.level(w.id, w.levels.indexOf(widget.level));
