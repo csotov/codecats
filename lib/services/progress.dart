@@ -302,6 +302,16 @@ class Progress extends ChangeNotifier {
   /// Math gym: topic id -> [questions solved in order, total right].
   final Map<String, List<int>> mathGym = {};
 
+  /// Bonus for finishing a full pass of a math-gym topic: big the first
+  /// time, small on review laps. Returns the coins given.
+  int mathLapDone(String topic, int lap) {
+    final bonus = lap <= 1 ? 20 : 5;
+    coins += bonus;
+    _save();
+    notifyListeners();
+    return bonus;
+  }
+
   void mathAnswered(String topic, bool right) {
     final m = mathGym[topic] ?? [0, 0];
     if (right) {
