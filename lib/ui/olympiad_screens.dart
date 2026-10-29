@@ -1,10 +1,10 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
 import 'sound_panel.dart';
 
-import '../data/blitz_facts.dart';
 import '../data/profe_talks.dart';
 import '../data/olympiad_tracks.dart';
 import '../data/tracks_models.dart';
@@ -544,7 +544,7 @@ class _CoderTaskScreenState extends State<CoderTaskScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Lightning round every 30 minutes of play.
+// Lightning round every 5 new levels won: 2 simple questions for coins.
 
 class BlitzClock {
   BlitzClock._();
@@ -558,8 +558,7 @@ class BlitzClock {
 
 bool _blitzOpen = false;
 
-/// Shows 1 question (2 once the player got 6 right) and pays per answer.
-String? _lastBlitz;
+/// Shows 2 simple questions and pays per right answer.
 
 Future<void> maybeRunBlitz(BuildContext context) async {
   final p = Progress.instance;
@@ -568,41 +567,21 @@ Future<void> maybeRunBlitz(BuildContext context) async {
   }
   _blitzOpen = true;
   final l = L.instance;
-  final n = p.blitzOk >= 6 ? 2 : 1;
+  const n = 2;
   var right = 0;
   for (var i = 0; i < n; i++) {
-    // Retrieval practice with Leitner boxes: even rounds drill a
-    // must-know contest fact (2-3 variants each), odd rounds recall a
-    // concept from a level already won.
-    final unlocked = [
-      for (final c in kConceptCards)
-        if (p.of(c.levelId).solved) c.id
-    ];
-    final cardId =
-        p.blitzSeq.isEven ? null : p.nextBlitzCard(unlocked, skip: _lastBlitz);
-    final card =
-        cardId == null ? null : kConceptCards.firstWhere((c) => c.id == cardId);
-    final String key;
-    final ProfeQuiz q;
-    if (card != null) {
-      key = card.id;
-      q = card.quiz;
-    } else {
-      key = p.nextBlitzCard([for (final f in kBlitzFacts) 'f:${f.id}'],
-          skip: _lastBlitz)!;
-      final fact = kBlitzFacts.firstWhere((f) => 'f:${f.id}' == key);
-      final box = p.blitzCards[key]?[0] ?? 0;
-      q = fact.variants[(box + p.blitzSeq) % fact.variants.length];
-    }
-    _lastBlitz = key;
+    // Simple, quick questions (mental math and parity), never contest
+    // trivia: they are a small coin break, not an exam.
+    final q = simpleBlitzQuiz(math.Random());
+    final key = 'simple';
     if (!context.mounted) break;
     final ok = await ProfessorQuizDialog.show(context, q,
         intro: l.pick('⚡ ¡Pregunta relámpago! (${i + 1}/$n)',
             '⚡ Lightning question! (${i + 1}/$n)'));
     if (ok == true) right++;
-    p.answerBlitzCard(key, ok == true);
     p.blitzSeq++;
-    Cloud.instance.log('blitz_q', data: {'card': key, 'ok': ok == true});
+    Cloud.instance
+        .log('blitz_q', data: {'card': key, 'q': q.qEs, 'ok': ok == true});
   }
   Cloud.instance.log('blitz', data: {'right': right, 'of': n});
   p.finishBlitz(right);
@@ -613,4 +592,57 @@ Future<void> maybeRunBlitz(BuildContext context) async {
             '⚡ +${right * Progress.kBlitzCoins} Meowdollars for quick thinking'))));
   }
   _blitzOpen = false;
+}
+
+/// A simple 3-option question: sum, difference, product, half or parity.
+ProfeQuiz simpleBlitzQuiz(math.Random r) {
+  final kind = r.nextInt(5);
+  late String qEs, qEn;
+  late int ans;
+  if (kind == 4) {
+    final odd = r.nextInt(40) * 2 + 1;
+    final evens = {for (var k = 0; k < 2; k++) r.nextInt(40) * 2 + 2};
+    while (evens.length < 2) {
+      evens.add(r.nextInt(40) * 2 + 2);
+    }
+    final opts = [odd, ...evens]..shuffle(r);
+    return ProfeQuiz(
+        qEs: '¿Cuál de estos números es impar?',
+        qEn: 'Which of these numbers is odd?',
+        optsEs: [for (final o in opts) '$o'],
+        optsEn: [for (final o in opts) '$o'],
+        answer: opts.indexOf(odd),
+        whyEs: '$odd es impar: al dividirlo por 2 sobra 1 ($odd % 2 == 1).',
+        whyEn: '$odd is odd: dividing by 2 leaves 1.');
+  }
+  final a = r.nextInt(20) + 2, b = r.nextInt(9) + 2;
+  switch (kind) {
+    case 0:
+      ans = a + b;
+      qEs = qEn = '¿$a + $b?';
+    case 1:
+      ans = a;
+      qEs = qEn = '¿${a + b} - $b?';
+    case 2:
+      ans = a * b;
+      qEs = qEn = '¿$a × $b?';
+    default:
+      ans = a;
+      qEs = '¿La mitad de ${a * 2}?';
+      qEn = 'Half of ${a * 2}?';
+  }
+  final opts = {ans};
+  while (opts.length < 3) {
+    final d = r.nextInt(5) + 1;
+    opts.add(r.nextBool() ? ans + d : (ans - d).abs());
+  }
+  final list = opts.toList()..shuffle(r);
+  return ProfeQuiz(
+      qEs: qEs,
+      qEn: qEn.replaceAll('¿', ''),
+      optsEs: [for (final o in list) '$o'],
+      optsEn: [for (final o in list) '$o'],
+      answer: list.indexOf(ans),
+      whyEs: 'Es $ans.',
+      whyEn: 'It is $ans.');
 }

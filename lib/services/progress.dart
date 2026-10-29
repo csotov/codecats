@@ -253,18 +253,16 @@ class Progress extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Minutes played since the last lightning round, and right answers so
-  /// far (more right answers -> 2 questions per round instead of 1).
+  /// New levels won since the last lightning round (saved as `bzm`), and
+  /// right answers so far.
   int blitzMin = 0;
   int blitzOk = 0;
-  static const kBlitzEvery = 30;
+  static const kBlitzEvery = 5;
   static const kBlitzCoins = 5;
 
-  void tickBlitz() {
-    blitzMin++;
-    if (blitzMin % 5 == 0 || blitzMin == kBlitzEvery) _save();
-    if (blitzMin == kBlitzEvery) notifyListeners();
-  }
+  /// Kept for the old per-minute clock; the round now comes every
+  /// [kBlitzEvery] new levels won (see [recordSolve]).
+  void tickBlitz() {}
 
   /// Phases opened by the skip exam, and the exam in progress.
   final Set<int> openPhases = {};
@@ -1002,6 +1000,8 @@ class Progress extends ChangeNotifier {
     p.starMask |= mask;
     lastCoinsEarned =
         coinsForSolve(firstSolve: !p.solved, stars: stars, boss: boss);
+    if (p.solved && !_payReplay(DateTime.now())) lastCoinsEarned = 0;
+    if (!p.solved) blitzMin++;
     coins += lastCoinsEarned;
     if (earlyIsToday && !(earlyFromAt?.isAfter(DateTime.now()) ?? false)) {
       earlyWon = true;
@@ -1032,6 +1032,24 @@ class Progress extends ChangeNotifier {
 
   /// First wins pay well (more stars, more coins; bosses pay a bonus);
   /// replays pay a little so a stuck player can earn hint money.
+  static const kPaidReplays = 3;
+  static const kReplayCooldown = Duration(minutes: 5);
+
+  /// Replays (re-winning a solved level) pay coins only for the first
+  /// [kPaidReplays] in a row; after that only when [kReplayCooldown] passed
+  /// since the previous replay, which also restarts the count.
+  /// Stored in [mathGym] as `rp`: [replays in the run, minute of the last].
+  bool _payReplay(DateTime now) {
+    final m = mathGym['rp'] ?? const [0, 0];
+    final min = now.millisecondsSinceEpoch ~/ 60000;
+    final run = min - m[1] >= kReplayCooldown.inMinutes ? 1 : m[0] + 1;
+    mathGym['rp'] = [run, min];
+    return run <= kPaidReplays;
+  }
+
+  @visibleForTesting
+  bool payReplayAt(DateTime now) => _payReplay(now);
+
   static int coinsForSolve(
           {required bool firstSolve, required int stars, bool boss = false}) =>
       firstSolve ? 10 + 5 * stars + (boss ? 20 : 0) : 3;
