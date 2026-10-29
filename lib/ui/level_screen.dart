@@ -25,6 +25,7 @@ import '../engine/runner_remote.dart';
 import '../l10n.dart';
 import '../models.dart';
 import '../data/cats.dart';
+import '../services/activity.dart';
 import '../services/cloud.dart';
 import '../services/progress.dart';
 import '../services/songs.dart';
@@ -138,6 +139,11 @@ class _LevelScreenState extends State<LevelScreen>
   final _added = <String, int>{}, _deleted = <String, int>{};
   final _addedFail = <String, int>{}, _deletedFail = <String, int>{};
   final _tokAdded = <String, int>{}, _tokAddedFail = <String, int>{};
+  final _tokDeleted = <String, int>{}, _tokDeletedFail = <String, int>{};
+  // Code before the current run of deletions: whole words erased are
+  // counted when the run ends.
+  String? _delRunStart;
+  bool _delRunFail = false;
   int _hesit = 0, _maxGapMs = 0;
   DateTime? _lastKeyAt, _lastFailAt;
   static const _postFailSecs = 90;
@@ -185,6 +191,11 @@ class _LevelScreenState extends State<LevelScreen>
       }
       final del = old.substring(pre, old.length - suf);
       final ins = code.substring(pre, code.length - suf);
+      if (del.isNotEmpty) {
+        _delRunStart ??= old;
+        _delRunFail |= afterFail;
+      }
+      if (ins.isNotEmpty) _endDelRun(del.isNotEmpty ? code : old);
       for (var i = 0; i < del.length; i++) {
         _bump(_deleted, del[i]);
         if (afterFail) _bump(_deletedFail, del[i]);
@@ -205,7 +216,19 @@ class _LevelScreenState extends State<LevelScreen>
     _persist();
   }
 
+  void _endDelRun(String now) {
+    final start = _delRunStart;
+    if (start == null) return;
+    deletedWords(start, now).forEach((w, n) {
+      _tokDeleted[w] = (_tokDeleted[w] ?? 0) + n;
+      if (_delRunFail) _tokDeletedFail[w] = (_tokDeletedFail[w] ?? 0) + n;
+    });
+    _delRunStart = null;
+    _delRunFail = false;
+  }
+
   void _flushTyping() {
+    _endDelRun(_prevCode);
     if (_keys == 0 && _backspaces == 0) return;
     Cloud.instance.log(
       'typing',
@@ -219,6 +242,8 @@ class _LevelScreenState extends State<LevelScreen>
         'delF': Map.of(_deletedFail),
         'tok': Map.of(_tokAdded),
         'tokF': Map.of(_tokAddedFail),
+        'tokD': Map.of(_tokDeleted),
+        'tokDF': Map.of(_tokDeletedFail),
         'hesit': _hesit,
         'gap': _maxGapMs,
       },
@@ -231,6 +256,8 @@ class _LevelScreenState extends State<LevelScreen>
     _deletedFail.clear();
     _tokAdded.clear();
     _tokAddedFail.clear();
+    _tokDeleted.clear();
+    _tokDeletedFail.clear();
     _hesit = 0;
     _maxGapMs = 0;
   }

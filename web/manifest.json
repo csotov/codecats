@@ -1,11 +1,11 @@
 {
-    "name": "codearena",
-    "short_name": "codearena",
+    "name": "CodeCats",
+    "short_name": "CodeCats",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "CodeCats: aprende C++ peleando batallas de código",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

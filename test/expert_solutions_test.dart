@@ -21,8 +21,7 @@ void main() {
     });
   });
 
-  testWidgets('expert screen fits a narrow phone and steps through',
-      (t) async {
+  testWidgets('expert screen fits a narrow phone and steps through', (t) async {
     t.view.physicalSize = const Size(390, 700);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);

@@ -98,25 +98,50 @@ int main() {
 
 // Block palette shortcuts -------------------------------------------------
 const kIoBlocks = [
-  'print_text', 'print_expr', 'print_inline', 'print_space', 'read_var',
+  'print_text',
+  'print_expr',
+  'print_inline',
+  'print_space',
+  'read_var',
 ];
 const kVarBlocks = [
-  'decl_int', 'decl_ll', 'decl_double', 'decl_bool',
-  'assign', 'add_assign', 'increment', 'decrement',
+  'decl_int',
+  'decl_ll',
+  'decl_double',
+  'decl_bool',
+  'assign',
+  'add_assign',
+  'increment',
+  'decrement',
 ];
 const kCtrlBlocks = [
-  'if_block', 'if_else', 'for_i', 'for_down', 'while_block',
-  'break_stmt', 'continue_stmt',
+  'if_block',
+  'if_else',
+  'for_i',
+  'for_down',
+  'while_block',
+  'break_stmt',
+  'continue_stmt',
 ];
 const kArrBlocks = [
-  'decl_array', 'decl_str', 'read_array', 'print_array',
-  'set_elem', 'swap_vars',
+  'decl_array',
+  'decl_str',
+  'read_array',
+  'print_array',
+  'set_elem',
+  'swap_vars',
 ];
 const kMiscBlocks = ['return0', 'raw_line'];
 const kAllBlocks = [
-  ...kIoBlocks, ...kVarBlocks, ...kCtrlBlocks, ...kArrBlocks, ...kMiscBlocks,
+  ...kIoBlocks,
+  ...kVarBlocks,
+  ...kCtrlBlocks,
+  ...kArrBlocks,
+  ...kMiscBlocks,
 ];
 
 /// Global ordered list of level ids (campaign path).
-List<String> orderedLevelIds(List<World> worlds) =>
-    [for (final w in worlds) for (final l in w.levels) l.id];
+List<String> orderedLevelIds(List<World> worlds) => [
+      for (final w in worlds)
+        for (final l in w.levels) l.id
+    ];

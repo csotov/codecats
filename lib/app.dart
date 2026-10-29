@@ -20,6 +20,9 @@ class CodeCatsApp extends StatelessWidget {
           Sfx.poke();
           Cloud.instance.touch();
         },
+        // Scrolling to reread the statement or the code is activity too.
+        onPointerSignal: (_) => Cloud.instance.touch(),
+        onPointerPanZoomUpdate: (_) => Cloud.instance.touch(),
         child: MaterialApp(
           title: 'CodeCats',
           debugShowCheckedModeBanner: false,

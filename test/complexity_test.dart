@@ -18,8 +18,7 @@ void main() {
       expect(Complexity.analyze(code).notation, 'O(n²)');
     });
     test('triple nesting -> O(n^3+)', () {
-      const code =
-          'int main(){for(int i=0;i<n;i++){for(int j=0;j<n;j++){'
+      const code = 'int main(){for(int i=0;i<n;i++){for(int j=0;j<n;j++){'
           'for(int k=0;k<n;k++){s+=1;}}}return 0;}';
       expect(Complexity.analyze(code).notation, 'O(n³+)');
     });
