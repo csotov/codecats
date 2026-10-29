@@ -7,7 +7,8 @@ final world10 = World(
   id: 'w10',
   titleEs: 'El Templo del Atún',
   titleEn: 'The Tuna Temple',
-  descEs: 'Los secretos de los números: primos, mcd, criba y potencias modulares.',
+  descEs:
+      'Los secretos de los números: primos, gcd, criba y potencias modulares.',
   descEn: 'The secrets of numbers: primes, gcd, sieve and modular powers.',
   icon: 'π',
   levels: [
@@ -98,17 +99,17 @@ final world10 = World(
       tEs: 'El secreto de Eucligato',
       tEn: 'The Euclicat secret',
       sEs: 'Hace 2300 años, Euclides descubrió un truco que aún '
-          'usan todas las computadoras: el máximo común divisor.',
+          'usan todas las computadoras: el gcd (greatest common divisor).',
       sEn: '2300 years ago, Euclid discovered a trick every '
           'computer still uses: the greatest common divisor.',
-      dEs: 'Lee dos números a y b e imprime su máximo común '
-          'divisor (mcd): el número más grande que divide a ambos.',
+      dEs: 'Lee dos números a y b e imprime su gcd (greatest common '
+          'divisor): el número más grande que divide a ambos.',
       dEn: 'Read two numbers a and b and print their greatest '
           'common divisor (gcd): the largest number that divides '
           'both.',
       iEs: 'Dos enteros a b.',
       iEn: 'Two integers a b.',
-      oEs: 'El mcd.',
+      oEs: 'El gcd.',
       oEn: 'The gcd.',
       samples: [
         ['48 36', '12'],
@@ -122,7 +123,7 @@ final world10 = World(
       cEs: ['1 ≤ a, b ≤ 1 000 000'],
       cEn: ['1 ≤ a, b ≤ 1,000,000'],
       hEs: [
-        'Euclides: mcd(a, b) = mcd(b, a % b). Repite hasta que '
+        'Euclides: gcd(a, b) = gcd(b, a % b). Repite hasta que '
             'b sea 0.',
         'while (b != 0) { t = a % b; a = b; b = t; } — la '
             'respuesta queda en a.',
@@ -141,17 +142,17 @@ final world10 = World(
       tEs: 'El comedero común',
       tEn: 'The shared bowl',
       sEs: 'Dos guerreros entrenan cada a y cada b días. ¿En '
-          'cuántos días coincidirán? Eso es el mínimo común '
-          'múltiplo.',
+          'cuántos días coincidirán? Eso es el lcm (least '
+          'common multiple).',
       sEn: 'Two warriors train every a and every b days. In how '
           'many days will they coincide? That is the least '
           'common multiple.',
-      dEs: 'Lee a y b e imprime su mínimo común múltiplo (mcm).',
+      dEs: 'Lee a y b e imprime su lcm (least common multiple).',
       dEn: 'Read a and b and print their least common '
           'multiple (lcm).',
       iEs: 'Dos enteros a b.',
       iEn: 'Two integers a b.',
-      oEs: 'El mcm.',
+      oEs: 'El lcm.',
       oEn: 'The lcm.',
       samples: [
         ['4 6', '12'],
@@ -165,9 +166,9 @@ final world10 = World(
       cEs: ['1 ≤ a, b ≤ 100 000'],
       cEn: ['1 ≤ a, b ≤ 100,000'],
       hEs: [
-        'Truco de oro: mcm(a, b) = a * b / mcd(a, b).',
+        'Truco de oro: lcm(a, b) = a * b / gcd(a, b).',
         'Cuidado con el desbordamiento: calcula primero '
-            'a / mcd * b, no a * b / mcd.',
+            'a / gcd * b, no a * b / gcd.',
       ],
       hEn: [
         'Golden trick: lcm(a, b) = a * b / gcd(a, b).',
