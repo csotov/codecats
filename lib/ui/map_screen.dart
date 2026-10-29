@@ -175,15 +175,22 @@ class _MapScreenState extends State<MapScreen> {
     }
     if (!Progress.warm) return false;
     final ymd = now.year * 10000 + now.month * 100 + now.day;
+    final scheduled = [
+      for (final t in Tweaks.instance.applied)
+        if (earlyOnDeadline('${t['topic']}', '${t['action']}') case final d?)
+          if (d.isAfter(now)) d
+    ]..sort();
     final adminToday = Tweaks.instance.applied.where((t) =>
         '${t['action']}'.startsWith('early_today') && t['topic'] == 'day:$ymd');
     final until = adminToday
         .map((t) => earlyTodayUntil('${t['action']}', now))
         .whereType<DateTime>()
         .fold<DateTime?>(null, (a, b) => a == null || b.isAfter(a) ? b : a);
-    if (!(adminToday.isNotEmpty
-        ? p.offerEarlyToday(now, until: until)
-        : p.offerEarly(now))) {
+    if (!(scheduled.isNotEmpty
+        ? p.offerEarlyOn(now, scheduled.first)
+        : adminToday.isNotEmpty
+            ? p.offerEarlyToday(now, until: until)
+            : p.offerEarly(now))) {
       return false;
     }
     final dl = p.earlyDeadlineAt!;
@@ -207,7 +214,7 @@ class _MapScreenState extends State<MapScreen> {
                     '🌅 ¡Premio madrugador de hoy! Si ganás un nivel $win, te llevás un premio especial: ${Progress.kEarlyHats} Gorritos Gatunos o un gato que no se consigue de ninguna otra forma. ¿Te animás?',
                     '🌅 Today\'s early-bird prize! Win a level $win and get a special prize: ${Progress.kEarlyHats} Cat Beanies or a cat you can\'t get any other way. Deal?')
                 : l.pick(
-                    '🌅 ¡Premio madrugador! Si mañana entrás antes de las ${_hm(dl)}, te espera un premio especial: ${Progress.kEarlyHats} Gorritos Gatunos o un gato que no se consigue de ninguna otra forma. ¿Te animás?',
+                    '🌅 ¡Premio madrugador! Si mañana entrás antes de las ${_hm(dl)}, te espera un premio especial: ${Progress.kEarlyHats} Gorritos Gatunos o un gato súper especial que no se consigue de ninguna otra forma. ¿Te animás?',
                     '🌅 Early-bird prize! Come back tomorrow before ${_hm(dl)} and a special prize awaits: ${Progress.kEarlyHats} Cat Beanies or a cat you can\'t get any other way. Deal?'),
             footer: Align(
               alignment: Alignment.centerRight,
@@ -1487,4 +1494,13 @@ DateTime? earlyTodayUntil(String action, DateTime now) {
   if (m == null) return null;
   return DateTime(
       now.year, now.month, now.day, int.parse(m[1]!), int.parse(m[2]!));
+}
+
+/// Topic 'day:20261030' + action 'early_on@1500' → 2026-10-30 15:00.
+DateTime? earlyOnDeadline(String topic, String action) {
+  final d = RegExp(r'^day:(\d{4})(\d\d)(\d\d)$').firstMatch(topic);
+  final t = RegExp(r'^early_on@(\d\d)(\d\d)$').firstMatch(action);
+  if (d == null || t == null) return null;
+  return DateTime(int.parse(d[1]!), int.parse(d[2]!), int.parse(d[3]!),
+      int.parse(t[1]!), int.parse(t[2]!));
 }

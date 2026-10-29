@@ -94,6 +94,21 @@ void main() {
     expect(p.earlyDeadlineAt, until);
     expect(p.claimEarly(DateTime(2026, 11, 5, 15, 31)), 'missed');
   });
+
+  test('admin schedules tomorrow before 15:00, offered once', () async {
+    SharedPreferences.setMockInitialValues({});
+    final p = Progress.instance;
+    await p.ensureLoaded();
+    await p.reset();
+    final now = DateTime(2026, 11, 7, 15, 40);
+    final dl = DateTime(2026, 11, 8, 15);
+    expect(p.offerEarlyOn(now, dl), isTrue);
+    expect(p.offerEarlyOn(now, dl), isFalse);
+    expect(p.earlyIsToday, isFalse);
+    expect(p.claimEarly(now), isNull);
+    expect(p.claimEarly(DateTime(2026, 11, 8, 14), _AlwaysFalse()), 'hats');
+    expect(p.offerEarlyOn(DateTime(2026, 11, 8, 14), dl), isFalse);
+  });
 }
 
 class _AlwaysTrue implements math.Random {
