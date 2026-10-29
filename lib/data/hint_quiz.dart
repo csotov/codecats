@@ -78,13 +78,15 @@ const kHintQuiz = <ProfeQuiz>[
       whyEs: 'Por defecto sort ordena de menor a mayor.',
       whyEn: 'By default sort goes from smallest to largest.'),
   ProfeQuiz(
-      qEs: 'Si x % 2 == 0, x es...',
-      qEn: 'If x % 2 == 0, x is...',
-      optsEs: ['par', 'impar'],
-      optsEn: ['even', 'odd'],
+      qEs: 'En a + b + c / 3, ¿qué se divide por 3?',
+      qEn: 'In a + b + c / 3, what is divided by 3?',
+      optsEs: ['solo c', 'toda la suma'],
+      optsEn: ['only c', 'the whole sum'],
       answer: 0,
-      whyEs: 'Resto 0 al dividir por 2: es par.',
-      whyEn: 'Remainder 0 when divided by 2: even.'),
+      whyEs:
+          'La división va antes que la suma. Para dividir todo: (a + b + c) / 3.',
+      whyEn:
+          'Division goes before addition. To divide everything: (a + b + c) / 3.'),
   ProfeQuiz(
       qEs: 'En formato grader, ¿quién lee los datos de la entrada?',
       qEn: 'In grader format, who reads the input?',
