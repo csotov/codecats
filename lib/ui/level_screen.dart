@@ -87,6 +87,7 @@ class _LevelScreenState extends State<LevelScreen>
   GlobalKey<CodeEditorState> _editorKey = GlobalKey();
   late TabController _tabController;
   final _scroll = ScrollController();
+  final _scrollCode = ScrollController();
 
   /// Bumped by "start over" so the editors rebuild from scratch.
   int _editorGen = 0;
@@ -580,6 +581,7 @@ class _LevelScreenState extends State<LevelScreen>
     );
     _tabController.dispose();
     _scroll.dispose();
+    _scrollCode.dispose();
     _runner.dispose();
     _remote?.dispose();
     _openLevels--;
@@ -1458,22 +1460,49 @@ class _LevelScreenState extends State<LevelScreen>
               Column(
                 children: [
                   Expanded(
-                    child: KeyboardScroll(
-                      controller: _scroll,
-                      child: ListView(
-                        controller: _scroll,
-                        padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-                        children: [
-                          KeyedSubtree(key: _missionKey, child: _missionCard()),
-                          KeyedSubtree(key: _hintsKey, child: _hintsCard()),
-                          KeyedSubtree(
-                              key: _programKey, child: _editorSection()),
-                          if (_console.isNotEmpty)
-                            KeyedSubtree(
-                                key: _consoleKey, child: _consoleCard()),
-                        ],
-                      ),
-                    ),
+                    child: LayoutBuilder(builder: (context, box) {
+                      final mission = [
+                        KeyedSubtree(key: _missionKey, child: _missionCard()),
+                        KeyedSubtree(key: _hintsKey, child: _hintsCard()),
+                      ];
+                      final program = [
+                        KeyedSubtree(key: _programKey, child: _editorSection()),
+                        if (_console.isNotEmpty)
+                          KeyedSubtree(key: _consoleKey, child: _consoleCard()),
+                      ];
+                      Widget column(ScrollController c, List<Widget> kids,
+                              EdgeInsets pad) =>
+                          KeyboardScroll(
+                            controller: c,
+                            child: Scrollbar(
+                              controller: c,
+                              thumbVisibility: true,
+                              thickness: 10,
+                              child: ListView(
+                                  controller: c, padding: pad, children: kids),
+                            ),
+                          );
+                      // Computer: statement on the left, code on the right,
+                      // so he reads and types without scrolling back and forth.
+                      if (box.maxWidth >= 1100) {
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                                flex: 5,
+                                child: column(_scroll, mission,
+                                    const EdgeInsets.fromLTRB(14, 10, 18, 14))),
+                            const VerticalDivider(width: 1),
+                            Expanded(
+                                flex: 6,
+                                child: column(_scrollCode, program,
+                                    const EdgeInsets.fromLTRB(14, 10, 18, 14))),
+                          ],
+                        );
+                      }
+                      return column(_scroll, [...mission, ...program],
+                          const EdgeInsets.fromLTRB(14, 10, 14, 14));
+                    }),
                   ),
                   _actionBar(),
                 ],
@@ -1967,6 +1996,7 @@ class _LevelScreenState extends State<LevelScreen>
         title: l.t('your_code'),
         child: CodeEditor(
           key: _editorKey,
+          minHeight: MediaQuery.sizeOf(context).width >= 1100 ? 460 : 220,
           initial: _savedCode,
           onChanged: _onCodeChanged,
         ),
@@ -2047,6 +2077,9 @@ class _LevelScreenState extends State<LevelScreen>
                     child: _promotedToCode
                         ? CodeEditor(
                             key: _editorKey,
+                            minHeight: MediaQuery.sizeOf(context).width >= 1100
+                                ? 460
+                                : 220,
                             initial: _savedCode,
                             onChanged: _onCodeChanged,
                           )
