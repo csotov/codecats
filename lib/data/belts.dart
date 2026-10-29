@@ -1,5 +1,6 @@
 import '../models.dart';
 import '../services/progress.dart';
+import 'usaco_bronze.dart';
 import 'worlds.dart';
 
 /// Martial-arts style rank: a belt per group of worlds, 4 stripes earned
@@ -8,7 +9,7 @@ import 'worlds.dart';
 /// the blue belt exam gives "Bronce USACO".
 class Belt {
   const Belt(this.n, this.es, this.en, this.color, this.worldIds,
-      {this.examBossWorlds});
+      {this.examBossWorlds, this.usaco = false});
   final int n;
   final String es, en;
   final int color;
@@ -16,6 +17,10 @@ class Belt {
 
   /// Worlds whose last boss goes into this belt's exam (default: its own).
   final List<String>? examBossWorlds;
+
+  /// The exam is a real USACO Bronze mock: 3 problems, 4 hours, scored by
+  /// cases; 75% of the points to pass.
+  final bool usaco;
 
   List<World> get worlds => [
         for (final id in worldIds) ...kWorlds.where((w) => w.id == id),
@@ -29,13 +34,13 @@ const kBelts = [
   Belt(1, 'Cinturón amarillo', 'Yellow belt', 0xFFFFD54F, ['w3', 'w4']),
   Belt(2, 'Cinturón naranja', 'Orange belt', 0xFFFF9800, ['w5', 'w15']),
   Belt(3, 'Cinturón verde', 'Green belt', 0xFF66BB6A, ['w6', 'w7']),
-  Belt(4, 'Cinturón azul', 'Blue belt', 0xFF42A5F5, ['w8'],
-      examBossWorlds: ['w5', 'w15', 'w6', 'w7', 'w8']),
+  Belt(4, 'Cinturón azul', 'Blue belt', 0xFF42A5F5, ['w8'], usaco: true),
   Belt(5, 'Bronce USACO', 'USACO Bronze', 0xFFCD7F32, ['w9', 'w10']),
   Belt(6, 'Cinturón morado', 'Purple belt', 0xFFAB47BC, ['w11', 'w12']),
   Belt(7, 'Cinturón marrón', 'Brown belt', 0xFFA1887F, ['w13', 'w14'],
       examBossWorlds: ['w9', 'w10', 'w11', 'w12', 'w13', 'w14']),
-  Belt(8, 'Plata USACO', 'USACO Silver', 0xFFC0C0C0, []),
+  // Plata USACO stays unnamed until there is a real Silver mock exam.
+  Belt(8, 'Cinturón negro', 'Black belt', 0xFF424242, []),
 ];
 
 /// Share of a belt's levels needed for each stripe.
@@ -66,6 +71,10 @@ int levelsToNextStripe(Belt b, Progress p) {
 /// each exam world.
 List<Level> pickBeltExam(Belt b, {int? seed}) {
   final day = seed ?? DateTime.now().millisecondsSinceEpoch ~/ 86400000;
+  if (b.usaco) {
+    final set = day % 2;
+    return kUsacoBronzeExam.sublist(set * 3, set * 3 + 3);
+  }
   final picked = <Level>[];
   for (final w in b.worlds) {
     final normal = w.levels.where((l) => !l.boss).toList();
@@ -83,5 +92,8 @@ List<Level> pickBeltExam(Belt b, {int? seed}) {
 }
 
 /// 12 minutes per problem, at least 30.
-Duration beltExamDuration(int problems) =>
+Duration beltExamDuration(Belt b, int problems) =>
+    b.usaco ? const Duration(hours: 4) : _beltMinutes(problems);
+
+Duration _beltMinutes(int problems) =>
     Duration(minutes: problems * 12 < 30 ? 30 : problems * 12);
