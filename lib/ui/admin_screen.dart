@@ -13,6 +13,7 @@ import '../services/cloud.dart';
 import '../services/tweaks.dart';
 import 'coach_admin.dart';
 import 'keyboard_scroll.dart';
+import 'replay_view.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -166,6 +167,15 @@ class _AdminScreenState extends State<AdminScreen> {
                     _charts(l),
                     const SizedBox(height: 12),
                     _typingReport(l),
+                    const SizedBox(height: 12),
+                    _fluency(l),
+                    const SizedBox(height: 12),
+                    SectionCard(
+                      title:
+                          l.pick('🎬 Repetición del código', '🎬 Code replay'),
+                      child: ReplayView(
+                          replays: Replay.fromEvents(_of('code_replay'))),
+                    ),
                     const SizedBox(height: 12),
                     _weekCompare(l),
                     const SizedBox(height: 12),
@@ -402,6 +412,169 @@ class _AdminScreenState extends State<AdminScreen> {
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  static double _median(List<double> v) {
+    if (v.isEmpty) return 0;
+    final x = [...v]..sort();
+    return x.length.isOdd
+        ? x[x.length ~/ 2]
+        : (x[x.length ~/ 2 - 1] + x[x.length ~/ 2]) / 2;
+  }
+
+  /// Speed while typing, planning pause, runs before fighting, rereading
+  /// after a loss, pastes, and sessions that look like someone else
+  /// (speed far from his usual) or pasted code, which are left out of
+  /// the speed numbers so they don't skew them.
+  Widget _fluency(L l) {
+    final typing = _of('typing').where((e) => _data(e)['tms'] != null);
+    // Per real session (pause > 15 min = new session).
+    final per = <ActiveSpan, (num, num, num)>{};
+    for (final e in typing) {
+      final ts = _ts(e);
+      if (ts == null) continue;
+      final sp = _spans.where((s) =>
+          !ts.isBefore(s.start) &&
+          !ts.isAfter(s.end.add(const Duration(minutes: 1))));
+      if (sp.isEmpty) continue;
+      final d = _data(e);
+      final o = per[sp.first] ?? (0, 0, 0);
+      per[sp.first] = (
+        o.$1 + ((d['keys'] as num?) ?? 0),
+        o.$2 + ((d['tms'] as num?) ?? 0),
+        o.$3 + ((d['pasteCh'] as num?) ?? 0)
+      );
+    }
+    double wpm((num, num, num) v) =>
+        v.$2 <= 0 ? 0 : (v.$1 / 5) / (v.$2 / 60000);
+    final measurable = per.entries.where((e) => e.value.$2 >= 60000).toList();
+    final med = _median([for (final e in measurable) wpm(e.value)]);
+    final flagged = <(ActiveSpan, String)>[];
+    for (final e in measurable) {
+      final w = wpm(e.value);
+      if (e.value.$3 >= 40) {
+        flagged.add((
+          e.key,
+          l.pick('pegó ${e.value.$3} letras de código', 'pasted code')
+        ));
+      } else if (med > 0 &&
+          measurable.length >= 4 &&
+          (w > med * 2 || w < med * 0.4)) {
+        flagged.add((
+          e.key,
+          l.pick(
+              'velocidad ${w.toStringAsFixed(0)} pal/min, lo normal es ${med.toStringAsFixed(0)}',
+              'unusual speed')
+        ));
+      }
+    }
+    final ok =
+        measurable.where((e) => !flagged.any((f) => f.$1 == e.key)).toList();
+    final now = DateTime.now();
+    final weekAgo = now.subtract(const Duration(days: 7));
+    final recent = _median([
+      for (final e in ok)
+        if (e.key.start.isAfter(weekAgo)) wpm(e.value)
+    ]);
+    final before = _median([
+      for (final e in ok)
+        if (!e.key.start.isAfter(weekAgo)) wpm(e.value)
+    ]);
+    final firsts = [
+      for (final e in typing)
+        if (_data(e)['first'] != null)
+          ((_data(e)['first'] as num) / 1000).toDouble()
+    ];
+    final fights = _of('fight').where((e) => _data(e)['runs_before'] != null);
+    final runs = fights.isEmpty
+        ? 0.0
+        : fights.fold<num>(0, (a, e) => a + (_data(e)['runs_before'] as num)) /
+            fights.length;
+    final afterFail = fights.where((e) => _data(e)['reread'] != null).toList();
+    final reread = afterFail.where((e) => _data(e)['reread'] == true).length;
+    final pastes = _sum('typing', 'paste');
+    String fmtDay(DateTime d) => '${d.day}/${d.month} '
+        '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+    final rows = <List<String>>[
+      [
+        l.pick('Velocidad al escribir', 'Typing speed'),
+        ok.isEmpty
+            ? l.pick('se mide desde esta versión (falta 1 min escribiendo)',
+                'measured from this version on')
+            : '${recent > 0 ? recent.toStringAsFixed(0) : '—'} ${l.pick('palabras/min esta semana', 'wpm this week')}'
+                '${before > 0 ? ' · ${l.pick('antes', 'before')} ${before.toStringAsFixed(0)}' : ''}'
+                ' · ${l.pick('solo cuenta el tiempo tecleando, sin pausas de más de 5 s', 'only time spent typing')}'
+      ],
+      [
+        l.pick('Piensa antes de escribir', 'Thinks before typing'),
+        firsts.isEmpty
+            ? '—'
+            : '${_median(firsts).round()} s ${l.pick('desde que abre el nivel hasta la primera tecla (mediana)', 'from opening to first key (median)')}'
+      ],
+      [
+        l.pick('Prueba con Ejecutar antes de combatir', 'Runs before fighting'),
+        fights.isEmpty
+            ? '—'
+            : '${runs.toStringAsFixed(1)} ${l.pick('veces por combate', 'per battle')}'
+      ],
+      [
+        l.pick('Relee el enunciado tras perder', 'Rereads after a loss'),
+        afterFail.isEmpty
+            ? '—'
+            : '$reread ${l.pick('de', 'of')} ${afterFail.length} ${l.pick('combates', 'battles')} (${(100 * reread / afterFail.length).round()}%)'
+      ],
+      [
+        l.pick('Pegó código', 'Pasted code'),
+        '$pastes ${l.pick('veces', 'times')}'
+      ],
+      [
+        l.pick('Sesiones dudosas', 'Doubtful sessions'),
+        flagged.isEmpty
+            ? l.pick('ninguna', 'none')
+            : '${flagged.length} ${l.pick('de', 'of')} ${measurable.length} ${l.pick('(no cuentan en la velocidad)', '(left out of speed)')}'
+      ],
+      for (final f in flagged) ['   · ${fmtDay(f.$1.start)}', f.$2],
+    ];
+    final days = <String, (num, num)>{};
+    for (final e in ok) {
+      final k = '${e.key.start.day}/${e.key.start.month}';
+      final o = days[k] ?? (0, 0);
+      days[k] = (o.$1 + e.value.$1, o.$2 + e.value.$2);
+    }
+    final dayBars = [
+      for (final d in days.entries.toList().reversed.take(14).toList().reversed)
+        (
+          d.key,
+          (d.value.$1 / 5) / (d.value.$2 / 60000),
+          '${((d.value.$1 / 5) / (d.value.$2 / 60000)).toStringAsFixed(0)} pal/min'
+        )
+    ];
+    return SectionCard(
+      title: l.pick('⌨️ Fluidez y confiabilidad', '⌨️ Fluency and reliability'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final r in rows)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                      width: 230,
+                      child: Text(r[0],
+                          style: const TextStyle(fontWeight: FontWeight.w600))),
+                  Expanded(child: Text(r[1])),
+                ],
+              ),
+            ),
+          if (dayBars.length >= 2) ...[
+            _chartTitle(l.pick('Velocidad por día', 'Speed per day')),
+            _hbars(dayBars, AppTheme.accent),
+          ],
         ],
       ),
     );

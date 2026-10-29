@@ -152,8 +152,17 @@ class Cloud extends ChangeNotifier {
     if (_queue.length >= 40) flush();
   }
 
+  bool _pruned = false;
+
   Future<void> flush() async {
     if (_queue.isEmpty || _c == null) return;
+    if (!_pruned) {
+      _pruned = true;
+      // Code replays are kept 60 days; the per-session numbers stay.
+      _c!.rpc('prune_replays').then((_) {}, onError: (Object e) {
+        debugPrint('prune: $e');
+      });
+    }
     final batch = List<Map<String, dynamic>>.from(_queue);
     _queue.clear();
     try {
