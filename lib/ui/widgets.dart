@@ -39,12 +39,6 @@ class RankXpBar extends StatelessWidget {
     final l = L.instance;
     final p = Progress.instance;
     final belt = kBelts[p.belt];
-    final stripes = beltStripes(belt, p);
-    final total = belt.levels.length;
-    final frac = total == 0
-        ? 1.0
-        : (beltSolved(belt, p) / (kStripeAt.last * total)).clamp(0.0, 1.0);
-    final missing = levelsToNextStripe(belt, p);
     final top = p.belt >= kBelts.length - 1;
     final resume = p.examActive && p.examPhase == kBeltExamBase + belt.n;
     final rank = rankForXp(p.xp);
@@ -81,54 +75,27 @@ class RankXpBar extends StatelessWidget {
               style: const TextStyle(color: AppTheme.textLo, fontSize: 11),
             ),
           ),
-        const SizedBox(height: 10),
-        const BeltChip(),
-        if (!top) ...[
-          const SizedBox(height: 6),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: frac,
-              minHeight: 6,
-              backgroundColor: AppTheme.cardEdge,
-              valueColor: AlwaysStoppedAnimation(Color(belt.color)),
+        if (!top && (p.beltExamOpen || resume))
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Tooltip(
+              message: l.pick(
+                  'Ganá una cinta: problemas sin pistas y con reloj',
+                  'Win a belt: problems with no hints and a clock'),
+              child: FilledButton.tonalIcon(
+                icon: const Icon(Icons.sports_martial_arts, size: 16),
+                label: Text(resume
+                    ? l.pick('Seguir el desafío de la cinta',
+                        'Resume the belt challenge')
+                    : l.pick(
+                        '🥋 Desafío: ganá una cinta', '🥋 Belt challenge')),
+                onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => PhaseExamScreen(belt: belt))),
+              ),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: stripes < 4
-                ? Text(
-                    l.pick(
-                        'Franja ${stripes + 1}: ${missing == 1 ? 'falta 1 nivel' : 'faltan $missing niveles'}. Con las 4 franjas das el examen de cinturón.',
-                        'Stripe ${stripes + 1}: $missing more levels. With 4 stripes you take the belt exam.'),
-                    style:
-                        const TextStyle(color: AppTheme.textLo, fontSize: 11))
-                : p.beltExamOpen || resume
-                    ? Tooltip(
-                        message: l.pick(
-                            'Problemas de tu cinturón, sin pistas y con reloj',
-                            'Problems of your belt, no hints, with a clock'),
-                        child: FilledButton.tonalIcon(
-                          icon: const Icon(Icons.sports_martial_arts, size: 16),
-                          label: Text(resume
-                              ? l.pick('Seguir el examen de cinturón',
-                                  'Resume the belt exam')
-                              : l.pick(
-                                  '🥋 Examen de cinturón', '🥋 Belt exam')),
-                          onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => PhaseExamScreen(belt: belt))),
-                        ),
-                      )
-                    : Text(
-                        l.pick(
-                            'Mañana podés volver a dar el examen de cinturón.',
-                            'You can retake the belt exam tomorrow.'),
-                        style: const TextStyle(
-                            color: AppTheme.textLo, fontSize: 11)),
-          ),
-        ],
       ],
     );
   }
