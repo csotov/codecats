@@ -1,11 +1,14 @@
 import 'package:codecats/data/grader_specs.dart';
+import 'package:codecats/data/halloween.dart';
 import 'package:codecats/data/worlds.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('every grader spec points to a real level and builds a full program',
       () {
-    final ids = {for (final l in allLevels) l.id};
+    final ids = {
+      for (final l in [...allLevels, ...kHalloweenLevels]) l.id
+    };
     for (final e in kGraderSpecs.entries) {
       expect(ids, contains(e.key));
       final g = e.value;
@@ -26,6 +29,12 @@ void main() {
         if (l.id == 'w3l9' || l.id == 'w3l25') continue; // drawings stay cout
         expect(kGraderSpecs, contains(l.id));
       }
+    }
+  });
+
+  test('Halloween levels are in grader format', () {
+    for (final id in ['hw1', 'hw2', 'hw3', 'hw4', 'hw5']) {
+      expect(kGraderSpecs, contains(id));
     }
   });
 }
