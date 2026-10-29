@@ -566,8 +566,8 @@ Future<void> maybeRunBlitz(BuildContext context) async {
   var right = 0;
   for (var i = 0; i < n; i++) {
     // Retrieval practice: 3 of 4 questions recall programming concepts
-    // from levels already won (spaced by Leitner boxes); 1 of 4 is
-    // olympiad math.
+    // from levels already won (spaced by Leitner boxes); 1 of 4 is a
+    // contest habit (precedence, integer division, overflow, brute force).
     final unlocked = [
       for (final c in kConceptCards)
         if (p.of(c.levelId).solved) c.id

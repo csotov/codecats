@@ -1102,235 +1102,225 @@ final List<CoderTask> kCoderTasks = [
   ),
 ];
 
-/// Lightning round (ISIJ Math round, kid-sized): olympiad math in tiny steps.
+/// Lightning round: competitive-programming habits that trip beginners
+/// (operator precedence and parentheses, integer division, overflow,
+/// brute-force counting and whether it fits in time).
 final List<ProfeQuiz> kBlitz = [
   const ProfeQuiz(
-      qEs: '7 + 8, ¿da par o impar?',
-      qEn: '7 + 8: even or odd?',
-      optsEs: ['par', 'impar'],
-      optsEn: ['even', 'odd'],
+      qEs: 'Para el promedio de a, b y c, ¿cuál está bien?',
+      qEn: 'For the average of a, b and c, which is right?',
+      optsEs: ['a + b + c / 3', '(a + b + c) / 3', 'a + b + (c / 3)'],
+      optsEn: ['a + b + c / 3', '(a + b + c) / 3', 'a + b + (c / 3)'],
       answer: 1,
-      whyEs: 'Impar + par = impar (15).',
-      whyEn: 'Odd + even = odd (15).'),
+      whyEs:
+          'La división va antes que la suma: sin paréntesis solo se divide c. Los paréntesis hacen que primero se sume todo.',
+      whyEn:
+          'Division goes before addition: without parentheses only c is divided. Parentheses make the sum happen first.'),
   const ProfeQuiz(
-      qEs: 'Si sumás 3 números impares, ¿el resultado es par o impar?',
-      qEn: 'If you add 3 odd numbers, is the result even or odd?',
-      optsEs: ['par', 'impar'],
-      optsEn: ['even', 'odd'],
+      qEs: '¿Cuánto da 2 + 3 * 4?',
+      qEn: 'What is 2 + 3 * 4?',
+      optsEs: ['20', '14'],
+      optsEn: ['20', '14'],
       answer: 1,
-      whyEs: 'Dos impares hacen par, y par + impar = impar.',
-      whyEn: 'Two odds make even, and even + odd = odd.'),
+      whyEs: 'Primero la multiplicación: 3 * 4 = 12, y después 2 + 12 = 14.',
+      whyEn: 'Multiplication first: 3 * 4 = 12, then 2 + 12 = 14.'),
   const ProfeQuiz(
-      qEs: 'Si a es par y b es impar, a × b es…',
-      qEn: 'If a is even and b is odd, a × b is…',
-      optsEs: ['par', 'impar', 'depende'],
-      optsEn: ['even', 'odd', 'it depends'],
+      qEs: '¿Y (2 + 3) * 4?',
+      qEn: 'And (2 + 3) * 4?',
+      optsEs: ['20', '14'],
+      optsEn: ['20', '14'],
       answer: 0,
-      whyEs: 'Cualquier número por un par da par.',
-      whyEn: 'Any number times an even number is even.'),
+      whyEs: 'Lo de adentro del paréntesis va primero: 5 * 4 = 20.',
+      whyEn: 'What\'s inside the parentheses goes first: 5 * 4 = 20.'),
+  const ProfeQuiz(
+      qEs: 'a = 7, b = 8. ¿Cuánto da a + b % 10?',
+      qEn: 'a = 7, b = 8. What is a + b % 10?',
+      optsEs: ['5', '15'],
+      optsEn: ['5', '15'],
+      answer: 1,
+      whyEs:
+          '% va antes que +: b % 10 = 8 y 7 + 8 = 15. Para el último dígito de la suma escribí (a + b) % 10.',
+      whyEn:
+          '% goes before +: b % 10 = 8 and 7 + 8 = 15. For the last digit of the sum write (a + b) % 10.'),
+  const ProfeQuiz(
+      qEs: '¿Cuánto da 10 - 4 - 3?',
+      qEn: 'What is 10 - 4 - 3?',
+      optsEs: ['9', '3'],
+      optsEn: ['9', '3'],
+      answer: 1,
+      whyEs: 'Se resuelve de izquierda a derecha: (10 - 4) - 3 = 3.',
+      whyEn: 'It goes left to right: (10 - 4) - 3 = 3.'),
+  const ProfeQuiz(
+      qEs: 'Con int, ¿cuánto da 7 / 2 * 2?',
+      qEn: 'With int, what is 7 / 2 * 2?',
+      optsEs: ['7', '6'],
+      optsEn: ['7', '6'],
+      answer: 1,
+      whyEs: '7 / 2 con int da 3 (se tira el decimal), y 3 * 2 = 6.',
+      whyEn: '7 / 2 with int is 3 (the decimal is dropped), and 3 * 2 = 6.'),
+  const ProfeQuiz(
+      qEs: 'int a = 7, b = 2;  double p = a / b;  ¿Cuánto vale p?',
+      qEn: 'int a = 7, b = 2;  double p = a / b;  What is p?',
+      optsEs: ['3.5', '3'],
+      optsEn: ['3.5', '3'],
+      answer: 1,
+      whyEs:
+          'a / b se calcula con int antes de guardarse: da 3. Para 3.5 escribí 1.0 * a / b.',
+      whyEn:
+          'a / b is computed with int before being stored: 3. For 3.5 write 1.0 * a / b.'),
+  const ProfeQuiz(
+      qEs: 'Con int a y b, ¿cuál da el promedio con decimales?',
+      qEn: 'With int a and b, which gives the average with decimals?',
+      optsEs: ['(a + b) / 2', '(a + b) / 2.0'],
+      optsEn: ['(a + b) / 2', '(a + b) / 2.0'],
+      answer: 1,
+      whyEs:
+          'Si uno de los dos números tiene decimales (2.0), la división también los tiene.',
+      whyEn:
+          'If one of the numbers has decimals (2.0), the division keeps them too.'),
+  const ProfeQuiz(
+      qEs: '¿Cuánto da -7 / 2 en C++?',
+      qEn: 'What is -7 / 2 in C++?',
+      optsEs: ['-4', '-3'],
+      optsEn: ['-4', '-3'],
+      answer: 1,
+      whyEs: 'C++ corta hacia el cero: -3,5 queda en -3.',
+      whyEn: 'C++ cuts towards zero: -3.5 becomes -3.'),
+  const ProfeQuiz(
+      qEs: 'int x = 50000; ¿qué pasa con x * x?',
+      qEn: 'int x = 50000; what happens with x * x?',
+      optsEs: ['da 2500000000', 'se desborda: int no llega'],
+      optsEn: ['gives 2500000000', 'overflows: int can\'t hold it'],
+      answer: 1,
+      whyEs: 'int llega hasta unos 2·10^9 y 2,5·10^9 no entra. Usá long long.',
+      whyEn:
+          'int goes up to about 2·10^9 and 2.5·10^9 doesn\'t fit. Use long long.'),
+  const ProfeQuiz(
+      qEs: 'a y b son int grandes. ¿Cuál multiplica sin desbordarse?',
+      qEn: 'a and b are big ints. Which multiplies without overflow?',
+      optsEs: ['(long long)(a * b)', '(long long)a * b'],
+      optsEn: ['(long long)(a * b)', '(long long)a * b'],
+      answer: 1,
+      whyEs:
+          'En (long long)(a * b) la multiplicación ya se desbordó como int antes de convertir. Hay que convertir antes de multiplicar.',
+      whyEn:
+          'In (long long)(a * b) the product already overflowed as int. Convert before multiplying.'),
   const ProfeQuiz(
       qEs:
-          'Tenés 3 remeras y 2 pantalones. ¿Cuántas combinaciones distintas podés armar?',
+          'Dos for anidados, cada uno de 1 a 1000. ¿Cuántas vueltas da en total el de adentro?',
       qEn:
-          'You have 3 shirts and 2 pants. How many different outfits can you make?',
-      optsEs: ['6', '5', '9'],
-      optsEn: ['6', '5', '9'],
-      answer: 0,
-      whyEs: 'Por cada remera hay 2 pantalones: 3 × 2 = 6. Regla del producto.',
-      whyEn: 'Each shirt goes with 2 pants: 3 × 2 = 6. Product rule.'),
+          'Two nested for loops, each from 1 to 1000. How many times does the inner one run?',
+      optsEs: ['2.000', '1.000.000', '1.000'],
+      optsEn: ['2,000', '1,000,000', '1,000'],
+      answer: 1,
+      whyEs:
+          '1000 vueltas de adentro por cada una de afuera: 1000 × 1000 = 1.000.000.',
+      whyEn: '1000 inner rounds per outer round: 1000 × 1000 = 1,000,000.'),
   const ProfeQuiz(
       qEs:
-          'De A a B hay 3 caminos y de B a C hay 4. ¿Cuántas formas hay de ir de A a C pasando por B?',
+          'La compu hace unas 10^8 operaciones por segundo. Con n = 100.000 y dos for anidados hasta n, ¿entra en 1 segundo?',
       qEn:
-          'There are 3 roads from A to B and 4 from B to C. How many ways from A to C through B?',
-      optsEs: ['12', '7', '4'],
-      optsEn: ['12', '7', '4'],
+          'A computer does about 10^8 operations per second. With n = 100,000 and two nested loops up to n, does it fit in 1 second?',
+      optsEs: ['sí', 'no'],
+      optsEn: ['yes', 'no'],
+      answer: 1,
+      whyEs:
+          'n × n = 10^10, que es 100 veces más de lo que entra. La fuerza bruta sirve cuando n es chico.',
+      whyEn:
+          'n × n = 10^10, 100 times too many. Brute force works when n is small.'),
+  const ProfeQuiz(
+      qEs: 'Con n = 1000 y dos for anidados hasta n, ¿entra en 1 segundo?',
+      qEn:
+          'With n = 1000 and two nested loops up to n, does it fit in 1 second?',
+      optsEs: ['sí', 'no'],
+      optsEn: ['yes', 'no'],
       answer: 0,
-      whyEs: 'Se multiplica: 3 × 4 = 12.',
-      whyEn: 'Multiply: 3 × 4 = 12.'),
+      whyEs:
+          '1000 × 1000 = 10^6, muy por debajo de 10^8. Acá la fuerza bruta entra tranquila.',
+      whyEn:
+          '1000 × 1000 = 10^6, far below 10^8. Brute force fits easily here.'),
+  const ProfeQuiz(
+      qEs:
+          'Fuerza bruta: probás todos los pares (i, j) con i < j entre 5 números. ¿Cuántos pares son?',
+      qEn:
+          'Brute force: you try every pair (i, j) with i < j among 5 numbers. How many pairs?',
+      optsEs: ['25', '10', '20'],
+      optsEn: ['25', '10', '20'],
+      answer: 1,
+      whyEs:
+          'El 1 con 4 más, el 2 con 3, el 3 con 2 y el 4 con 1: 4 + 3 + 2 + 1 = 10. Por eso el for de adentro arranca en j = i + 1.',
+      whyEn:
+          '1 pairs with 4, 2 with 3, 3 with 2, 4 with 1: 4 + 3 + 2 + 1 = 10. That\'s why the inner loop starts at j = i + 1.'),
+  const ProfeQuiz(
+      qEs:
+          'Fuerza bruta: 3 remeras y 4 pantalones. ¿Cuántas combinaciones tenés que probar?',
+      qEn:
+          'Brute force: 3 shirts and 4 pants. How many outfits do you have to try?',
+      optsEs: ['7', '12'],
+      optsEn: ['7', '12'],
+      answer: 1,
+      whyEs:
+          'Cada remera va con cada pantalón: 3 × 4 = 12. Son dos for anidados.',
+      whyEn:
+          'Each shirt with each pair of pants: 3 × 4 = 12. That\'s two nested loops.'),
   const ProfeQuiz(
       qEs: '¿Cuántos números hay del 5 al 12, contando los dos?',
       qEn: 'How many numbers are there from 5 to 12, counting both?',
-      optsEs: ['8', '7', '6'],
-      optsEn: ['8', '7', '6'],
-      answer: 0,
+      optsEs: ['7', '8'],
+      optsEn: ['7', '8'],
+      answer: 1,
       whyEs: '12 - 5 + 1 = 8. ¡El +1 es un error clásico en los for!',
       whyEn: '12 - 5 + 1 = 8. The +1 is a classic for-loop mistake!'),
   const ProfeQuiz(
-      qEs: '¿Cuánto es 123456 % 10?',
-      qEn: 'What is 123456 % 10?',
-      optsEs: ['6', '5', '1'],
-      optsEn: ['6', '5', '1'],
-      answer: 0,
-      whyEs: '% 10 da el último dígito.',
-      whyEn: '% 10 gives the last digit.'),
-  const ProfeQuiz(
-      qEs: '¿Cuánto es 100 % 7?',
-      qEn: 'What is 100 % 7?',
-      optsEs: ['2', '3', '14'],
-      optsEn: ['2', '3', '14'],
-      answer: 0,
-      whyEs: '7 × 14 = 98 y sobran 2.',
-      whyEn: '7 × 14 = 98 and 2 are left.'),
-  const ProfeQuiz(
-      qEs: 'Hoy es lunes. ¿Qué día es dentro de 15 días?',
-      qEn: 'Today is Monday. What day is it in 15 days?',
-      optsEs: ['martes', 'miércoles', 'lunes'],
-      optsEn: ['Tuesday', 'Wednesday', 'Monday'],
+      qEs: '¿Cuántos múltiplos de 3 hay del 1 al 100, sin hacer un for?',
+      qEn: 'How many multiples of 3 are there from 1 to 100, without a loop?',
+      optsEs: ['100 / 3 = 33', '100 % 3 = 1'],
+      optsEn: ['100 / 3 = 33', '100 % 3 = 1'],
       answer: 0,
       whyEs:
-          'Los días se repiten cada 7: 15 % 7 = 1, un día después del lunes.',
-      whyEn: 'Days repeat every 7: 15 % 7 = 1, one day after Monday.'),
-  const ProfeQuiz(
-      qEs: '¿Cuál es el último dígito de 2 × 2 × 2 × 2 × 2 (2⁵)?',
-      qEn: 'What is the last digit of 2 × 2 × 2 × 2 × 2 (2⁵)?',
-      optsEs: ['2', '4', '6'],
-      optsEn: ['2', '4', '6'],
-      answer: 0,
-      whyEs: '2⁵ = 32. Los últimos dígitos de 2ⁿ se repiten: 2, 4, 8, 6, 2…',
-      whyEn: '2⁵ = 32. The last digits of 2ⁿ repeat: 2, 4, 8, 6, 2…'),
-  const ProfeQuiz(
-      qEs: '¿De cuántas formas se pueden poner 3 gatos en una fila?',
-      qEn: 'In how many ways can 3 cats stand in a row?',
-      optsEs: ['6', '3', '9'],
-      optsEn: ['6', '3', '9'],
-      answer: 0,
-      whyEs:
-          '3 opciones para el primero, 2 para el segundo, 1 para el último: 3 × 2 × 1 = 6.',
+          'Cada 3 números hay un múltiplo de 3, así que la división entera los cuenta.',
       whyEn:
-          '3 choices for the first, 2 for the second, 1 for the last: 3 × 2 × 1 = 6.'),
+          'There is one multiple of 3 every 3 numbers, so integer division counts them.'),
   const ProfeQuiz(
-      qEs:
-          'Con los dígitos 1, 2 y 3, pudiendo repetir, ¿cuántos números de 2 cifras se pueden formar?',
-      qEn:
-          'With digits 1, 2 and 3, repeats allowed, how many 2-digit numbers can you make?',
-      optsEs: ['9', '6', '3'],
-      optsEn: ['9', '6', '3'],
-      answer: 0,
-      whyEs: '3 opciones para cada cifra: 3 × 3 = 9.',
-      whyEn: '3 choices for each digit: 3 × 3 = 9.'),
-  const ProfeQuiz(
-      qEs:
-          'Con los dígitos 1, 2 y 3, SIN repetir, ¿cuántos números de 2 cifras se pueden formar?',
-      qEn:
-          'With digits 1, 2 and 3, NO repeats, how many 2-digit numbers can you make?',
-      optsEs: ['6', '9', '3'],
-      optsEn: ['6', '9', '3'],
-      answer: 0,
-      whyEs: '3 para la primera cifra y 2 para la segunda: 3 × 2 = 6.',
-      whyEn: '3 for the first digit and 2 for the second: 3 × 2 = 6.'),
-  const ProfeQuiz(
-      qEs: '4 gatos se saludan todos con todos una vez. ¿Cuántos saludos hay?',
-      qEn: '4 cats each greet every other cat once. How many greetings?',
-      optsEs: ['6', '12', '16'],
-      optsEn: ['6', '12', '16'],
+      qEs: 'Suma de 1 a 100 sin for: n * (n + 1) / 2. ¿Cuánto da?',
+      qEn: 'Sum from 1 to 100 without a loop: n * (n + 1) / 2. What is it?',
+      optsEs: ['5050', '10100', '5000'],
+      optsEn: ['5050', '10100', '5000'],
       answer: 0,
       whyEs:
-          'Cada uno saluda a 3: 4 × 3 = 12, pero cada saludo se contó dos veces: 6.',
+          '100 * 101 = 10100 y dividido 2 da 5050. Los paréntesis hacen que se sume antes de multiplicar.',
       whyEn:
-          'Each greets 3: 4 × 3 = 12, but each greeting was counted twice: 6.'),
+          '100 * 101 = 10100, divided by 2 is 5050. Parentheses make the sum happen before the product.'),
   const ProfeQuiz(
-      qEs:
-          'Un reloj de 12 horas marca las 9. ¿Qué hora marca 100 horas después?',
-      qEn: 'A 12-hour clock shows 9. What does it show 100 hours later?',
-      optsEs: ['1', '7', '4'],
-      optsEn: ['1', '7', '4'],
-      answer: 0,
-      whyEs: '100 % 12 = 4, y 9 + 4 = 13, que en el reloj es la 1.',
-      whyEn: '100 % 12 = 4, and 9 + 4 = 13, which is 1 on the clock.'),
-  const ProfeQuiz(
-      qEs: 'Hay 13 gatos. ¿Seguro que hay 2 que cumplen años el mismo mes?',
-      qEn: 'There are 13 cats. Are 2 of them surely born in the same month?',
-      optsEs: ['Sí', 'No', 'Depende'],
-      optsEn: ['Yes', 'No', 'It depends'],
-      answer: 0,
+      qEs: '¿Para qué x es verdadero  x > 0 && x < 10?',
+      qEn: 'For which x is  x > 0 && x < 10  true?',
+      optsEs: ['0', '5', '10'],
+      optsEn: ['0', '5', '10'],
+      answer: 1,
       whyEs:
-          'Hay 12 meses y 13 gatos: alguno se repite. Es el principio del palomar.',
+          '&& pide que se cumplan las dos: solo 5 es mayor que 0 y menor que 10.',
       whyEn:
-          '12 months and 13 cats: some month repeats. That is the pigeonhole principle.'),
+          '&& needs both to hold: only 5 is greater than 0 and less than 10.'),
   const ProfeQuiz(
-      qEs:
-          'En un cajón hay medias rojas y azules mezcladas. ¿Cuántas tenés que sacar a ciegas para estar SEGURO de tener 2 del mismo color?',
-      qEn:
-          'A drawer has red and blue socks mixed. How many must you take blindly to be SURE of 2 of the same color?',
-      optsEs: ['3', '2', '4'],
-      optsEn: ['3', '2', '4'],
-      answer: 0,
+      qEs: '¿Qué hace  if (a = 5)?',
+      qEn: 'What does  if (a = 5)  do?',
+      optsEs: ['compara a con 5', 'guarda 5 en a y siempre es verdadero'],
+      optsEn: ['compares a with 5', 'stores 5 in a and is always true'],
+      answer: 1,
       whyEs:
-          'Con 2 podrían salir una de cada color; con 3 seguro se repite un color (palomar).',
+          'Un solo = guarda. Para comparar va ==. Es un error muy común en concursos.',
       whyEn:
-          'With 2 you might get one of each; with 3 a color surely repeats (pigeonhole).'),
+          'A single = assigns. To compare use ==. A very common contest bug.'),
   const ProfeQuiz(
-      qEs: 'Doblás un papel por la mitad 4 veces. ¿Cuántas capas quedan?',
-      qEn: 'You fold a paper in half 4 times. How many layers?',
-      optsEs: ['16', '8', '4'],
-      optsEn: ['16', '8', '4'],
-      answer: 0,
-      whyEs: 'Cada doblez duplica: 2 × 2 × 2 × 2 = 16.',
-      whyEn: 'Each fold doubles: 2 × 2 × 2 × 2 = 16.'),
-  const ProfeQuiz(
-      qEs: '2¹⁰ (2 multiplicado 10 veces) es más o menos…',
-      qEn: '2¹⁰ (2 multiplied 10 times) is about…',
-      optsEs: ['1000', '100', '10000'],
-      optsEn: ['1000', '100', '10000'],
-      answer: 0,
-      whyEs: '2¹⁰ = 1024. Sirve para estimar: 2²⁰ ≈ un millón.',
-      whyEn: '2¹⁰ = 1024. Handy to estimate: 2²⁰ ≈ a million.'),
-  const ProfeQuiz(
-      qEs: '¿Cuántas veces podés dividir 64 por 2 hasta llegar a 1?',
-      qEn: 'How many times can you halve 64 until you reach 1?',
-      optsEs: ['6', '8', '32'],
-      optsEn: ['6', '8', '32'],
-      answer: 0,
+      qEs: '¿Cuál da el mayor de a, b y c?',
+      qEn: 'Which gives the largest of a, b and c?',
+      optsEs: ['max(a, b, c)', 'max(a, max(b, c))'],
+      optsEn: ['max(a, b, c)', 'max(a, max(b, c))'],
+      answer: 1,
       whyEs:
-          '64, 32, 16, 8, 4, 2, 1: son 6. Así de rápida es la búsqueda binaria.',
+          'max compara de a dos. Primero el mayor de b y c, y después ese contra a.',
       whyEn:
-          '64, 32, 16, 8, 4, 2, 1: that is 6. That is how fast binary search is.'),
-  const ProfeQuiz(
-      qEs: '1 + 2 + 3 + … + 10 = ?',
-      qEn: '1 + 2 + 3 + … + 10 = ?',
-      optsEs: ['55', '50', '45'],
-      optsEn: ['55', '50', '45'],
-      answer: 0,
-      whyEs: 'Juntá extremos: 1 + 10, 2 + 9… son 5 pares de 11 = 55.',
-      whyEn: 'Pair the ends: 1 + 10, 2 + 9… 5 pairs of 11 = 55.'),
-  const ProfeQuiz(
-      qEs: '¿Cuántos múltiplos de 3 hay del 1 al 100?',
-      qEn: 'How many multiples of 3 are there from 1 to 100?',
-      optsEs: ['33', '34', '30'],
-      optsEn: ['33', '34', '30'],
-      answer: 0,
-      whyEs: '100 / 3 = 33 (división entera).',
-      whyEn: '100 / 3 = 33 (integer division).'),
-  const ProfeQuiz(
-      qEs:
-          'Un for de 1 a n con otro for de 1 a n adentro. Si n = 10, ¿cuántas veces se repite lo de adentro?',
-      qEn:
-          'A for from 1 to n with another for from 1 to n inside. If n = 10, how many times does the inside run?',
-      optsEs: ['100', '20', '10'],
-      optsEn: ['100', '20', '10'],
-      answer: 0,
-      whyEs:
-          '10 vueltas × 10 vueltas = 100. Por eso dos for anidados son O(n²).',
-      whyEn: '10 × 10 = 100. That is why two nested loops are O(n²).'),
-  const ProfeQuiz(
-      qEs:
-          '¿Cuántos grupos distintos (subconjuntos) se pueden armar con {gato, perro, ratón}, incluyendo el grupo vacío?',
-      qEn:
-          'How many different groups (subsets) can you form from {cat, dog, mouse}, including the empty one?',
-      optsEs: ['8', '6', '3'],
-      optsEn: ['8', '6', '3'],
-      answer: 0,
-      whyEs: 'Cada animal está o no está: 2 × 2 × 2 = 8.',
-      whyEn: 'Each animal is in or out: 2 × 2 × 2 = 8.'),
-  const ProfeQuiz(
-      qEs: '1 + 2 + 3 + … + 100 = ?',
-      qEn: '1 + 2 + 3 + … + 100 = ?',
-      optsEs: ['5050', '5000', '10000'],
-      optsEn: ['5050', '5000', '10000'],
-      answer: 0,
-      whyEs: 'El truco de Gauss: n × (n + 1) / 2 = 100 × 101 / 2 = 5050.',
-      whyEn: 'Gauss trick: n × (n + 1) / 2 = 100 × 101 / 2 = 5050.'),
+          'max compares two at a time: first the larger of b and c, then that against a.'),
 ];
 
 /// Lightning round concept cards (retrieval practice), unlocked by the level that teaches them.
