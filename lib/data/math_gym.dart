@@ -201,15 +201,15 @@ const List<MathTopic> kMathTopics = [
   MathTopic(
       id: 'mcd',
       minWorld: 2,
-      titleEs: 'MCD y MCM',
+      titleEs: 'gcd y lcm',
       titleEn: 'GCD and LCM',
       ideaEs:
-          'El MCD es el divisor común más grande; el MCM, el múltiplo común más chico.',
+          'gcd (greatest common divisor) es el divisor común más grande; lcm (least common multiple), el múltiplo común más chico. En C++: gcd(a, b) y lcm(a, b).',
       ideaEn:
           'GCD is the largest common divisor; LCM the smallest common multiple.',
       questions: [
         MathQ(
-            qEs: '¿Cuál es el MCD de 12 y 18?',
+            qEs: '¿Cuál es el gcd de 12 y 18?',
             qEn: 'What is the GCD of 12 and 18?',
             answer: '6',
             hintEs: 'Divisores de 12: 1, 2, 3, 4, 6, 12.',
@@ -217,7 +217,7 @@ const List<MathTopic> kMathTopics = [
             whyEs: '6 divide a los dos y es el más grande.',
             whyEn: '6 divides both and is the largest.'),
         MathQ(
-            qEs: '¿Cuál es el MCM de 4 y 6?',
+            qEs: '¿Cuál es el lcm de 4 y 6?',
             qEn: 'What is the LCM of 4 and 6?',
             answer: '12',
             hintEs: 'Múltiplos de 4: 4, 8, 12…',
@@ -230,22 +230,22 @@ const List<MathTopic> kMathTopics = [
             qEn:
                 'One cat eats every 4 hours, another every 6. They eat together now. In how many hours together again?',
             answer: '12',
-            hintEs: 'Es un MCM.',
+            hintEs: 'Es un lcm.',
             hintEn: 'It is an LCM.',
-            whyEs: 'MCM(4, 6) = 12.',
+            whyEs: 'lcm(4, 6) = 12.',
             whyEn: 'LCM(4, 6) = 12.'),
         MathQ(
             qEs:
-                'Algoritmo de Euclides: MCD(a, b) = MCD(b, a % b). ¿Cuánto es MCD(48, 18)?',
+                'Algoritmo de Euclides: gcd(a, b) = gcd(b, a % b). ¿Cuánto es gcd(48, 18)?',
             qEn: 'Euclid: GCD(a, b) = GCD(b, a % b). What is GCD(48, 18)?',
             answer: '6',
-            hintEs: '48 % 18 = 12, después MCD(18, 12)…',
+            hintEs: '48 % 18 = 12, después gcd(18, 12)…',
             hintEn: '48 % 18 = 12, then GCD(18, 12)…',
             whyEs: '(48,18)→(18,12)→(12,6)→(6,0): 6.',
             whyEn: '(48,18)→(18,12)→(12,6)→(6,0): 6.'),
         MathQ(
             qEs:
-                'MCD(a, b) × MCM(a, b) = a × b. Si MCD(8, 12) = 4, ¿cuánto es MCM(8, 12)?',
+                'gcd(a, b) * lcm(a, b) = a * b. Si gcd(8, 12) = 4, ¿cuánto es lcm(8, 12)?',
             qEn:
                 'GCD(a, b) × LCM(a, b) = a × b. If GCD(8, 12) = 4, what is LCM(8, 12)?',
             answer: '24',

@@ -1707,11 +1707,11 @@ final Map<String, List<Level>> kMoreLevels = {
       sEs:
           'Varios gatos comen cada a_i días. ¿Cuándo coinciden todos otra vez?',
       sEn: 'Several cats eat every a_i days. When do they all meet again?',
-      dEs: 'Lee n y n números. Imprime su mínimo común múltiplo.',
+      dEs: 'Lee n y n números. Imprime su lcm (least common multiple).',
       dEn: 'Read n and n numbers. Print their least common multiple.',
       iEs: 'n / n números (el resultado entra en long long)',
       iEn: 'n / n numbers (the result fits in long long)',
-      oEs: 'El MCM.',
+      oEs: 'El lcm.',
       oEn: 'The LCM.',
       samples: [
         ['3\n2 3 4', '12'],
@@ -1723,7 +1723,7 @@ final Map<String, List<Level>> kMoreLevels = {
         ['8\n6 3 9 1 3 10 2 4', '180'],
         ['4\n6 10 15 7', '210']
       ],
-      hEs: ['mcm(a, b) = a / mcd(a, b) * b. Aplicalo de a uno.'],
+      hEs: ['lcm(a, b) = a / gcd(a, b) * b. Aplicalo de a uno.'],
       hEn: ['lcm(a, b) = a / gcd(a, b) * b. Apply it one at a time.'],
       xp: 640,
       concepts: const ['gcd', 'lcm'],
@@ -1809,7 +1809,7 @@ final Map<String, List<Level>> kMoreLevels = {
         ['360 84', '30 7'],
         ['1000000 999999', '1000000 999999']
       ],
-      hEs: ['Dividí los dos por su MCD.'],
+      hEs: ['Dividí los dos por su gcd.'],
       hEn: ['Divide both by their GCD.'],
       xp: 640,
       concepts: const ['gcd'],
@@ -1837,7 +1837,7 @@ final Map<String, List<Level>> kMoreLevels = {
         ['1000000 999999', 'SI'],
         ['121 77', 'NO']
       ],
-      hEs: ['Son coprimos si mcd(a, b) == 1.'],
+      hEs: ['Son coprimos si gcd(a, b) == 1.'],
       hEn: ['They are coprime if gcd(a, b) == 1.'],
       xp: 640,
       concepts: const ['gcd'],
