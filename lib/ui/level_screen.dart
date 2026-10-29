@@ -30,6 +30,7 @@ import '../services/cloud.dart';
 import '../services/progress.dart';
 import '../services/songs.dart';
 import '../services/sfx.dart';
+import '../services/tweaks.dart';
 import 'blocks_editor.dart';
 import 'code_editor.dart';
 import 'coin.dart';
@@ -289,6 +290,9 @@ class _LevelScreenState extends State<LevelScreen>
         'mode': widget.level.mode.name,
         'boss': widget.level.boss,
         'solved_before': Progress.instance.of(widget.level.id).solved,
+        if (Tweaks.instance.has('hint1', widget.level.id)) 'tweak_hint1': true,
+        if (Tweaks.instance.has('harder', widget.level.id))
+          'tweak_harder': true,
       },
     );
     _modeTick = Timer.periodic(const Duration(seconds: 5), (_) {
@@ -338,6 +342,9 @@ class _LevelScreenState extends State<LevelScreen>
     _savedCode = _starter;
     _promotedToCode = _codeOnly;
     _hintsShown = Progress.instance.of(widget.level.id).hintsBought;
+    if (_hintsShown < 1 && Tweaks.instance.has('hint1', widget.level.id)) {
+      _hintsShown = 1;
+    }
     _tabController = TabController(length: _hybrid ? 2 : 1, vsync: this);
   }
 
@@ -408,7 +415,8 @@ class _LevelScreenState extends State<LevelScreen>
       return;
     }
     _stuckSec = 0;
-    if (_freeHints < _maxFreeHints) {
+    if (_freeHints < _maxFreeHints &&
+        !Tweaks.instance.has('harder', widget.level.id)) {
       _offerFreeHint();
     } else {
       _nudge();

@@ -9,6 +9,7 @@ import '../l10n.dart';
 import '../models.dart';
 import '../services/activity.dart';
 import '../services/cloud.dart';
+import '../services/tweaks.dart';
 import 'coach_admin.dart';
 import 'keyboard_scroll.dart';
 import 'theme.dart';
@@ -32,6 +33,7 @@ class _AdminScreenState extends State<AdminScreen> {
   List<ActiveSpan> _spans = const [];
   // Active (non-idle) seconds per level, from level_leave windows.
   Map<String, int> _levelActive = const {};
+  List<Map<String, dynamic>> _tweaks = const [];
   bool _loading = true;
   String? _error;
 
@@ -75,10 +77,12 @@ class _AdminScreenState extends State<AdminScreen> {
     try {
       final lv = await Cloud.instance.levelStats(id);
       final ev = await Cloud.instance.recentEvents(id);
+      final tw = await Tweaks.instance.forStudent(id);
       if (!mounted) return;
       setState(() {
         _levels = lv..sort((a, b) => _order(a).compareTo(_order(b)));
         _events = ev;
+        _tweaks = tw;
         _computeActivity();
         _loading = false;
       });
@@ -1093,13 +1097,153 @@ class _AdminScreenState extends State<AdminScreen> {
 
   /// Concept tags plus the world, so a world that costs him projects
   /// onto its remaining levels even when tags are too fine-grained.
-  List<String> _topicsOf(String id) {
-    final lv = levelById(id);
-    if (lv == null) return const [];
-    final wi = kWorlds.indexWhere((w) => w.levels.contains(lv));
+  List<String> _topicsOf(String id) => levelTopics(id);
+
+  /// Changes the coach can apply with one click. Topic advice waits for
+  /// a one-sided Fisher test (p < 0.10, at least 3 levels); urgent ones
+  /// (a level he keeps reopening or 20+ min without winning) go now.
+  List<Widget> _advice(
+      L l, List<LevelDiag> diags, String Function(String id) title) {
+    final items = <(String, String, String, String, bool)>[];
+    for (final d in diags.where(urgent)) {
+      items.add((
+        'level:${d.id}',
+        'hint1',
+        l.pick('🚨 Urgente · ${title(d.id)}: pista 1 gratis desde el inicio',
+            '🚨 Urgent · ${title(d.id)}: hint 1 free from the start'),
+        _evidence(l, d),
+        true,
+      ));
+    }
+    final tests = topicTests(diags, _topicsOf)
+      ..sort((a, b) => a.pWorse.compareTo(b.pWorse));
+    String ev(TopicTest t, double p) => l.pick(
+        'Le costaron ${t.k} de ${t.n} niveles de este tema, contra '
+            '${t.kOther} de ${t.nOther} en el resto · confianza '
+            '${(100 * (1 - p)).round()}%',
+        'Struggled on ${t.k} of ${t.n} levels of this topic vs '
+            '${t.kOther} of ${t.nOther} elsewhere · confidence '
+            '${(100 * (1 - p)).round()}%');
+    for (final t in tests) {
+      if (t.worse) {
+        items.add((
+          t.topic,
+          'hint1',
+          l.pick(
+              '🛠️ ${t.topic}: pista 1 gratis desde el inicio en sus niveles',
+              '🛠️ ${t.topic}: hint 1 free from the start on its levels'),
+          ev(t, t.pWorse),
+          false,
+        ));
+      } else if (t.better) {
+        items.add((
+          t.topic,
+          'harder',
+          l.pick(
+              '🚀 ${t.topic}: subir la exigencia (sin pista gratis automática)',
+              '🚀 ${t.topic}: raise the bar (no automatic free hint)'),
+          ev(t, t.pBetter),
+          false,
+        ));
+      }
+    }
+    final waiting = [
+      for (final t in tests)
+        if (t.missing case final m?) (t, m)
+    ];
+    Map<String, dynamic>? stateOf(String topic, String action) => _tweaks
+        .cast<Map<String, dynamic>?>()
+        .firstWhere((r) => r!['topic'] == topic && r['action'] == action,
+            orElse: () => null);
+    Future<void> act(
+        String topic, String action, String? status, String evidence) async {
+      final id = _userId;
+      if (id == null) return;
+      try {
+        if (status == null) {
+          await Tweaks.instance.undo(id, topic, action);
+        } else {
+          await Tweaks.instance.decide(id, topic, action, status, evidence);
+        }
+        final tw = await Tweaks.instance.forStudent(id);
+        if (mounted) setState(() => _tweaks = tw);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('$e')));
+        }
+      }
+    }
+
+    const lo = TextStyle(fontSize: 12, color: AppTheme.textLo);
     return [
-      ...lv.concepts,
-      if (wi >= 0) L.instance.pick('mundo ${wi + 1}', 'world ${wi + 1}')
+      _chartTitle(l.pick('💡 Consejos para aplicar', '💡 Advice to apply')),
+      if (items.isEmpty)
+        Text(l.pick(
+            'Ninguno todavía: no hay diferencias que no puedan ser casualidad.',
+            'None yet: no difference that could not be chance.')),
+      for (final (topic, action, text, evidence, isUrgent) in items)
+        Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+                color: isUrgent ? Colors.redAccent : AppTheme.textLo,
+                width: isUrgent ? 2 : 1),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(text, style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(evidence, style: lo),
+              const SizedBox(height: 6),
+              switch (stateOf(topic, action)?['status']) {
+                final String st => Row(children: [
+                    Text(st == 'applied'
+                        ? l.pick('✅ Aplicado', '✅ Applied')
+                        : l.pick('🚫 Descartado', '🚫 Dismissed')),
+                    const SizedBox(width: 8),
+                    Tooltip(
+                      message: l.pick('Volver a como estaba', 'Revert'),
+                      child: TextButton(
+                          onPressed: () => act(topic, action, null, evidence),
+                          child: Text(l.pick('Deshacer', 'Undo'))),
+                    ),
+                  ]),
+                _ => Wrap(spacing: 8, children: [
+                    Tooltip(
+                      message: l.pick(
+                          'El juego lo pone en práctica desde su próxima partida',
+                          'The game applies it from his next session'),
+                      child: FilledButton(
+                          onPressed: () =>
+                              act(topic, action, 'applied', evidence),
+                          child: Text(l.pick('Aplicar', 'Apply'))),
+                    ),
+                    Tooltip(
+                      message: l.pick('No hacer nada y no volver a mostrarlo',
+                          'Do nothing and stop suggesting it'),
+                      child: OutlinedButton(
+                          onPressed: () =>
+                              act(topic, action, 'dismissed', evidence),
+                          child: Text(l.pick('Descartar', 'Dismiss'))),
+                    ),
+                  ]),
+              },
+            ],
+          ),
+        ),
+      if (waiting.isNotEmpty)
+        Text(
+            l.pick('⏳ Esperando datos: ', '⏳ Waiting for data: ') +
+                waiting
+                    .take(6)
+                    .map((w) => l.pick(
+                        '${w.$1.topic} (faltan ~${w.$2} niveles)',
+                        '${w.$1.topic} (~${w.$2} more levels)'))
+                    .join(' · '),
+            style: lo),
     ];
   }
 
@@ -1115,8 +1259,20 @@ class _AdminScreenState extends State<AdminScreen> {
     final flagged =
         diags.where((d) => d.verdict != LevelVerdict.ok).take(10).toList();
     final cs = conceptStats(diags, _topicsOf).values.toList()
-      ..sort((a, b) =>
-          (b.failsPer + 2 * b.hintsPer).compareTo(a.failsPer + 2 * a.hintsPer));
+      ..sort((a, b) {
+        int rank(ConceptStat c) => c.weak
+            ? 0
+            : c.strong
+                ? 1
+                : c.enoughData
+                    ? 2
+                    : 3;
+        final r = rank(a).compareTo(rank(b));
+        return r != 0
+            ? r
+            : (b.failsPer + 2 * b.hintsPer)
+                .compareTo(a.failsPer + 2 * a.hintsPer);
+      });
     final weak = {for (final c in cs.where((c) => c.weak)) c.concept: c};
     final strong = {for (final c in cs.where((c) => c.strong)) c.concept: c};
     final played = diags.map((d) => d.id).toSet();
@@ -1164,6 +1320,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   'Based on ${diags.length} played levels, with active time '
                       '(no pauses over 15 min).'),
               style: lo),
+          ..._advice(l, diags, title),
           _chartTitle(l.pick(
               'Niveles que piden un cambio (más fricción primero)',
               'Levels that need a change (most friction first)')),

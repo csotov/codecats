@@ -9,6 +9,7 @@ import 'app.dart';
 import 'services/cloud.dart';
 import 'services/progress.dart';
 import 'services/sfx.dart';
+import 'services/tweaks.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +18,8 @@ Future<void> main() async {
   CoachStore.instance.load();
   BlitzClock.start();
   Cloud.instance.addListener(CoachStore.instance.load);
+  Tweaks.instance.load();
+  Cloud.instance.addListener(Tweaks.instance.load);
   await Progress.instance.ensureLoaded();
   if (Cloud.instance.signedIn) unawaited(Progress.instance.linkAccount());
   await GraderPref.load();
