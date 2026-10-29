@@ -21,6 +21,7 @@ import 'world13.dart';
 import 'world14.dart';
 import 'world15.dart';
 import 'world_more.dart';
+import 'usaco_bronze.dart';
 
 /// The full campaign in order.
 final List<World> kWorlds = [
@@ -46,7 +47,10 @@ final List<World> kWorlds = [
 
 /// Inserts the extra practice levels of [kMoreLevels] right before the boss.
 World _withMore(World w) {
-  final more = kMoreLevels[w.id] ?? const <Level>[];
+  final more = [
+    ...?kMoreLevels[w.id],
+    if (w.id == 'w8') ...kUsacoPractice,
+  ];
   if (more.isEmpty) return w;
   return World(
     id: w.id,
@@ -82,6 +86,9 @@ Level? levelById(String id) {
     for (final v in kLeadIns.values) ...v,
     for (final c in kClosing) c.$3,
   ]) {
+    if (l.id == id) return l;
+  }
+  for (final l in kUsacoBronzeExam) {
     if (l.id == id) return l;
   }
   for (final c in [...kContestPool, ...kContestLong]) {

@@ -226,6 +226,12 @@ class Progress extends ChangeNotifier {
   final Map<String, int> scores = {};
 
   void recordScore(String levelId, int score) {
+    if (examActive &&
+        examIds.contains(levelId) &&
+        score > (examScores[levelId] ?? -1)) {
+      examScores[levelId] = score;
+      _save();
+    }
     if (score <= (scores[levelId] ?? -1)) return;
     scores[levelId] = score;
     _save();
@@ -275,7 +281,8 @@ class Progress extends ChangeNotifier {
 
   void _placeBelt() {
     var b = 0;
-    while (b < kBelts.length - 1 && beltStripes(kBelts[b], this) == 4) {
+    // Never placed past the blue belt: Bronce USACO needs the exam.
+    while (b < 4 && beltStripes(kBelts[b], this) == 4) {
       b++;
     }
     _belt = b;
@@ -304,6 +311,9 @@ class Progress extends ChangeNotifier {
   int examEndMs = 0;
   final Set<String> examSolved = {};
 
+  /// Best score (0-100) per problem in the running exam.
+  final Map<String, int> examScores = {};
+
   bool get examActive =>
       examPhase > 0 && DateTime.now().millisecondsSinceEpoch < examEndMs;
 
@@ -312,6 +322,7 @@ class Progress extends ChangeNotifier {
     examIds = List.unmodifiable(ids);
     examEndMs = DateTime.now().add(length).millisecondsSinceEpoch;
     examSolved.clear();
+    examScores.clear();
     _save();
     notifyListeners();
   }
@@ -339,6 +350,7 @@ class Progress extends ChangeNotifier {
     examPhase = 0;
     examIds = const [];
     examEndMs = 0;
+    examScores.clear();
     examSolved.clear();
     _save();
     notifyListeners();
@@ -631,6 +643,10 @@ class Progress extends ChangeNotifier {
         examSolved
           ..clear()
           ..addAll((j['exs'] as List? ?? const []).map((e) => '$e'));
+        examScores
+          ..clear()
+          ..addAll((j['exsc'] as Map? ?? const {})
+              .map((k, v) => MapEntry('$k', (v as num).toInt())));
         blitzCards
           ..clear()
           ..addAll(_intLists(j['bq']));
@@ -690,6 +706,7 @@ class Progress extends ChangeNotifier {
         'exi': examIds,
         'exe': examEndMs,
         'exs': examSolved.toList(),
+        'exsc': examScores,
         'bq': blitzCards,
         'mg': mathGym,
         'ct': contestIds,

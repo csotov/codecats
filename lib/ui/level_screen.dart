@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../data/usaco_bronze.dart';
 
 import 'sound_panel.dart';
 
@@ -845,7 +846,8 @@ class _LevelScreenState extends State<LevelScreen>
         data: {'msg': report.compileError!.split('\n').first},
       );
     }
-    final subtasks = kLabSubtasks[widget.level.id];
+    final subtasks =
+        kLabSubtasks[widget.level.id] ?? usacoSubtasks(widget.level.id);
     if (subtasks != null) {
       final (score, ok) = subtaskScore(subtasks, report);
       Progress.instance.recordScore(widget.level.id, score);
