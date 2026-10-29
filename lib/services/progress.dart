@@ -1184,22 +1184,28 @@ class Progress extends ChangeNotifier {
   }
 
   /// Replaces any pending offer with one for today: win a level before
-  /// 15:30 (or within 2 hours if it's later). Once a day. With [from], the
-  /// window opens then and lasts 2 hours; a new [from] moves a pending offer.
-  bool offerEarlyToday(DateTime now, {DateTime? from}) {
-    final f = from?.millisecondsSinceEpoch ?? 0;
+  /// 15:30 (or within 2 hours if it's later). Once a day. With [until] the
+  /// admin fixes the deadline (to get him in early); a new one moves a
+  /// pending offer.
+  bool offerEarlyToday(DateTime now, {DateTime? until}) {
+    final same = until == null
+        ? earlyFrom == 0
+        : earlyFrom == 0 && earlyDeadline == until.millisecondsSinceEpoch;
     if (earlyTodayDay == _ymd(now) &&
-        (f == earlyFrom || earlyDeadline == 0 || earlyWon)) {
+        (same || earlyDeadline == 0 || earlyWon)) {
       return false;
     }
     earlyTodayDay = _ymd(now);
     earlyOfferDay = _ymd(now);
     earlyWon = false;
-    earlyFrom = f;
+    earlyFrom = 0;
     var dl = DateTime(now.year, now.month, now.day, 15, 30);
-    final later = (from != null && from.isAfter(now) ? from : now)
-        .add(const Duration(hours: 2));
-    if (from != null || later.isAfter(dl)) dl = later;
+    final later = now.add(const Duration(hours: 2));
+    if (until != null && until.isAfter(now)) {
+      dl = until;
+    } else if (later.isAfter(dl)) {
+      dl = later;
+    }
     final end = DateTime(now.year, now.month, now.day, 23, 59);
     if (dl.isAfter(end)) dl = end;
     earlyDeadline = dl.millisecondsSinceEpoch;
