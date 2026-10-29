@@ -256,11 +256,12 @@ class _AdminScreenState extends State<AdminScreen> {
         '$sessions ${l.pick('(se corta tras 15 min sin tocar nada)', '(split after 15 idle min)')}'
       ],
       [
-        l.pick('Tiempo practicado', 'Time practiced'),
+        l.pick(
+            'Tiempo practicado (todo el juego)', 'Time practiced (whole game)'),
         '${fmt(active)} · ${l.pick('promedio', 'avg')} ${fmt(sessions == 0 ? 0 : active / sessions)} · ${l.pick('la más larga', 'longest')} ${fmt(longest)}'
       ],
       [
-        l.pick('Tiempo en niveles', 'Time in levels'),
+        l.pick('Tiempo dentro de niveles', 'Time inside levels'),
         '${fmt(secs)} ${rawSecs > secs + 60 ? l.pick('(descontados ${fmt(rawSecs - secs)} con el nivel abierto sin tocar)', '(${fmt(rawSecs - secs)} idle removed)') : ''}'
       ],
       [
@@ -892,7 +893,7 @@ class _AdminScreenState extends State<AdminScreen> {
                 ),
               ),
               SizedBox(
-                  width: 70, child: Text(d.$3, textAlign: TextAlign.right)),
+                  width: 110, child: Text(d.$3, textAlign: TextAlign.right)),
             ]),
           ),
       ],
