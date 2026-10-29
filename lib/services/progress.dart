@@ -363,16 +363,25 @@ class Progress extends ChangeNotifier {
     return earned;
   }
 
-  /// Questions asked so far; every 4th one is olympiad math.
+  /// Questions asked so far; even ones are contest facts, odd ones
+  /// concept cards from won levels.
   int blitzSeq = 0;
 
-  /// Next concept card: due ones first (lowest due round), skipping the
-  /// last one asked. Null when nothing is unlocked yet.
-  String? nextBlitzCard(List<String> unlocked) {
-    if (unlocked.isEmpty) return null;
-    final sorted = [...unlocked]..sort(
-        (a, b) => (blitzCards[a]?[1] ?? 0).compareTo(blitzCards[b]?[1] ?? 0));
-    return sorted.first;
+  /// Next Leitner card (Anki-like): reviews that are due come first,
+  /// then one new card in list order, else the one due soonest. [skip]
+  /// avoids asking the same card twice in a row.
+  String? nextBlitzCard(List<String> ids, {String? skip}) {
+    final pool = ids.length > 1 ? [...ids.where((i) => i != skip)] : ids;
+    if (pool.isEmpty) return null;
+    final seen = [...pool.where(blitzCards.containsKey)]
+      ..sort((a, b) => blitzCards[a]![1].compareTo(blitzCards[b]![1]));
+    if (seen.isNotEmpty && blitzCards[seen.first]![1] <= blitzSeq) {
+      return seen.first;
+    }
+    for (final id in pool) {
+      if (!blitzCards.containsKey(id)) return id;
+    }
+    return seen.first;
   }
 
   /// Right answers wait longer (1, 2, 4, 8, 16 rounds); wrong ones come

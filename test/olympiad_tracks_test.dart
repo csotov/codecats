@@ -1,3 +1,4 @@
+import 'package:codecats/data/blitz_facts.dart';
 import 'package:codecats/data/olympiad_tracks.dart';
 import 'package:codecats/data/tracks_models.dart';
 import 'package:codecats/engine/judge.dart';
@@ -74,11 +75,32 @@ void main() {
   });
 
   test('blitz has questions with valid answers', () {
-    expect(kBlitz.length, greaterThanOrEqualTo(15));
-    for (final q in kBlitz) {
-      expect(q.answer, lessThan(q.optsEs.length));
-      expect(q.optsEn.length, q.optsEs.length);
+    expect(kBlitzFacts.length, greaterThanOrEqualTo(15));
+    expect(kBlitzFacts.map((f) => f.id).toSet().length, kBlitzFacts.length);
+    for (final f in kBlitzFacts) {
+      expect(f.variants.length, greaterThanOrEqualTo(2), reason: f.id);
+      for (final q in f.variants) {
+        expect(q.answer, lessThan(q.optsEs.length));
+        expect(q.optsEn.length, q.optsEs.length);
+      }
     }
+  });
+
+  test('blitz Leitner: due reviews first, then new cards in order', () {
+    final p = Progress.instance;
+    p.blitzCards.clear();
+    p.blitzSeq = 0;
+    final ids = ['a', 'b', 'c'];
+    expect(p.nextBlitzCard(ids), 'a');
+    p.answerBlitzCard('a', false);
+    p.blitzSeq++;
+    expect(p.nextBlitzCard(ids), 'a');
+    expect(p.nextBlitzCard(ids, skip: 'a'), 'b');
+    p.answerBlitzCard('a', true);
+    p.blitzSeq++;
+    expect(p.nextBlitzCard(ids), 'b');
+    p.blitzCards.clear();
+    p.blitzSeq = 0;
   });
 
   test('concept cards point at real levels and have unique ids', () {
