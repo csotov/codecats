@@ -71,6 +71,7 @@ enum CatTrigger {
   triesN, // [CatMeme.need] battles fought in total
   coinsN, // hold [CatMeme.need] Miaudólares at once
   halloweenN, // [CatMeme.need] Halloween event levels solved
+  earlyBird, // came back before the early-bird deadline (only way to get it)
 }
 
 /// The full cat-dex. Core memes repeat constantly (retention by
@@ -1007,6 +1008,16 @@ const kCats = <CatMeme>[
     need: 5,
     hintEs: 'Evento Halloween 🎃: gana 5 niveles del evento',
     hintEn: 'Halloween event 🎃: win 5 event levels',
+  ),
+  CatMeme(
+    id: 'early_bird',
+    nameEs: 'Gato Madrugador',
+    nameEn: 'Early Bird Cat',
+    rarity: CatRarity.legendario,
+    trigger: CatTrigger.earlyBird,
+    hintEs:
+        'Solo se consigue entrando temprano cuando el mapa avisa "Premio madrugador"',
+    hintEn: 'Only by coming back early when the map shows "Early-bird prize"',
   ),
 ];
 

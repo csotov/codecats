@@ -38,6 +38,8 @@ import '../data/coach_problems.dart';
 import 'trace_screen.dart';
 import '../data/challenges.dart';
 import 'meme_player.dart';
+import 'professor.dart';
+import '../data/cats.dart';
 import 'theme.dart';
 import 'widgets.dart';
 import 'badge_shop.dart';
@@ -67,6 +69,7 @@ class _MapScreenState extends State<MapScreen> {
     _badgeTick = Timer.periodic(const Duration(seconds: 2), (_) async {
       if (_badgePopup || !mounted) return;
       if (ModalRoute.of(context)?.isCurrent != true) return;
+      if (await _earlyBird()) return;
       final coinCats = Progress.instance.checkCoinCats();
       if (coinCats.isNotEmpty) {
         _badgePopup = true;
@@ -108,6 +111,86 @@ class _MapScreenState extends State<MapScreen> {
       _badgePopup = false;
     });
   }
+
+  /// Early-bird prize: claims it if he came back in time, or (on some
+  /// days) promises one for tomorrow. True when a popup was shown.
+  Future<bool> _earlyBird() async {
+    final p = Progress.instance;
+    final l = L.instance;
+    final now = DateTime.now();
+    final prize = p.claimEarly(now);
+    if (prize != null) {
+      Cloud.instance.log('early_bird', data: {'result': prize});
+    }
+    if (prize == 'cat') {
+      _badgePopup = true;
+      await MemeBurst.show(
+        context,
+        kCats.firstWhere((c) => c.id == Progress.kEarlyCat),
+        captionEs:
+            '🌅 ¡Llegaste temprano! Gato Madrugador, solo para madrugadores',
+        captionEn: '🌅 You came early! Early Bird Cat, only for early birds',
+      );
+      _badgePopup = false;
+      return true;
+    }
+    if (prize == 'hats') {
+      _badgePopup = true;
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(l.pick('🌅 ¡Llegaste temprano!', '🌅 You came early!')),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('🎩🎩🎩🎩', style: TextStyle(fontSize: 46)),
+            const SizedBox(height: 8),
+            Text(
+                l.pick(
+                    'Premio madrugador: +${Progress.kEarlyHats} Gorritos Gatunos y +${Progress.kHatCoins * Progress.kEarlyHats} Miaudólares.',
+                    'Early-bird prize: +${Progress.kEarlyHats} Cat Beanies and +${Progress.kHatCoins * Progress.kEarlyHats} Meowdollars.'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 17)),
+          ]),
+          actions: [
+            FilledButton(
+                autofocus: true,
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l.pick('¡Genial!', 'Great!'))),
+          ],
+        ),
+      );
+      _badgePopup = false;
+      return true;
+    }
+    if (!p.offerEarly(now)) return false;
+    final dl = p.earlyDeadlineAt!;
+    Cloud.instance.log('early_offer', data: {'deadline': dl.toIso8601String()});
+    _badgePopup = true;
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        content: SizedBox(
+          width: 480,
+          child: ProfessorSays(
+            text: l.pick(
+                '🌅 ¡Premio madrugador! Si mañana entrás antes de las ${_hm(dl)}, te espera un premio especial: ${Progress.kEarlyHats} Gorritos Gatunos o un gato que no se consigue de ninguna otra forma. ¿Te animás?',
+                '🌅 Early-bird prize! Come back tomorrow before ${_hm(dl)} and a special prize awaits: ${Progress.kEarlyHats} Cat Beanies or a cat you can\'t get any other way. Deal?'),
+            footer: Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton(
+                  autofocus: true,
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text(l.pick('¡Trato hecho!', 'Deal!'))),
+            ),
+          ),
+        ),
+      ),
+    );
+    _badgePopup = false;
+    return true;
+  }
+
+  static String _hm(DateTime d) =>
+      '${d.hour}:${d.minute.toString().padLeft(2, '0')}';
 
   bool _talkQueued = false;
   bool _missionsOpen = false;
@@ -412,6 +495,10 @@ class _MapScreenState extends State<MapScreen> {
                     : l.t('rival_behind'),
             style: const TextStyle(color: AppTheme.textLo, fontSize: 11),
           ),
+          if (Progress.instance.earlyDeadlineAt != null) ...[
+            const SizedBox(height: 8),
+            _EarlyCountdown(Progress.instance.earlyDeadlineAt!),
+          ],
           ..._fold([
             if (daily != null) ...[
               const SizedBox(height: 10),
@@ -1254,6 +1341,57 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Come back tomorrow before 15:00" with a live countdown.
+class _EarlyCountdown extends StatefulWidget {
+  const _EarlyCountdown(this.deadline);
+  final DateTime deadline;
+
+  @override
+  State<_EarlyCountdown> createState() => _EarlyCountdownState();
+}
+
+class _EarlyCountdownState extends State<_EarlyCountdown> {
+  late final Timer _t =
+      Timer.periodic(const Duration(seconds: 30), (_) => setState(() {}));
+
+  @override
+  void dispose() {
+    _t.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = L.instance;
+    final d = widget.deadline;
+    final left = d.difference(DateTime.now());
+    final h = left.inHours, m = left.inMinutes % 60;
+    final hm = '${d.hour}:${d.minute.toString().padLeft(2, '0')}';
+    return Tooltip(
+      message: l.pick(
+          'Entrá mañana antes de esa hora y ganás ${Progress.kEarlyHats} gorritos o un gato exclusivo',
+          'Come back tomorrow before then to win ${Progress.kEarlyHats} beanies or an exclusive cat'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+              colors: [Color(0xFFFF7A3D), Color(0xFFFFC857)]),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          l.pick(
+              '🌅 Premio madrugador: entrá mañana antes de las $hm · faltan ${h}h ${m}min',
+              '🌅 Early-bird prize: come back tomorrow before $hm · ${h}h ${m}min left'),
+          style: const TextStyle(
+              color: Color(0xFF3A1A00),
+              fontWeight: FontWeight.w800,
+              fontSize: 12),
         ),
       ),
     );

@@ -55,6 +55,7 @@ Level? catTargetLevel(CatMeme cat) {
     case CatTrigger.always:
     case CatTrigger.coinsN:
     case CatTrigger.halloweenN:
+    case CatTrigger.earlyBird:
     case CatTrigger.fail:
       return null;
     case CatTrigger.perfect:
