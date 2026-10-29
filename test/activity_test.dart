@@ -45,4 +45,32 @@ void main() {
     expect(cs['for']!.weak, isTrue);
     expect(cs['cout']!.enoughData, isFalse);
   });
+
+  test('topic advice waits for significance, urgent goes now', () {
+    LevelDiag lv(String id, {bool won = true, int hints = 0, int opens = 1}) =>
+        LevelDiag(id)
+          ..won = won
+          ..hints = hints
+          ..opens = opens
+          ..fights = 1
+          ..activeSec = 300;
+    final few = [
+      lv('m1', hints: 2),
+      lv('m2', hints: 1),
+      for (var i = 0; i < 6; i++) lv('o$i'),
+    ];
+    List<String> topics(String id) => id.startsWith('m') ? ['%'] : ['cout'];
+    final t1 = topicTests(few, topics).firstWhere((t) => t.topic == 'modulo');
+    expect(t1.worse, isFalse);
+    expect(t1.missing, isNotNull);
+    final many = [
+      for (var i = 0; i < 4; i++) lv('m$i', hints: 2),
+      for (var i = 0; i < 8; i++) lv('o$i'),
+    ];
+    final t2 = topicTests(many, topics).firstWhere((t) => t.topic == 'modulo');
+    expect(t2.worse, isTrue);
+    expect(t2.pWorse, lessThan(kAlpha));
+    expect(urgent(lv('x', won: false, opens: 3)), isTrue);
+    expect(urgent(lv('y', won: false)), isFalse);
+  });
 }

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 /// Real practice sessions from telemetry: a pause longer than [kIdleGap]
 /// with no event (heartbeats only fire while he touches the app) splits
 /// the play into separate sessions and the dead time is not counted.
@@ -175,3 +177,84 @@ String normConcept(String c) {
     _ => k,
   };
 }
+
+/// A level "cost him" when he did not beat it, failed twice or used a hint.
+bool struggled(LevelDiag d) => !d.won || d.fails >= 2 || d.hints >= 1;
+
+/// Significance needed before advising a change for a topic.
+const kAlpha = 0.10;
+
+double _lnChoose(int n, int k) {
+  if (k < 0 || k > n) return double.negativeInfinity;
+  var s = 0.0;
+  for (var i = 1; i <= k; i++) {
+    s += math.log((n - k + i) / i);
+  }
+  return s;
+}
+
+/// One-sided Fisher exact test: P(X >= k) when [n] of [total] levels are
+/// drawn and [hits] of all levels were struggles.
+double fisherAtLeast(int k, int n, int hits, int total) {
+  final den = _lnChoose(total, n);
+  var p = 0.0;
+  for (var x = k; x <= n && x <= hits; x++) {
+    final a = _lnChoose(hits, x) + _lnChoose(total - hits, n - x) - den;
+    if (a.isFinite) p += math.exp(a);
+  }
+  return p.clamp(0.0, 1.0);
+}
+
+/// Struggle rate on one topic against every other level he played.
+class TopicTest {
+  TopicTest(this.topic, this.n, this.k, this.nOther, this.kOther);
+  final String topic;
+  final int n, k, nOther, kOther;
+
+  double get rate => n == 0 ? 0 : k / n;
+  double get rateOther => nOther == 0 ? 0 : kOther / nOther;
+  double get pWorse => fisherAtLeast(k, n, k + kOther, n + nOther);
+  double get pBetter => 1 - fisherAtLeast(k + 1, n, k + kOther, n + nOther);
+
+  bool get worse => n >= 3 && rate > rateOther && pWorse < kAlpha;
+  bool get better => n >= 3 && k == 0 && kOther > 0 && pBetter < kAlpha;
+
+  /// More levels of this topic needed (same rate) before the difference
+  /// stops looking like chance; null when there is no gap or it is > 10.
+  int? get missing {
+    if (worse || better || rate == rateOther) return null;
+    for (var a = 1; a <= 10; a++) {
+      final n2 = n + a, k2 = (rate * n2).round();
+      final t = TopicTest(topic, n2, k2, nOther, kOther);
+      if (n2 >= 3 && (rate > rateOther ? t.worse : t.better)) return a;
+    }
+    return null;
+  }
+}
+
+List<TopicTest> topicTests(
+    List<LevelDiag> diags, List<String> Function(String id) topicsOf) {
+  final played = diags.where((d) => !d.peek).toList();
+  final byTopic = <String, List<LevelDiag>>{};
+  for (final d in played) {
+    for (final c in {for (final c in topicsOf(d.id)) normConcept(c)}) {
+      byTopic.putIfAbsent(c, () => []).add(d);
+    }
+  }
+  final total = played.length, hits = played.where(struggled).length;
+  return [
+    for (final e in byTopic.entries)
+      if (e.value.length < total)
+        TopicTest(
+          e.key,
+          e.value.length,
+          e.value.where(struggled).length,
+          total - e.value.length,
+          hits - e.value.where(struggled).length,
+        ),
+  ];
+}
+
+/// Needs help right away, without waiting for topic statistics.
+bool urgent(LevelDiag d) =>
+    !d.won && !d.peek && (d.opens >= 3 || d.activeSec >= 1200);
