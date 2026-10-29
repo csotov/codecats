@@ -175,13 +175,24 @@ class _MapScreenState extends State<MapScreen> {
     }
     if (!Progress.warm) return false;
     final ymd = now.year * 10000 + now.month * 100 + now.day;
-    final adminToday = Tweaks.instance.applied
-        .any((t) => t['action'] == 'early_today' && t['topic'] == 'day:$ymd');
-    if (!(adminToday ? p.offerEarlyToday(now) : p.offerEarly(now))) {
+    final adminToday = Tweaks.instance.applied.where((t) =>
+        '${t['action']}'.startsWith('early_today') && t['topic'] == 'day:$ymd');
+    final from = adminToday
+        .map((t) => earlyTodayFrom('${t['action']}', now))
+        .whereType<DateTime>()
+        .fold<DateTime?>(null, (a, b) => a == null || b.isAfter(a) ? b : a);
+    if (!(adminToday.isNotEmpty
+        ? p.offerEarlyToday(now, from: from)
+        : p.offerEarly(now))) {
       return false;
     }
     final dl = p.earlyDeadlineAt!;
     final today = p.earlyIsToday;
+    final fr = p.earlyFromAt;
+    final win = fr != null && fr.isAfter(now)
+        ? l.pick('entre las ${_hm(fr)} y las ${_hm(dl)}',
+            'between ${_hm(fr)} and ${_hm(dl)}')
+        : l.pick('antes de las ${_hm(dl)}', 'before ${_hm(dl)}');
     Cloud.instance.log('early_offer', data: {'deadline': dl.toIso8601String()});
     _badgePopup = true;
     await showDialog<void>(
@@ -193,8 +204,8 @@ class _MapScreenState extends State<MapScreen> {
               child: ProfessorSays(
             text: today
                 ? l.pick(
-                    '🌅 ¡Premio madrugador de hoy! Si ganás un nivel antes de las ${_hm(dl)}, te llevás un premio especial: ${Progress.kEarlyHats} Gorritos Gatunos o un gato que no se consigue de ninguna otra forma. ¿Te animás?',
-                    '🌅 Today\'s early-bird prize! Win a level before ${_hm(dl)} and get a special prize: ${Progress.kEarlyHats} Cat Beanies or a cat you can\'t get any other way. Deal?')
+                    '🌅 ¡Premio madrugador de hoy! Si ganás un nivel $win, te llevás un premio especial: ${Progress.kEarlyHats} Gorritos Gatunos o un gato que no se consigue de ninguna otra forma. ¿Te animás?',
+                    '🌅 Today\'s early-bird prize! Win a level $win and get a special prize: ${Progress.kEarlyHats} Cat Beanies or a cat you can\'t get any other way. Deal?')
                 : l.pick(
                     '🌅 ¡Premio madrugador! Si mañana entrás antes de las ${_hm(dl)}, te espera un premio especial: ${Progress.kEarlyHats} Gorritos Gatunos o un gato que no se consigue de ninguna otra forma. ¿Te animás?',
                     '🌅 Early-bird prize! Come back tomorrow before ${_hm(dl)} and a special prize awaits: ${Progress.kEarlyHats} Cat Beanies or a cat you can\'t get any other way. Deal?'),
@@ -1428,6 +1439,11 @@ class _EarlyCountdownState extends State<_EarlyCountdown> {
     final left = d.difference(DateTime.now());
     final h = left.inHours, m = left.inMinutes % 60;
     final hm = '${d.hour}:${d.minute.toString().padLeft(2, '0')}';
+    final fr = Progress.instance.earlyFromAt;
+    final soon = fr != null && fr.isAfter(DateTime.now());
+    final sl = soon ? fr.difference(DateTime.now()) : Duration.zero;
+    final fhm =
+        soon ? '${fr.hour}:${fr.minute.toString().padLeft(2, '0')}' : '';
     return Tooltip(
       message: Progress.instance.earlyIsToday
           ? l.pick(
@@ -1444,13 +1460,17 @@ class _EarlyCountdownState extends State<_EarlyCountdown> {
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
-          Progress.instance.earlyIsToday
+          soon
               ? l.pick(
-                  '🌅 Premio madrugador de hoy: ganá un nivel antes de las $hm · faltan ${h}h ${m}min',
-                  '🌅 Today\'s early-bird prize: win a level before $hm · ${h}h ${m}min left')
-              : l.pick(
-                  '🌅 Premio madrugador: entrá mañana antes de las $hm · faltan ${h}h ${m}min',
-                  '🌅 Early-bird prize: come back tomorrow before $hm · ${h}h ${m}min left'),
+                  '🌅 Premio madrugador de hoy: empieza a las $fhm (faltan ${sl.inHours}h ${sl.inMinutes % 60}min) · ganá un nivel antes de las $hm',
+                  '🌅 Today\'s early-bird prize: starts at $fhm (${sl.inHours}h ${sl.inMinutes % 60}min) · win a level before $hm')
+              : Progress.instance.earlyIsToday
+                  ? l.pick(
+                      '🌅 Premio madrugador de hoy: ganá un nivel antes de las $hm · faltan ${h}h ${m}min',
+                      '🌅 Today\'s early-bird prize: win a level before $hm · ${h}h ${m}min left')
+                  : l.pick(
+                      '🌅 Premio madrugador: entrá mañana antes de las $hm · faltan ${h}h ${m}min',
+                      '🌅 Early-bird prize: come back tomorrow before $hm · ${h}h ${m}min left'),
           style: const TextStyle(
               color: Color(0xFF3A1A00),
               fontWeight: FontWeight.w800,
@@ -1459,4 +1479,12 @@ class _EarlyCountdownState extends State<_EarlyCountdown> {
       ),
     );
   }
+}
+
+/// 'early_today@1530' → today at 15:30; plain 'early_today' → null.
+DateTime? earlyTodayFrom(String action, DateTime now) {
+  final m = RegExp(r'@(\d\d)(\d\d)$').firstMatch(action);
+  if (m == null) return null;
+  return DateTime(
+      now.year, now.month, now.day, int.parse(m[1]!), int.parse(m[2]!));
 }
