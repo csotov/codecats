@@ -1,3 +1,4 @@
+import '../data/belts.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -261,6 +262,43 @@ class Progress extends ChangeNotifier {
 
   /// Phases opened by the skip exam, and the exam in progress.
   final Set<int> openPhases = {};
+
+  /// Current belt (index in kBelts); -1 = not placed yet (older saves are
+  /// placed by what they already solved, never lower).
+  int _belt = -1;
+  int beltFailDay = 0;
+  int beltStripesSeen = 0;
+  int get belt {
+    if (_belt < 0) _placeBelt();
+    return _belt;
+  }
+
+  void _placeBelt() {
+    var b = 0;
+    while (b < kBelts.length - 1 && beltStripes(kBelts[b], this) == 4) {
+      b++;
+    }
+    _belt = b;
+    beltStripesSeen = beltStripes(kBelts[b], this);
+  }
+
+  bool get beltExamOpen =>
+      belt < kBelts.length - 1 &&
+      beltStripes(kBelts[belt], this) == 4 &&
+      beltFailDay != _epochDay(DateTime.now());
+
+  /// New stripes since the last celebration; pays 10 per stripe.
+  int takeNewStripes() {
+    final s = beltStripes(kBelts[belt], this);
+    final n = s - beltStripesSeen;
+    if (n <= 0) return 0;
+    beltStripesSeen = s;
+    coins += 10 * n;
+    _save();
+    notifyListeners();
+    return n;
+  }
+
   int examPhase = 0;
   List<String> examIds = const [];
   int examEndMs = 0;
@@ -287,7 +325,17 @@ class Progress extends ChangeNotifier {
 
   /// Ends the exam; opens the phase when [passed].
   void endExam({required bool passed}) {
-    if (passed && examPhase > 0) openPhases.add(examPhase);
+    if (examPhase >= kBeltExamBase) {
+      if (passed && examPhase - kBeltExamBase == belt) {
+        _belt = belt + 1;
+        beltStripesSeen = beltStripes(kBelts[_belt], this);
+        coins += 60;
+      } else if (!passed) {
+        beltFailDay = _epochDay(DateTime.now());
+      }
+    } else if (passed && examPhase > 0) {
+      openPhases.add(examPhase);
+    }
     examPhase = 0;
     examIds = const [];
     examEndMs = 0;
@@ -574,6 +622,9 @@ class Progress extends ChangeNotifier {
           ..addAll(
               (j['php'] as List? ?? const []).map((e) => (e as num).toInt()));
         examPhase = (j['exp'] as num?)?.toInt() ?? 0;
+        _belt = (j['blt'] as num?)?.toInt() ?? -1;
+        beltFailDay = (j['bfd'] as num?)?.toInt() ?? 0;
+        beltStripesSeen = (j['bss'] as num?)?.toInt() ?? 0;
         examIds =
             List.unmodifiable((j['exi'] as List? ?? const []).map((e) => '$e'));
         examEndMs = (j['exe'] as num?)?.toInt() ?? 0;
@@ -633,6 +684,9 @@ class Progress extends ChangeNotifier {
         'bzs': blitzSeq,
         'php': openPhases.toList(),
         'exp': examPhase,
+        'blt': _belt,
+        'bfd': beltFailDay,
+        'bss': beltStripesSeen,
         'exi': examIds,
         'exe': examEndMs,
         'exs': examSolved.toList(),
@@ -753,6 +807,12 @@ class Progress extends ChangeNotifier {
     blitzSeq = math.max(blitzSeq, (d['bzs'] as num?)?.toInt() ?? 0);
     openPhases
         .addAll((d['php'] as List? ?? const []).map((e) => (e as num).toInt()));
+    final cloudBelt = (d['blt'] as num?)?.toInt() ?? -1;
+    if (cloudBelt > _belt) {
+      _belt = cloudBelt;
+      beltStripesSeen =
+          math.max(beltStripesSeen, (d['bss'] as num?)?.toInt() ?? 0);
+    }
     _mergeMax(blitzCards, d['bq']);
     _mergeMax(mathGym, d['mg']);
     final lv = d['lv'];
@@ -813,6 +873,9 @@ class Progress extends ChangeNotifier {
           'bzs': blitzSeq,
           'php': openPhases.toList(),
           'exp': examPhase,
+          'blt': _belt,
+          'bfd': beltFailDay,
+          'bss': beltStripesSeen,
           'exi': examIds,
           'exe': examEndMs,
           'exs': examSolved.toList(),
@@ -1273,9 +1336,9 @@ class Progress extends ChangeNotifier {
       case CatTrigger.solved50:
         return solvedCount >= 50;
       case CatTrigger.rankGold:
-        return xp >= kRanks[2].minXp;
+        return belt >= 2;
       case CatTrigger.rankIoi:
-        return xp >= kRanks.last.minXp;
+        return belt >= 6;
       case CatTrigger.allStarsW1:
         final w1 = kWorlds.first;
         return w1.levels.every((lv) => (levels[lv.id]?.stars ?? 0) >= 3);
@@ -1487,6 +1550,9 @@ class Progress extends ChangeNotifier {
 
   /// Reset only the ACTIVE profile's progress (start from zero).
   Future<void> reset() async {
+    _belt = -1;
+    beltFailDay = 0;
+    beltStripesSeen = 0;
     xp = 0;
     coins = kStartCoins;
     streak = 0;

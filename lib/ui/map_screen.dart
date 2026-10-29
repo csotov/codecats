@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'mode_intro.dart';
+import '../data/belts.dart';
 import '../data/phases.dart';
 import 'phase_exam.dart';
 import 'math_gym_screen.dart';
@@ -194,6 +195,7 @@ class _MapScreenState extends State<MapScreen> {
       '${d.hour}:${d.minute.toString().padLeft(2, '0')}';
 
   bool _talkQueued = false;
+  bool _stripeQueued = false;
   bool _missionsOpen = false;
 
   /// Shows only the first few mission rows; the rest fold behind a
@@ -242,6 +244,35 @@ class _MapScreenState extends State<MapScreen> {
       animation:
           Listenable.merge([progress, Cloud.instance, CoachStore.instance]),
       builder: (context, _) {
+        if (!_stripeQueued &&
+            beltStripes(kBelts[progress.belt], progress) >
+                progress.beltStripesSeen) {
+          _stripeQueued = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) {
+              _stripeQueued = false;
+              return;
+            }
+            final n = progress.takeNewStripes();
+            final b = kBelts[progress.belt];
+            final s = beltStripes(b, progress);
+            if (n > 0) {
+              await ProfessorDialog.show(context, [
+                l.pick(
+                    '🥋 ¡Ganaste la franja $s de 4 de tu ${b.es}! +${10 * n} Miaudólares.',
+                    '🥋 You earned stripe $s of 4 on your ${b.en}! +${10 * n} coins.'),
+                s == 4
+                    ? l.pick(
+                        'Con las 4 franjas ya podés dar el examen de cinturón: arriba del mapa está el botón. Sin pistas y con reloj, como en la olimpiada.',
+                        'With 4 stripes you can take the belt exam: the button is at the top of the map.')
+                    : l.pick(
+                        'Así entrenan los campeones: de a poco y todos los días. Con 4 franjas das el examen para el cinturón siguiente.',
+                        'Champions train like this: a bit every day. With 4 stripes you take the exam for the next belt.'),
+              ]);
+            }
+            _stripeQueued = false;
+          });
+        }
         if (progress.blitzMin >= Progress.kBlitzEvery) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {

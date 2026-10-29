@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'sound_panel.dart';
 
+import '../data/belts.dart';
 import '../data/phases.dart';
 import '../data/worlds.dart';
 import '../l10n.dart';
@@ -19,8 +20,14 @@ import 'theme.dart';
 /// Duolingo-style skip exam: pass 80% of the problems in time to open
 /// the phase. No hints (exam mode); the run survives leaving the screen.
 class PhaseExamScreen extends StatefulWidget {
-  const PhaseExamScreen({super.key, required this.phase});
-  final Phase phase;
+  const PhaseExamScreen({super.key, this.phase, this.belt})
+      : assert((phase == null) != (belt == null));
+  final Phase? phase;
+
+  /// Belt exam: passing gives the next belt.
+  final Belt? belt;
+
+  int get code => phase?.n ?? kBeltExamBase + belt!.n;
 
   static const kDuration = Duration(minutes: 45);
 
@@ -40,15 +47,21 @@ class _PhaseExamScreenState extends State<PhaseExamScreen> {
     super.initState();
     Sfx.focus();
     final p = Progress.instance;
-    if (p.examActive && p.examPhase == widget.phase.n) {
+    if (p.examActive && p.examPhase == widget.code) {
       _problems = [for (final id in p.examIds) levelById(id)]
           .whereType<Level>()
           .toList();
     } else {
-      _problems = pickPhaseExam(widget.phase);
-      p.startExam(widget.phase.n, [for (final l in _problems) l.id],
-          PhaseExamScreen.kDuration);
-      Cloud.instance.log('phase_exam_start', data: {'phase': widget.phase.n});
+      final b = widget.belt;
+      _problems = b == null ? pickPhaseExam(widget.phase!) : pickBeltExam(b);
+      p.startExam(
+          widget.code,
+          [for (final l in _problems) l.id],
+          b == null
+              ? PhaseExamScreen.kDuration
+              : beltExamDuration(_problems.length));
+      Cloud.instance.log(b == null ? 'phase_exam_start' : 'belt_exam_start',
+          data: {'phase': widget.code, 'n': _problems.length});
     }
     _end = DateTime.fromMillisecondsSinceEpoch(p.examEndMs);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -73,15 +86,39 @@ class _PhaseExamScreenState extends State<PhaseExamScreen> {
     if (_ended) return;
     _ended = true;
     final passed = _solved >= _need;
-    Cloud.instance.log('phase_exam_end',
-        data: {'phase': widget.phase.n, 'solved': _solved, 'passed': passed});
+    final b = widget.belt;
+    Cloud.instance.log(b == null ? 'phase_exam_end' : 'belt_exam_end', data: {
+      'phase': widget.code,
+      'solved': _solved,
+      'total': _problems.length,
+      'passed': passed
+    });
     Progress.instance.endExam(passed: passed);
     final l = L.instance;
+    if (b != null) {
+      final next = kBelts[(b.n + 1).clamp(0, kBelts.length - 1)];
+      await ProfessorDialog.show(context, [
+        passed
+            ? l.pick(
+                '🥋 ¡Aprobaste! $_solved de ${_problems.length}. Desde hoy sos ${next.es}. +60 Miaudólares.',
+                '🥋 You passed! $_solved of ${_problems.length}. From today you are ${next.en}. +60 coins.')
+            : l.pick(
+                'Resolviste $_solved de ${_problems.length} y hacían falta $_need. No perdiste nada: conservás tu cinturón y tus franjas. Mañana podés intentarlo de nuevo.',
+                'You solved $_solved of ${_problems.length} and $_need were needed. You lost nothing. Try again tomorrow.'),
+        if (passed && next.n == 5)
+          l.pick(
+              'Esto ya es el nivel de la división Bronce de USACO, la olimpiada de Estados Unidos. Lo ganaste de verdad.',
+              'This is the real USACO Bronze division level. You earned it.'),
+      ]);
+      if (mounted) Navigator.pop(context);
+      return;
+    }
+    final ph = widget.phase!;
     await ProfessorDialog.show(context, [
       passed
           ? l.pick(
-              '¡Aprobaste! $_solved de ${_problems.length}. Se abrió la Fase ${widget.phase.n}: ${l.pick(widget.phase.titleEs, widget.phase.titleEn)}.',
-              'You passed! $_solved of ${_problems.length}. Phase ${widget.phase.n} is open: ${l.pick(widget.phase.titleEs, widget.phase.titleEn)}.')
+              '¡Aprobaste! $_solved de ${_problems.length}. Se abrió la Fase ${ph.n}: ${l.pick(ph.titleEs, ph.titleEn)}.',
+              'You passed! $_solved of ${_problems.length}. Phase ${ph.n} is open: ${l.pick(ph.titleEs, ph.titleEn)}.')
           : l.pick(
               'Resolviste $_solved de ${_problems.length} y hacían falta $_need. No pasa nada: repasá los mundos de la fase anterior y volvé a intentarlo.',
               'You solved $_solved of ${_problems.length} and $_need were needed. No problem: review the previous phase worlds and try again.'),
@@ -98,8 +135,9 @@ class _PhaseExamScreenState extends State<PhaseExamScreen> {
     final p = Progress.instance;
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-            '🎓 ${l.pick('Examen para saltar a la Fase', 'Skip exam to Phase')} ${widget.phase.n}'),
+        title: Text(widget.belt != null
+            ? '🥋 ${l.pick('Examen de cinturón', 'Belt exam')}'
+            : '🎓 ${l.pick('Examen para saltar a la Fase', 'Skip exam to Phase')} ${widget.phase!.n}'),
         actions: [
           const MusicButton(),
           Center(

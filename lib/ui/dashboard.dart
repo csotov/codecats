@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'sound_panel.dart';
 
+import '../data/belts.dart';
 import '../data/worlds.dart';
 import '../l10n.dart';
 import '../data/profe_talks.dart';
@@ -74,8 +75,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final attempts = p.levels.values.fold<int>(0, (s, lp) => s + lp.attempts);
     final accuracy = attempts == 0 ? 100 : (p.solvedCount * 100) ~/ attempts;
     final perfect = p.levels.values.where((lp) => lp.stars == 3).length;
-    final rank = rankForXp(p.xp);
-    final next = nextRank(p.xp);
+    final belt = kBelts[p.belt];
+    final toStripe = levelsToNextStripe(belt, p);
 
     return AnimatedBuilder(
       animation: p,
@@ -112,7 +113,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 style: const TextStyle(
                                     fontSize: 18, fontWeight: FontWeight.w800)),
                             const SizedBox(height: 4),
-                            RankChip(rank: rank),
+                            const BeltChip(),
                           ],
                         ),
                       ),
@@ -146,9 +147,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       l.t('perfect_levels')),
                   _stat(
                       context,
-                      Icons.trending_up,
-                      next == null ? 'MAX' : '${next.minXp - p.xp}',
-                      l.t('to_next_rank')),
+                      Icons.sports_martial_arts,
+                      toStripe == 0 ? '🥋' : '$toStripe',
+                      l.pick('niveles para la próxima franja',
+                          'levels to the next stripe')),
                 ],
               ),
               const SizedBox(height: 14),
