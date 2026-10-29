@@ -351,6 +351,12 @@ class Progress extends ChangeNotifier {
   /// `talk_<id>` so they sync with the rest of the progress.
   bool talkSeen(String id) => mathGym.containsKey('talk_$id');
 
+  void addCoins(int n) {
+    coins += n;
+    _save();
+    notifyListeners();
+  }
+
   void markTalkSeen(String id) {
     mathGym['talk_$id'] = [1, 0];
     _save();
