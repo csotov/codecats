@@ -583,6 +583,7 @@ class Progress extends ChangeNotifier {
     earlyHats = 0;
     earlyTodayDay = 0;
     earlyWon = false;
+    earlyFrom = 0;
     final raw = prefs.getString(_keyFor(active!.id));
     if (raw != null) {
       try {
@@ -624,6 +625,7 @@ class Progress extends ChangeNotifier {
         earlyHats = (j['eh'] as num?)?.toInt() ?? 0;
         earlyTodayDay = (j['etd'] as num?)?.toInt() ?? 0;
         earlyWon = j['ew'] == true;
+        earlyFrom = (j['ef'] as num?)?.toInt() ?? 0;
         cfHandle = j['cfh'] as String? ?? '';
         atcoderUser = j['acu'] as String? ?? '';
         scores
@@ -697,6 +699,7 @@ class Progress extends ChangeNotifier {
         'eh': earlyHats,
         'etd': earlyTodayDay,
         'ew': earlyWon,
+        'ef': earlyFrom,
         'bde': equippedBadge,
         'cfh': cfHandle,
         'acu': atcoderUser,
@@ -821,6 +824,7 @@ class Progress extends ChangeNotifier {
     if (earlyDeadline == 0) earlyDeadline = (d['eo'] as num?)?.toInt() ?? 0;
     earlyTodayDay = math.max(earlyTodayDay, (d['etd'] as num?)?.toInt() ?? 0);
     earlyWon = earlyWon || d['ew'] == true;
+    earlyFrom = math.max(earlyFrom, (d['ef'] as num?)?.toInt() ?? 0);
     if (equippedBadge.isEmpty) equippedBadge = d['bde'] as String? ?? '';
     if (!equippedBadge.startsWith('s_')) equippedBadge = '';
     if (cfHandle.isEmpty) cfHandle = d['cfh'] as String? ?? '';
@@ -891,6 +895,7 @@ class Progress extends ChangeNotifier {
           'eh': earlyHats,
           'etd': earlyTodayDay,
           'ew': earlyWon,
+          'ef': earlyFrom,
           'bde': equippedBadge,
           'cfh': cfHandle,
           'acu': atcoderUser,
@@ -993,7 +998,9 @@ class Progress extends ChangeNotifier {
     lastCoinsEarned =
         coinsForSolve(firstSolve: !p.solved, stars: stars, boss: boss);
     coins += lastCoinsEarned;
-    if (earlyIsToday) earlyWon = true;
+    if (earlyIsToday && !(earlyFromAt?.isAfter(DateTime.now()) ?? false)) {
+      earlyWon = true;
+    }
     if (!p.solved) {
       earned = levelXp;
       xp += levelXp;
@@ -1165,21 +1172,34 @@ class Progress extends ChangeNotifier {
   /// level won ([earlyWon]) before the deadline, not just opening the game.
   int earlyTodayDay = 0;
   bool earlyWon = false;
+
+  /// Optional start of today's window (ms, 0 = right away): wins before it
+  /// don't count.
+  int earlyFrom = 0;
+  DateTime? get earlyFromAt =>
+      earlyFrom == 0 ? null : DateTime.fromMillisecondsSinceEpoch(earlyFrom);
   bool get earlyIsToday {
     final dl = earlyDeadlineAt;
     return dl != null && earlyTodayDay == _ymd(dl);
   }
 
   /// Replaces any pending offer with one for today: win a level before
-  /// 15:30 (or within 2 hours if it's later). Once a day.
-  bool offerEarlyToday(DateTime now) {
-    if (earlyTodayDay == _ymd(now)) return false;
+  /// 15:30 (or within 2 hours if it's later). Once a day. With [from], the
+  /// window opens then and lasts 2 hours; a new [from] moves a pending offer.
+  bool offerEarlyToday(DateTime now, {DateTime? from}) {
+    final f = from?.millisecondsSinceEpoch ?? 0;
+    if (earlyTodayDay == _ymd(now) &&
+        (f == earlyFrom || earlyDeadline == 0 || earlyWon)) {
+      return false;
+    }
     earlyTodayDay = _ymd(now);
     earlyOfferDay = _ymd(now);
     earlyWon = false;
+    earlyFrom = f;
     var dl = DateTime(now.year, now.month, now.day, 15, 30);
-    final later = now.add(const Duration(hours: 2));
-    if (later.isAfter(dl)) dl = later;
+    final later = (from != null && from.isAfter(now) ? from : now)
+        .add(const Duration(hours: 2));
+    if (from != null || later.isAfter(dl)) dl = later;
     final end = DateTime(now.year, now.month, now.day, 23, 59);
     if (dl.isAfter(end)) dl = end;
     earlyDeadline = dl.millisecondsSinceEpoch;

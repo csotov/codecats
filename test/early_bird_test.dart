@@ -79,6 +79,20 @@ void main() {
         'hats');
     expect(p.earlyDeadlineAt, isNull);
   });
+
+  test('admin can move today\'s window to start later', () async {
+    SharedPreferences.setMockInitialValues({});
+    final p = Progress.instance;
+    await p.ensureLoaded();
+    await p.reset();
+    final now = DateTime.now();
+    expect(p.offerEarlyToday(now), isTrue);
+    final from = now.add(const Duration(hours: 1));
+    expect(p.offerEarlyToday(now, from: from), isTrue);
+    expect(p.offerEarlyToday(now, from: from), isFalse);
+    p.recordSolve('w1l1', 10, 1);
+    expect(p.earlyWon, isFalse, reason: 'wins before the window don\'t count');
+  });
 }
 
 class _AlwaysTrue implements math.Random {
