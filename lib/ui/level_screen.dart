@@ -294,6 +294,10 @@ class _LevelScreenState extends State<LevelScreen>
         if (Tweaks.instance.has('hint1', widget.level.id)) 'tweak_hint1': true,
         if (Tweaks.instance.has('harder', widget.level.id))
           'tweak_harder': true,
+        if (Tweaks.instance.has('early_help', widget.level.id))
+          'tweak_early_help': true,
+        if (Tweaks.instance.has('example', widget.level.id))
+          'tweak_example': true,
       },
     );
     final ex = workedExampleFor(widget.level.id);
@@ -301,7 +305,8 @@ class _LevelScreenState extends State<LevelScreen>
     if (ex != null &&
         !widget.examMode &&
         !Progress.instance.of(widget.level.id).solved &&
-        !Progress.instance.talkSeen(exKey)) {
+        (!Progress.instance.talkSeen(exKey) ||
+            Tweaks.instance.has('example', widget.level.id))) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         Progress.instance.markTalkSeen(exKey);
@@ -422,7 +427,9 @@ class _LevelScreenState extends State<LevelScreen>
     if (DateTime.now().difference(_lastActivity) > _activeWindow) return;
     _stuckSec += sec;
     // Never interrupt a run, a dialog or another screen: wait for later.
-    if (_stuckSec < (_isLong ? _stuckLimit : _stuckLimitShort) ||
+    final limit = (_isLong ? _stuckLimit : _stuckLimitShort) ~/
+        (Tweaks.instance.has('early_help', widget.level.id) ? 2 : 1);
+    if (_stuckSec < limit ||
         _busy ||
         ModalRoute.of(context)?.isCurrent != true) {
       return;

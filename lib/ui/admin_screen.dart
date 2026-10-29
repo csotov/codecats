@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'sound_panel.dart';
 
+import '../data/worked_examples.dart';
 import '../data/worlds.dart';
 import '../data/cats.dart';
 import '../data/complexity.dart';
@@ -1104,15 +1105,44 @@ class _AdminScreenState extends State<AdminScreen> {
   /// (a level he keeps reopening or 20+ min without winning) go now.
   List<Widget> _advice(
       L l, List<LevelDiag> diags, String Function(String id) title) {
-    final items = <(String, String, String, String, bool)>[];
+    final items =
+        <(String, String, String, bool, List<(String, String, String)>)>[];
+    final hint1 = (
+      'hint1',
+      l.pick('Pista 1 gratis desde el inicio', 'Hint 1 free from the start'),
+      l.pick(
+          'Impacto: destraba enseguida y baja la frustración. Riesgo: se acostumbra a leer la pista antes de pensar.',
+          'Impact: unblocks right away, less frustration. Risk: he gets used to reading the hint before thinking.'),
+    );
+    final early = (
+      'early_help',
+      l.pick('El Profe ofrece ayuda antes (a la mitad del tiempo)',
+          'The Profe offers help sooner (half the time)'),
+      l.pick(
+          'Impacto: primero piensa solo un rato y la ayuda llega antes de frustrarse. Riesgo: menos tiempo de pelearla solo.',
+          'Impact: he thinks alone first and help arrives before frustration. Risk: less time struggling alone.'),
+    );
+    final example = (
+      'example',
+      l.pick('Ejemplo resuelto antes de cada intento',
+          'Worked example before every attempt'),
+      l.pick(
+          'Impacto: ve el molde del código y lo aplica con otros datos; es lo que más ayuda con temas nuevos. Riesgo: puede copiar el molde sin entenderlo.',
+          'Impact: he sees the code pattern and reuses it; best for new topics. Risk: copying the pattern without understanding.'),
+    );
+    bool hasExample(Iterable<String> ids) =>
+        ids.any((id) => workedExampleFor(id) != null);
     for (final d in diags.where(urgent)) {
       items.add((
         'level:${d.id}',
-        'hint1',
-        l.pick('🚨 Urgente · ${title(d.id)}: pista 1 gratis desde el inicio',
-            '🚨 Urgent · ${title(d.id)}: hint 1 free from the start'),
+        l.pick('🚨 Urgente · ${title(d.id)}', '🚨 Urgent · ${title(d.id)}'),
         _evidence(l, d),
         true,
+        [
+          hint1,
+          early,
+          if (hasExample([d.id])) example
+        ],
       ));
     }
     final tests = topicTests(diags, _topicsOf)
@@ -1126,24 +1156,35 @@ class _AdminScreenState extends State<AdminScreen> {
             '${(100 * (1 - p)).round()}%');
     for (final t in tests) {
       if (t.worse) {
+        final ids = [
+          for (final w in kWorlds)
+            for (final lv in w.levels)
+              if (_topicsOf(lv.id).map(normConcept).contains(t.topic)) lv.id
+        ];
         items.add((
           t.topic,
-          'hint1',
-          l.pick(
-              '🛠️ ${t.topic}: pista 1 gratis desde el inicio en sus niveles',
-              '🛠️ ${t.topic}: hint 1 free from the start on its levels'),
+          l.pick('🛠️ ${t.topic}: le cuesta', '🛠️ ${t.topic}: he struggles'),
           ev(t, t.pWorse),
           false,
+          [early, hint1, if (hasExample(ids)) example],
         ));
       } else if (t.better) {
         items.add((
           t.topic,
-          'harder',
           l.pick(
-              '🚀 ${t.topic}: subir la exigencia (sin pista gratis automática)',
-              '🚀 ${t.topic}: raise the bar (no automatic free hint)'),
+              '🚀 ${t.topic}: le resulta fácil', '🚀 ${t.topic}: easy for him'),
           ev(t, t.pBetter),
           false,
+          [
+            (
+              'harder',
+              l.pick('Subir la exigencia: sin pista gratis automática',
+                  'Raise the bar: no automatic free hint'),
+              l.pick(
+                  'Impacto: más desafío y estrellas más merecidas. Riesgo: si un nivel nuevo del tema le cuesta, tarda más en recibir ayuda.',
+                  'Impact: more challenge. Risk: slower help if a new level of the topic is hard.'),
+            ),
+          ],
         ));
       }
     }
@@ -1182,7 +1223,7 @@ class _AdminScreenState extends State<AdminScreen> {
         Text(l.pick(
             'Ninguno todavía: no hay diferencias que no puedan ser casualidad.',
             'None yet: no difference that could not be chance.')),
-      for (final (topic, action, text, evidence, isUrgent) in items)
+      for (final (topic, text, evidence, isUrgent, options) in items)
         Container(
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(10),
@@ -1198,38 +1239,79 @@ class _AdminScreenState extends State<AdminScreen> {
               Text(text, style: const TextStyle(fontWeight: FontWeight.w600)),
               Text(evidence, style: lo),
               const SizedBox(height: 6),
-              switch (stateOf(topic, action)?['status']) {
-                final String st => Row(children: [
-                    Text(st == 'applied'
-                        ? l.pick('✅ Aplicado', '✅ Applied')
-                        : l.pick('🚫 Descartado', '🚫 Dismissed')),
+              switch (options
+                  .map((o) => (o, stateOf(topic, o.$1)?['status']))
+                  .where((e) => e.$2 is String)
+                  .firstOrNull) {
+                final chosen? => Row(children: [
+                    Flexible(
+                      child: Text(chosen.$2 == 'applied'
+                          ? l.pick('✅ Aplicado: ${chosen.$1.$2}',
+                              '✅ Applied: ${chosen.$1.$2}')
+                          : l.pick('🚫 Descartado', '🚫 Dismissed')),
+                    ),
                     const SizedBox(width: 8),
                     Tooltip(
                       message: l.pick('Volver a como estaba', 'Revert'),
                       child: TextButton(
-                          onPressed: () => act(topic, action, null, evidence),
+                          onPressed: () =>
+                              act(topic, chosen.$1.$1, null, evidence),
                           child: Text(l.pick('Deshacer', 'Undo'))),
                     ),
                   ]),
-                _ => Wrap(spacing: 8, children: [
-                    Tooltip(
-                      message: l.pick(
-                          'El juego lo pone en práctica desde su próxima partida',
-                          'The game applies it from his next session'),
-                      child: FilledButton(
-                          onPressed: () =>
-                              act(topic, action, 'applied', evidence),
-                          child: Text(l.pick('Aplicar', 'Apply'))),
-                    ),
-                    Tooltip(
-                      message: l.pick('No hacer nada y no volver a mostrarlo',
-                          'Do nothing and stop suggesting it'),
-                      child: OutlinedButton(
-                          onPressed: () =>
-                              act(topic, action, 'dismissed', evidence),
-                          child: Text(l.pick('Descartar', 'Dismiss'))),
-                    ),
-                  ]),
+                _ => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (options.length > 1)
+                        Text(
+                            l.pick('Elegí una de ${options.length} opciones:',
+                                'Pick one of ${options.length} options:'),
+                            style: lo),
+                      for (final (i, o) in options.indexed)
+                        Container(
+                          margin: const EdgeInsets.only(top: 6),
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.04),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                      '${options.length > 1 ? '${String.fromCharCode(65 + i)}. ' : ''}${o.$2}'
+                                      '${i == 0 && options.length > 1 ? l.pick(' (recomendada)', ' (recommended)') : ''}',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w600)),
+                                  Text(o.$3, style: lo),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Tooltip(
+                              message: l.pick(
+                                  'El juego lo pone en práctica desde su próxima partida',
+                                  'The game applies it from his next session'),
+                              child: FilledButton(
+                                  onPressed: () =>
+                                      act(topic, o.$1, 'applied', evidence),
+                                  child: Text(l.pick('Aplicar', 'Apply'))),
+                            ),
+                          ]),
+                        ),
+                      const SizedBox(height: 6),
+                      Tooltip(
+                        message: l.pick('No hacer nada y no volver a mostrarlo',
+                            'Do nothing and stop suggesting it'),
+                        child: OutlinedButton(
+                            onPressed: () => act(
+                                topic, options.first.$1, 'dismissed', evidence),
+                            child: Text(l.pick('Descartar', 'Dismiss'))),
+                      ),
+                    ],
+                  ),
               },
             ],
           ),
