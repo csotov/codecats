@@ -23,7 +23,7 @@ Future<void> main() async {
   await Progress.instance.ensureLoaded();
   if (Cloud.instance.signedIn) unawaited(Progress.instance.linkAccount());
   await GraderPref.load();
-  runApp(const CodeCatsApp());
+  runApp(CodeCatsApp());
   Sfx.menu(); // fire-and-forget; browsers may delay audio until first tap
   // A key press also counts as a user gesture for the browser.
   HardwareKeyboard.instance.addHandler((e) {

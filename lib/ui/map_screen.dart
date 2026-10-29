@@ -170,7 +170,8 @@ class _MapScreenState extends State<MapScreen> {
       builder: (ctx) => AlertDialog(
         content: SizedBox(
           width: 480,
-          child: ProfessorSays(
+          child: IntrinsicHeight(
+              child: ProfessorSays(
             text: l.pick(
                 '🌅 ¡Premio madrugador! Si mañana entrás antes de las ${_hm(dl)}, te espera un premio especial: ${Progress.kEarlyHats} Gorritos Gatunos o un gato que no se consigue de ninguna otra forma. ¿Te animás?',
                 '🌅 Early-bird prize! Come back tomorrow before ${_hm(dl)} and a special prize awaits: ${Progress.kEarlyHats} Cat Beanies or a cat you can\'t get any other way. Deal?'),
@@ -181,7 +182,7 @@ class _MapScreenState extends State<MapScreen> {
                   onPressed: () => Navigator.pop(ctx),
                   child: Text(l.pick('¡Trato hecho!', 'Deal!'))),
             ),
-          ),
+          )),
         ),
       ),
     );
