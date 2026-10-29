@@ -63,10 +63,13 @@ void main() {
     final r = await runBlocks([
       b('decl_int', params: {'name': 'n', 'init': '5'}),
       b('decl_int', params: {'name': 's', 'init': '0'}),
-      b('for_i', params: {'var': 'i', 'start': '1', 'end': 'n + 1'},
-          children: [
-            b('add_assign', params: {'name': 's', 'expr': 'i'}),
-          ]),
+      b('for_i', params: {
+        'var': 'i',
+        'start': '1',
+        'end': 'n + 1'
+      }, children: [
+        b('add_assign', params: {'name': 's', 'expr': 'i'}),
+      ]),
       b('print_expr', params: {'expr': 's'}),
     ]);
     expect(r.output, '15\n');
@@ -74,13 +77,19 @@ void main() {
 
   test('nested for: inner var does not clobber outer', () async {
     final r = await runBlocks([
-      b('for_i', params: {'var': 'i', 'start': '0', 'end': '3'},
-          children: [
-            b('for_i', params: {'var': 'i', 'start': '0', 'end': '2'},
-                children: [
-                  b('print_inline', params: {'expr': '1'}),
-                ]),
-          ]),
+      b('for_i', params: {
+        'var': 'i',
+        'start': '0',
+        'end': '3'
+      }, children: [
+        b('for_i', params: {
+          'var': 'i',
+          'start': '0',
+          'end': '2'
+        }, children: [
+          b('print_inline', params: {'expr': '1'}),
+        ]),
+      ]),
     ]);
     expect(r.output, '111111');
   });
@@ -96,13 +105,13 @@ void main() {
   test('if/else branches', () async {
     final r = await runBlocks([
       b('decl_int', params: {'name': 'x', 'init': '-3'}),
-      b('if_else', params: {'cond': 'x >= 0'},
-          children: [
-            b('print_text', params: {'text': 'pos'}),
-          ],
-          elseChildren: [
-            b('print_text', params: {'text': 'neg'}),
-          ]),
+      b('if_else', params: {
+        'cond': 'x >= 0'
+      }, children: [
+        b('print_text', params: {'text': 'pos'}),
+      ], elseChildren: [
+        b('print_text', params: {'text': 'neg'}),
+      ]),
     ]);
     expect(r.output, 'neg\n');
   });
@@ -110,12 +119,12 @@ void main() {
   test('while + break', () async {
     final r = await runBlocks([
       b('decl_int', params: {'name': 'i', 'init': '0'}),
-      b('while_block', params: {'cond': 'true'},
-          children: [
-            b('increment', params: {'name': 'i'}),
-            b('if_block', params: {'cond': 'i >= 3'},
-                children: [b('break_stmt')]),
-          ]),
+      b('while_block', params: {
+        'cond': 'true'
+      }, children: [
+        b('increment', params: {'name': 'i'}),
+        b('if_block', params: {'cond': 'i >= 3'}, children: [b('break_stmt')]),
+      ]),
       b('print_expr', params: {'expr': 'i'}),
     ]);
     expect(r.output, '3\n');

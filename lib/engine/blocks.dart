@@ -101,11 +101,8 @@ String _p(Map<String, String> p, String k, [String fallback = '']) {
 /// A name param may hold several comma-separated identifiers
 /// ("a, b" → ['a','b']) — kids naturally declare/read in batches.
 List<String> _names(String raw, String fallback) {
-  final parts = raw
-      .split(',')
-      .map((s) => s.trim())
-      .where((s) => s.isNotEmpty)
-      .toList();
+  final parts =
+      raw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
   return parts.isEmpty ? [fallback] : parts;
 }
 
@@ -156,8 +153,7 @@ final List<BlockDef> _defs = [
     labelEs: 'Leer variable',
     labelEn: 'Read variable',
     params: [BlockParam('var', 'variable', 'variable', hint: 'x')],
-    emit: (p) =>
-        'cin >> ${_names(_p(p, 'var'), 'x').join(' >> ')};',
+    emit: (p) => 'cin >> ${_names(_p(p, 'var'), 'x').join(' >> ')};',
   ),
   // ---- Variables -------------------------------------------------------
   BlockDef(
@@ -167,8 +163,8 @@ final List<BlockDef> _defs = [
     labelEn: 'Integer variable',
     params: [
       BlockParam('name', 'nombre', 'name', hint: 'x'),
-      BlockParam('init', 'valor inicial (opcional)',
-          'initial value (optional)', hint: '0'),
+      BlockParam('init', 'valor inicial (opcional)', 'initial value (optional)',
+          hint: '0'),
     ],
     emit: (p) => _decl('int', _p(p, 'name'), _p(p, 'init'), 'x'),
   ),
@@ -179,11 +175,10 @@ final List<BlockDef> _defs = [
     labelEn: 'Big integer (long long)',
     params: [
       BlockParam('name', 'nombre', 'name', hint: 'x'),
-      BlockParam('init', 'valor inicial (opcional)',
-          'initial value (optional)', hint: '0'),
+      BlockParam('init', 'valor inicial (opcional)', 'initial value (optional)',
+          hint: '0'),
     ],
-    emit: (p) =>
-        _decl('long long', _p(p, 'name'), _p(p, 'init'), 'x'),
+    emit: (p) => _decl('long long', _p(p, 'name'), _p(p, 'init'), 'x'),
   ),
   BlockDef(
     id: 'decl_double',
@@ -192,8 +187,8 @@ final List<BlockDef> _defs = [
     labelEn: 'Decimal number',
     params: [
       BlockParam('name', 'nombre', 'name', hint: 'x'),
-      BlockParam('init', 'valor inicial (opcional)',
-          'initial value (optional)', hint: '0'),
+      BlockParam('init', 'valor inicial (opcional)', 'initial value (optional)',
+          hint: '0'),
     ],
     emit: (p) => _decl('double', _p(p, 'name'), _p(p, 'init'), 'x'),
   ),
@@ -204,8 +199,8 @@ final List<BlockDef> _defs = [
     labelEn: 'Boolean variable',
     params: [
       BlockParam('name', 'nombre', 'name', hint: 'ok'),
-      BlockParam('init', 'valor inicial (opcional)',
-          'initial value (optional)', hint: 'false'),
+      BlockParam('init', 'valor inicial (opcional)', 'initial value (optional)',
+          hint: 'false'),
     ],
     emit: (p) => _decl('bool', _p(p, 'name'), _p(p, 'init'), 'ok'),
   ),
@@ -279,8 +274,7 @@ final List<BlockDef> _defs = [
           hint: 'n', defaultValue: 'n'),
     ],
     hasBody: true,
-    emit: (p) =>
-        'for (int ${_p(p, 'var', 'i')} = ${_p(p, 'start', '0')}; '
+    emit: (p) => 'for (int ${_p(p, 'var', 'i')} = ${_p(p, 'start', '0')}; '
         '${_p(p, 'var', 'i')} < ${_p(p, 'end', 'n')}; ${_p(p, 'var', 'i')}++) {',
   ),
   BlockDef(
@@ -290,12 +284,13 @@ final List<BlockDef> _defs = [
     labelEn: 'Repeat backwards (for--)',
     params: [
       BlockParam('var', 'variable', 'variable', hint: 'i', defaultValue: 'i'),
-      BlockParam('start', 'desde', 'from', hint: 'n - 1', defaultValue: 'n - 1'),
-      BlockParam('end', 'mientras >=', 'while >=', hint: '0', defaultValue: '0'),
+      BlockParam('start', 'desde', 'from',
+          hint: 'n - 1', defaultValue: 'n - 1'),
+      BlockParam('end', 'mientras >=', 'while >=',
+          hint: '0', defaultValue: '0'),
     ],
     hasBody: true,
-    emit: (p) =>
-        'for (int ${_p(p, 'var', 'i')} = ${_p(p, 'start', 'n - 1')}; '
+    emit: (p) => 'for (int ${_p(p, 'var', 'i')} = ${_p(p, 'start', 'n - 1')}; '
         '${_p(p, 'var', 'i')} >= ${_p(p, 'end', '0')}; ${_p(p, 'var', 'i')}--) {',
   ),
   BlockDef(
@@ -353,8 +348,7 @@ final List<BlockDef> _defs = [
       BlockParam('name', 'arreglo', 'array', hint: 'a'),
       BlockParam('n', 'cantidad', 'count', hint: 'n'),
     ],
-    emit: (p) =>
-        'for (int _i = 0; _i < ${_p(p, 'n', 'n')}; _i++) '
+    emit: (p) => 'for (int _i = 0; _i < ${_p(p, 'n', 'n')}; _i++) '
         'cin >> ${_p(p, 'name', 'a')}[_i];',
   ),
   BlockDef(
@@ -366,8 +360,7 @@ final List<BlockDef> _defs = [
       BlockParam('name', 'arreglo', 'array', hint: 'a'),
       BlockParam('n', 'cantidad', 'count', hint: 'n'),
     ],
-    emit: (p) =>
-        'for (int _i = 0; _i < ${_p(p, 'n', 'n')}; _i++) { '
+    emit: (p) => 'for (int _i = 0; _i < ${_p(p, 'n', 'n')}; _i++) { '
         'if (_i) cout << " "; cout << ${_p(p, 'name', 'a')}[_i]; } '
         'cout << endl;',
   ),
@@ -393,8 +386,7 @@ final List<BlockDef> _defs = [
       BlockParam('a', 'variable A', 'variable A', hint: 'a[i]'),
       BlockParam('b', 'variable B', 'variable B', hint: 'a[j]'),
     ],
-    emit: (p) =>
-        '{ int _t = ${_p(p, 'a', 'x')}; ${_p(p, 'a', 'x')} = '
+    emit: (p) => '{ int _t = ${_p(p, 'a', 'x')}; ${_p(p, 'a', 'x')} = '
         '${_p(p, 'b', 'y')}; ${_p(p, 'b', 'y')} = _t; }',
   ),
   // ---- Misc ---------------------------------------------------------------

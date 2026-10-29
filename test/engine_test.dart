@@ -31,11 +31,13 @@ void main() {
 
     test('nested blocks indent correctly', () {
       final code = blocksToCode([
-        BlockNode('for_i',
-            params: {'var': 'i', 'start': '0', 'end': 'n'},
-            children: [
-              BlockNode('print_expr', params: {'expr': 'i'}),
-            ]),
+        BlockNode('for_i', params: {
+          'var': 'i',
+          'start': '0',
+          'end': 'n'
+        }, children: [
+          BlockNode('print_expr', params: {'expr': 'i'}),
+        ]),
       ]);
       expect(code, contains('for (int i = 0; i < n; i++) {'));
       expect(code, contains('        cout << i << endl;'));
@@ -43,14 +45,13 @@ void main() {
 
     test('if/else emits both branches', () {
       final code = blocksToCode([
-        BlockNode('if_else',
-            params: {'cond': 'x > 0'},
-            children: [
-              BlockNode('print_text', params: {'text': 'pos'}),
-            ],
-            elseChildren: [
-              BlockNode('print_text', params: {'text': 'neg'}),
-            ]),
+        BlockNode('if_else', params: {
+          'cond': 'x > 0'
+        }, children: [
+          BlockNode('print_text', params: {'text': 'pos'}),
+        ], elseChildren: [
+          BlockNode('print_text', params: {'text': 'neg'}),
+        ]),
       ]);
       expect(code, contains('if (x > 0) {'));
       expect(code, contains('} else {'));
@@ -70,13 +71,13 @@ void main() {
     });
 
     test('blocks survive JSON round-trip', () {
-      final root = BlockNode('for_i',
-          params: {'var': 'i', 'end': '10'},
-          children: [
-            BlockNode('print_expr', params: {'expr': 'i * i'}),
-          ]);
-      final restored =
-          blocksFromJson(blocksToJson([root]));
+      final root = BlockNode('for_i', params: {
+        'var': 'i',
+        'end': '10'
+      }, children: [
+        BlockNode('print_expr', params: {'expr': 'i * i'}),
+      ]);
+      final restored = blocksFromJson(blocksToJson([root]));
       expect(restored.length, 1);
       expect(restored[0].defId, 'for_i');
       expect(restored[0].params['end'], '10');

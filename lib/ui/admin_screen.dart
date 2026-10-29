@@ -6,6 +6,7 @@ import '../data/worlds.dart';
 import '../data/cats.dart';
 import '../data/complexity.dart';
 import '../l10n.dart';
+import '../models.dart';
 import '../services/activity.dart';
 import '../services/cloud.dart';
 import 'coach_admin.dart';
@@ -152,6 +153,8 @@ class _AdminScreenState extends State<AdminScreen> {
                     const Center(child: CircularProgressIndicator())
                   else if (_userId != null) ...[
                     _summary(l),
+                    const SizedBox(height: 12),
+                    _decisions(l),
                     const SizedBox(height: 12),
                     _sessionsCard(l),
                     const SizedBox(height: 12),
@@ -1058,6 +1061,186 @@ class _AdminScreenState extends State<AdminScreen> {
         ]),
       );
     });
+  }
+
+  String _verdictText(L l, LevelVerdict v) => switch (v) {
+        LevelVerdict.abandoned => l.pick(
+            '🚪 Lo deja sin ganar: revisar enunciado o agregar un nivel puente',
+            '🚪 Left unbeaten: review statement or add a bridge level'),
+        LevelVerdict.tooHard => l.pick(
+            '🧗 Muy difícil: partir en pasos o dar la pista 1 antes',
+            '🧗 Too hard: split into steps or show hint 1 earlier'),
+        LevelVerdict.hintDependent => l.pick(
+            '🆘 Depende de pistas: repasar el tema previo antes',
+            '🆘 Hint-dependent: review the previous topic first'),
+        LevelVerdict.syntax => l.pick(
+            '⌨️ Se traba en sintaxis: más práctica de escritura',
+            '⌨️ Stuck on syntax: more typing practice'),
+        LevelVerdict.tooEasy => l.pick(
+            '⚡ Muy fácil: se puede acortar o subir la exigencia',
+            '⚡ Too easy: shorten it or raise the bar'),
+        LevelVerdict.ok => l.pick('✅ Bien calibrado', '✅ Well calibrated'),
+      };
+
+  String _evidence(L l, LevelDiag d) => l.pick(
+      '${d.opens} aperturas · ${d.fails} fallos · ${d.hints} pistas · '
+          '${d.compileErrors} err. comp. · ${_fmtMin(d.activeSec)} activos'
+          '${d.won ? '' : ' · sin ganar'}',
+      '${d.opens} opens · ${d.fails} fails · ${d.hints} hints · '
+          '${d.compileErrors} comp. err · ${_fmtMin(d.activeSec)} active'
+          '${d.won ? '' : ' · unbeaten'}');
+
+  /// Concept tags plus the world, so a world that costs him projects
+  /// onto its remaining levels even when tags are too fine-grained.
+  List<String> _topicsOf(String id) {
+    final lv = levelById(id);
+    if (lv == null) return const [];
+    final wi = kWorlds.indexWhere((w) => w.levels.contains(lv));
+    return [
+      ...lv.concepts,
+      if (wi >= 0) L.instance.pick('mundo ${wi + 1}', 'world ${wi + 1}')
+    ];
+  }
+
+  Widget _decisions(L l) {
+    final diags = diagnoseLevels(_events, _levelActive)
+        .where((d) => levelById(d.id) != null)
+        .toList();
+    String title(String id) {
+      final lv = levelById(id);
+      return lv == null ? id : '$id · ${l.pick(lv.titleEs, lv.titleEn)}';
+    }
+
+    final flagged =
+        diags.where((d) => d.verdict != LevelVerdict.ok).take(10).toList();
+    final cs = conceptStats(diags, _topicsOf).values.toList()
+      ..sort((a, b) =>
+          (b.failsPer + 2 * b.hintsPer).compareTo(a.failsPer + 2 * a.hintsPer));
+    final weak = {for (final c in cs.where((c) => c.weak)) c.concept: c};
+    final strong = {for (final c in cs.where((c) => c.strong)) c.concept: c};
+    final played = diags.map((d) => d.id).toSet();
+    final ids = orderedIds;
+    final last = ids.lastIndexWhere(played.contains);
+    final upcoming = [
+      for (final id in ids.skip(last + 1).take(20))
+        if (levelById(id) case final lv?) lv
+    ];
+    final projections = <(Level, List<ConceptStat>, List<ConceptStat>)>[];
+    for (final lv in upcoming) {
+      final w = [
+        for (final c in lv.concepts)
+          if (weak[c] case final s?) s
+      ];
+      final s = [
+        for (final c in lv.concepts)
+          if (strong[c] case final s?) s
+      ];
+      if (w.isNotEmpty || (s.isNotEmpty && s.length == lv.concepts.length)) {
+        projections.add((lv, w, s));
+      }
+    }
+    String cEv(ConceptStat c) => l.pick(
+        '${c.concept}: ${c.n} niveles, ${c.failsPer.toStringAsFixed(1)} fallos '
+            'y ${c.hintsPer.toStringAsFixed(1)} pistas por nivel, '
+            '${c.minPer.toStringAsFixed(0)} min c/u'
+            '${c.unbeaten > 0 ? ', ${c.unbeaten} sin ganar' : ''}',
+        '${c.concept}: ${c.n} levels, ${c.failsPer.toStringAsFixed(1)} fails '
+            'and ${c.hintsPer.toStringAsFixed(1)} hints per level, '
+            '${c.minPer.toStringAsFixed(0)} min each'
+            '${c.unbeaten > 0 ? ', ${c.unbeaten} unbeaten' : ''}');
+    const lo = TextStyle(fontSize: 12, color: AppTheme.textLo);
+    const hi = TextStyle(fontWeight: FontWeight.w600);
+    return SectionCard(
+      title: l.pick(
+          '🧭 Para decidir: qué cambiar', '🧭 Decisions: what to change'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+              l.pick(
+                  'Basado en ${diags.length} niveles jugados, con tiempo activo '
+                      '(sin pausas de más de 15 min).',
+                  'Based on ${diags.length} played levels, with active time '
+                      '(no pauses over 15 min).'),
+              style: lo),
+          _chartTitle(l.pick(
+              'Niveles que piden un cambio (más fricción primero)',
+              'Levels that need a change (most friction first)')),
+          if (flagged.isEmpty)
+            Text(l.pick('Ninguno por ahora.', 'None for now.'))
+          else
+            for (final d in flagged)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title(d.id), style: hi),
+                    Text(_verdictText(l, d.verdict)),
+                    Text(_evidence(l, d), style: lo),
+                  ],
+                ),
+              ),
+          _chartTitle(l.pick('Temas: dónde le cuesta y dónde vuela',
+              'Topics: where he struggles and where he flies')),
+          if (cs.isEmpty)
+            Text(l.pick('Pocos datos.', 'Not enough data.'))
+          else
+            for (final c in cs.take(12))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                    '${c.weak ? '🔴' : c.strong ? '🟢' : c.enoughData ? '🟡' : '⚪'} '
+                    '${cEv(c)}'
+                    '${c.enoughData ? '' : l.pick(' (pocos datos)', ' (little data)')}',
+                    style: const TextStyle(fontSize: 13)),
+              ),
+          Text(
+              l.pick(
+                  '🔴 le cuesta (≥2 fallos o ≥1 pista por nivel, o alguno sin '
+                      'ganar) · 🟢 sin fallos ni pistas y rápido · '
+                      '⚪ menos de 2 niveles: no se proyecta',
+                  '🔴 struggles (≥2 fails or ≥1 hint per level, or one '
+                      'unbeaten) · 🟢 no fails/hints and fast · '
+                      '⚪ fewer than 2 levels: not projected'),
+              style: lo),
+          _chartTitle(l.pick('Proyección: próximos niveles que todavía no jugó',
+              'Projection: upcoming levels he has not played')),
+          if (projections.isEmpty)
+            Text(l.pick(
+                'Sin recomendaciones: los próximos niveles no usan temas con '
+                    'datos suficientes.',
+                'No recommendations: upcoming levels use no topics with '
+                    'enough data.'))
+          else
+            for (final (lv, w, s) in projections.take(8))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title(lv.id), style: hi),
+                    Text(w.isNotEmpty
+                        ? l.pick(
+                            '🛠️ Preparar: un nivel puente o la pista 1 visible '
+                                'desde el inicio, y un repaso de '
+                                '${w.map((c) => c.concept).join(', ')} antes',
+                            '🛠️ Prepare: a bridge level or hint 1 visible from '
+                                'the start, and a review of '
+                                '${w.map((c) => c.concept).join(', ')} first')
+                        : l.pick(
+                            '🚀 Se puede acelerar: subir la exigencia o '
+                                'agruparlo con el siguiente',
+                            '🚀 Can speed up: raise the bar or merge it with '
+                                'the next one')),
+                    for (final c in w.isNotEmpty ? w : s)
+                      Text(l.pick('Por qué: ', 'Why: ') + cEv(c), style: lo),
+                  ],
+                ),
+              ),
+        ],
+      ),
+    );
   }
 
   Widget _levelTable(L l) {

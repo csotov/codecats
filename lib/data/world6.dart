@@ -24,9 +24,16 @@ final world6 = World(
           'to largest, space-separated.',
       iEs: 'Tres enteros a b c.',
       iEn: 'Three integers a b c.',
-      samples: [['3 1 2', '1 2 3'], ['5 5 5', '5 5 5']],
-      tests: [['9 8 7', '7 8 9'], ['-1 0 -5', '-5 -1 0'],
-              ['1 3 2', '1 2 3'], ['2 1 3', '1 2 3']],
+      samples: [
+        ['3 1 2', '1 2 3'],
+        ['5 5 5', '5 5 5']
+      ],
+      tests: [
+        ['9 8 7', '7 8 9'],
+        ['-1 0 -5', '-5 -1 0'],
+        ['1 3 2', '1 2 3'],
+        ['2 1 3', '1 2 3']
+      ],
       hEs: [
         'Si a > b, intercámbialos. Repite con (a,c) y (b,c).',
         'Tras tres intercambios condicionales, quedan ordenados.',
@@ -53,19 +60,24 @@ final world6 = World(
           'BUBBLE SORT and print it space-separated.',
       iEs: 'Línea 1: n. Línea 2: n enteros.',
       iEn: 'Line 1: n. Line 2: n integers.',
-      samples: [['5\n4 2 5 1 3', '1 2 3 4 5'],
-                ['4\n9 7 8 6', '6 7 8 9']],
-      tests: [['1\n5', '5'], ['3\n3 2 1', '1 2 3'],
-              ['6\n0 -1 5 -1 2 0', '-1 -1 0 0 2 5'],
-              ['7\n10 9 8 7 6 5 4', '4 5 6 7 8 9 10']],
+      samples: [
+        ['5\n4 2 5 1 3', '1 2 3 4 5'],
+        ['4\n9 7 8 6', '6 7 8 9']
+      ],
+      tests: [
+        ['1\n5', '5'],
+        ['3\n3 2 1', '1 2 3'],
+        ['6\n0 -1 5 -1 2 0', '-1 -1 0 0 2 5'],
+        ['7\n10 9 8 7 6 5 4', '4 5 6 7 8 9 10']
+      ],
       hEs: [
         'for (int i = 0; i < n; i++) for (int j = 0; j + 1 < n - i; j++) '
-        'if (a[j] > a[j+1]) intercambia.',
+            'if (a[j] > a[j+1]) intercambia.',
         'Intercambio: int t = a[j]; a[j] = a[j+1]; a[j+1] = t;',
       ],
       hEn: [
         'for (int i = 0; i < n; i++) for (int j = 0; j + 1 < n - i; j++) '
-        'if (a[j] > a[j+1]) swap.',
+            'if (a[j] > a[j+1]) swap.',
         'Swap: int t = a[j]; a[j] = a[j+1]; a[j+1] = t;',
       ],
       starter: kStrStarter,
@@ -86,17 +98,21 @@ final world6 = World(
           'and print it space-separated.',
       iEs: 'Línea 1: n. Línea 2: n enteros.',
       iEn: 'Line 1: n. Line 2: n integers.',
-      samples: [['5\n64 25 12 22 11', '11 12 22 25 64'],
-                ['3\n3 1 2', '1 2 3']],
-      tests: [['4\n4 3 2 1', '1 2 3 4'],
-              ['6\n5 -5 0 3 -2 8', '-5 -2 0 3 5 8']],
+      samples: [
+        ['5\n64 25 12 22 11', '11 12 22 25 64'],
+        ['3\n3 1 2', '1 2 3']
+      ],
+      tests: [
+        ['4\n4 3 2 1', '1 2 3 4'],
+        ['6\n5 -5 0 3 -2 8', '-5 -2 0 3 5 8']
+      ],
       hEs: [
         'for (int i = 0; i < n; i++) { busca j con el mínimo en '
-        'a[i..n-1]; intercambia a[i] y a[j]; }',
+            'a[i..n-1]; intercambia a[i] y a[j]; }',
       ],
       hEn: [
         'for (int i = 0; i < n; i++) { find j with the minimum in '
-        'a[i..n-1]; swap a[i] and a[j]; }',
+            'a[i..n-1]; swap a[i] and a[j]; }',
       ],
       starter: kStrStarter,
       xp: 320,
@@ -116,10 +132,15 @@ final world6 = World(
           'the middle element after sorting.',
       iEs: 'Línea 1: n (impar). Línea 2: n enteros.',
       iEn: 'Line 1: n (odd). Line 2: n integers.',
-      samples: [['5\n10 50 30 20 40', '30'],
-                ['3\n7 2 9', '7']],
-      tests: [['1\n42', '42'], ['7\n7 1 6 3 9 2 8', '6'],
-              ['5\n-5 0 5 -10 10', '0']],
+      samples: [
+        ['5\n10 50 30 20 40', '30'],
+        ['3\n7 2 9', '7']
+      ],
+      tests: [
+        ['1\n42', '42'],
+        ['7\n7 1 6 3 9 2 8', '6'],
+        ['5\n-5 0 5 -10 10', '0']
+      ],
       hEs: [
         'Ordena con cualquiera de los dos métodos anteriores.',
         'La mediana está en a[n/2].',
@@ -147,17 +168,22 @@ final world6 = World(
           '(starting at 0) where x first appears, or -1 if absent.',
       iEs: 'Línea 1: n. Línea 2: n enteros. Línea 3: x.',
       iEn: 'Line 1: n. Line 2: n integers. Line 3: x.',
-      samples: [['5\n4 8 15 16 23\n15', '2'],
-                ['4\n1 2 3 4\n9', '-1']],
-      tests: [['3\n7 7 7\n7', '0'], ['1\n0\n0', '0'],
-              ['6\n5 4 3 2 1 0\n0', '5']],
+      samples: [
+        ['5\n4 8 15 16 23\n15', '2'],
+        ['4\n1 2 3 4\n9', '-1']
+      ],
+      tests: [
+        ['3\n7 7 7\n7', '0'],
+        ['1\n0\n0', '0'],
+        ['6\n5 4 3 2 1 0\n0', '5']
+      ],
       hEs: [
         'Recorre y usa break al encontrarlo; o guarda pos = -1 '
-        'y solo actualízala si sigue siendo -1.',
+            'y solo actualízala si sigue siendo -1.',
       ],
       hEn: [
         'Traverse and break when found; or keep pos = -1 '
-        'and only update it while it is still -1.',
+            'and only update it while it is still -1.',
       ],
       starter: kStrStarter,
       xp: 310,
@@ -179,20 +205,26 @@ final world6 = World(
           'Use binary search and print the position of x or -1.',
       iEs: 'Línea 1: n. Línea 2: n enteros ordenados. Línea 3: x.',
       iEn: 'Line 1: n. Line 2: n sorted integers. Line 3: x.',
-      samples: [['6\n1 3 5 7 9 11\n7', '3'],
-                ['6\n1 3 5 7 9 11\n4', '-1']],
-      tests: [['1\n5\n5', '0'], ['5\n2 4 6 8 10\n10', '4'],
-              ['5\n2 4 6 8 10\n2', '0'], ['8\n1 2 3 5 8 13 21 34\n13', '5'],
-              ['4\n10 20 30 40\n15', '-1']],
+      samples: [
+        ['6\n1 3 5 7 9 11\n7', '3'],
+        ['6\n1 3 5 7 9 11\n4', '-1']
+      ],
+      tests: [
+        ['1\n5\n5', '0'],
+        ['5\n2 4 6 8 10\n10', '4'],
+        ['5\n2 4 6 8 10\n2', '0'],
+        ['8\n1 2 3 5 8 13 21 34\n13', '5'],
+        ['4\n10 20 30 40\n15', '-1']
+      ],
       hEs: [
         'int lo = 0, hi = n - 1; while (lo <= hi) { int mid = (lo+hi)/2; '
-        'if (a[mid] == x) ...; else if (a[mid] < x) lo = mid + 1; '
-        'else hi = mid - 1; }',
+            'if (a[mid] == x) ...; else if (a[mid] < x) lo = mid + 1; '
+            'else hi = mid - 1; }',
       ],
       hEn: [
         'int lo = 0, hi = n - 1; while (lo <= hi) { int mid = (lo+hi)/2; '
-        'if (a[mid] == x) ...; else if (a[mid] < x) lo = mid + 1; '
-        'else hi = mid - 1; }',
+            'if (a[mid] == x) ...; else if (a[mid] < x) lo = mid + 1; '
+            'else hi = mid - 1; }',
       ],
       starter: kStrStarter,
       xp: 350,
@@ -212,9 +244,16 @@ final world6 = World(
           'ascending (a[i] <= a[i+1]), NO otherwise.',
       iEs: 'Línea 1: n. Línea 2: n enteros.',
       iEn: 'Line 1: n. Line 2: n integers.',
-      samples: [['4\n1 2 2 5', 'SI'], ['4\n1 3 2 4', 'NO']],
-      tests: [['1\n9', 'SI'], ['2\n2 1', 'NO'],
-              ['5\n5 4 3 2 1', 'NO'], ['3\n0 0 0', 'SI']],
+      samples: [
+        ['4\n1 2 2 5', 'SI'],
+        ['4\n1 3 2 4', 'NO']
+      ],
+      tests: [
+        ['1\n9', 'SI'],
+        ['2\n2 1', 'NO'],
+        ['5\n5 4 3 2 1', 'NO'],
+        ['3\n0 0 0', 'SI']
+      ],
       hEs: [
         'Recorre i de 0 a n-2: si a[i] > a[i+1] ya sabes que NO.',
         'Elementos iguales seguidos están permitidos.',
@@ -241,19 +280,23 @@ final world6 = World(
           'highest in descending order, space-separated.',
       iEs: 'Línea 1: n. Línea 2: n enteros.',
       iEn: 'Line 1: n. Line 2: n integers.',
-      samples: [['5\n10 50 30 20 40', '50 40 30'],
-                ['4\n1 2 3 4', '4 3 2']],
-      tests: [['3\n7 7 7', '7 7 7'],
-              ['6\n-10 0 -5 20 15 -1', '20 15 0'],
-              ['5\n100 1 50 25 75', '100 75 50']],
+      samples: [
+        ['5\n10 50 30 20 40', '50 40 30'],
+        ['4\n1 2 3 4', '4 3 2']
+      ],
+      tests: [
+        ['3\n7 7 7', '7 7 7'],
+        ['6\n-10 0 -5 20 15 -1', '20 15 0'],
+        ['5\n100 1 50 25 75', '100 75 50']
+      ],
       hEs: [
         'Ordena de menor a mayor e imprime los últimos 3 al revés: '
-        'a[n-1] a[n-2] a[n-3].',
+            'a[n-1] a[n-2] a[n-3].',
         'O modifica el ordenamiento para ordenar de mayor a menor.',
       ],
       hEn: [
         'Sort ascending and print the last 3 backwards: '
-        'a[n-1] a[n-2] a[n-3].',
+            'a[n-1] a[n-2] a[n-3].',
         'Or modify the sort to order descending.',
       ],
       starter: kStrStarter,

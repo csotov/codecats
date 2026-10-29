@@ -15,8 +15,34 @@ void main() {
   });
 
   test('deleted words are whole identifiers', () {
-    expect(deletedWords('cout << x << endl;', "cout << x << '\\n';"),
-        {'endl': 1});
+    expect(
+        deletedWords('cout << x << endl;', "cout << x << '\\n';"), {'endl': 1});
     expect(deletedWords('int a; int b;', 'int a;'), {'int': 1});
+  });
+
+  test('level diagnosis and concept projection', () {
+    Map<String, dynamic> ev(String t, String id, [Map d = const {}]) =>
+        {'type': t, 'level_id': id, 'data': d};
+    final diags = diagnoseLevels([
+      ev('level_open', 'a'),
+      for (var i = 0; i < 5; i++) ev('fight', 'a', {'won': false}),
+      ev('fight', 'a', {'won': true}),
+      ev('level_open', 'b'),
+      ev('fight', 'b', {'won': true}),
+      ev('level_open', 'c'),
+      ev('level_open', 'c'),
+    ], {
+      'a': 900,
+      'b': 60,
+      'c': 700
+    });
+    final by = {for (final d in diags) d.id: d};
+    expect(by['a']!.verdict, LevelVerdict.tooHard);
+    expect(by['b']!.verdict, LevelVerdict.tooEasy);
+    expect(by['c']!.verdict, LevelVerdict.abandoned);
+    expect(diags.last.id, 'b');
+    final cs = conceptStats(diags, (id) => id == 'b' ? ['cout'] : ['for']);
+    expect(cs['for']!.weak, isTrue);
+    expect(cs['cout']!.enoughData, isFalse);
   });
 }
