@@ -581,6 +581,8 @@ class Progress extends ChangeNotifier {
     earlyDeadline = 0;
     earlyOfferDay = 0;
     earlyHats = 0;
+    earlyTodayDay = 0;
+    earlyWon = false;
     final raw = prefs.getString(_keyFor(active!.id));
     if (raw != null) {
       try {
@@ -620,6 +622,8 @@ class Progress extends ChangeNotifier {
         earlyDeadline = (j['eo'] as num?)?.toInt() ?? 0;
         earlyOfferDay = (j['eod'] as num?)?.toInt() ?? 0;
         earlyHats = (j['eh'] as num?)?.toInt() ?? 0;
+        earlyTodayDay = (j['etd'] as num?)?.toInt() ?? 0;
+        earlyWon = j['ew'] == true;
         cfHandle = j['cfh'] as String? ?? '';
         atcoderUser = j['acu'] as String? ?? '';
         scores
@@ -691,6 +695,8 @@ class Progress extends ChangeNotifier {
         'eo': earlyDeadline,
         'eod': earlyOfferDay,
         'eh': earlyHats,
+        'etd': earlyTodayDay,
+        'ew': earlyWon,
         'bde': equippedBadge,
         'cfh': cfHandle,
         'acu': atcoderUser,
@@ -813,6 +819,8 @@ class Progress extends ChangeNotifier {
     earlyHats = math.max(earlyHats, (d['eh'] as num?)?.toInt() ?? 0);
     earlyOfferDay = math.max(earlyOfferDay, (d['eod'] as num?)?.toInt() ?? 0);
     if (earlyDeadline == 0) earlyDeadline = (d['eo'] as num?)?.toInt() ?? 0;
+    earlyTodayDay = math.max(earlyTodayDay, (d['etd'] as num?)?.toInt() ?? 0);
+    earlyWon = earlyWon || d['ew'] == true;
     if (equippedBadge.isEmpty) equippedBadge = d['bde'] as String? ?? '';
     if (!equippedBadge.startsWith('s_')) equippedBadge = '';
     if (cfHandle.isEmpty) cfHandle = d['cfh'] as String? ?? '';
@@ -881,6 +889,8 @@ class Progress extends ChangeNotifier {
           'eo': earlyDeadline,
           'eod': earlyOfferDay,
           'eh': earlyHats,
+          'etd': earlyTodayDay,
+          'ew': earlyWon,
           'bde': equippedBadge,
           'cfh': cfHandle,
           'acu': atcoderUser,
@@ -983,6 +993,7 @@ class Progress extends ChangeNotifier {
     lastCoinsEarned =
         coinsForSolve(firstSolve: !p.solved, stars: stars, boss: boss);
     coins += lastCoinsEarned;
+    if (earlyIsToday) earlyWon = true;
     if (!p.solved) {
       earned = levelXp;
       xp += levelXp;
@@ -1149,6 +1160,40 @@ class Progress extends ChangeNotifier {
   /// moment in ms (0 = no offer); [earlyOfferDay] the last day (yyyymmdd)
   /// the dice were rolled, so it is decided once a day.
   int earlyDeadline = 0, earlyOfferDay = 0, earlyHats = 0;
+
+  /// Same-day offer sent by the admin: on [earlyTodayDay] the prize needs a
+  /// level won ([earlyWon]) before the deadline, not just opening the game.
+  int earlyTodayDay = 0;
+  bool earlyWon = false;
+  bool get earlyIsToday {
+    final dl = earlyDeadlineAt;
+    return dl != null && earlyTodayDay == _ymd(dl);
+  }
+
+  /// Replaces any pending offer with one for today: win a level before
+  /// 15:30 (or within 2 hours if it's later). Once a day.
+  bool offerEarlyToday(DateTime now) {
+    if (earlyTodayDay == _ymd(now)) return false;
+    earlyTodayDay = _ymd(now);
+    earlyOfferDay = _ymd(now);
+    earlyWon = false;
+    var dl = DateTime(now.year, now.month, now.day, 15, 30);
+    final later = now.add(const Duration(hours: 2));
+    if (later.isAfter(dl)) dl = later;
+    final end = DateTime(now.year, now.month, now.day, 23, 59);
+    if (dl.isAfter(end)) dl = end;
+    earlyDeadline = dl.millisecondsSinceEpoch;
+    _save();
+    notifyListeners();
+    return true;
+  }
+
+  /// When the game was opened; the Profe's short challenges and offers wait
+  /// [kWarmUp] so they never pop up right on entering.
+  static DateTime appStart = DateTime.now();
+  static const kWarmUp = Duration(minutes: 1);
+  static bool get warm => DateTime.now().difference(appStart) >= kWarmUp;
+
   static const kEarlyChance = 0.4;
   static const kEarlyHats = 4;
   static const kEarlyCat = 'early_bird';
@@ -1187,7 +1232,9 @@ class Progress extends ChangeNotifier {
       return 'missed';
     }
     if (now.isBefore(DateTime(dl.year, dl.month, dl.day))) return null;
+    if (earlyIsToday && !earlyWon) return null;
     earlyDeadline = 0;
+    earlyWon = false;
     final String prize;
     if (!unlockedCats.contains(kEarlyCat) && (rng ?? _rng).nextBool()) {
       unlockedCats.add(kEarlyCat);

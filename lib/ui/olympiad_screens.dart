@@ -563,7 +563,9 @@ String? _lastBlitz;
 
 Future<void> maybeRunBlitz(BuildContext context) async {
   final p = Progress.instance;
-  if (_blitzOpen || p.blitzMin < Progress.kBlitzEvery) return;
+  if (_blitzOpen || p.blitzMin < Progress.kBlitzEvery || !Progress.warm) {
+    return;
+  }
   _blitzOpen = true;
   final l = L.instance;
   final n = p.blitzOk >= 6 ? 2 : 1;
