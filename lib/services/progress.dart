@@ -518,6 +518,9 @@ class Progress extends ChangeNotifier {
     badges.clear();
     equippedBadge = '';
     hatMade = List.filled(kHatTrade.length, 0);
+    earlyDeadline = 0;
+    earlyOfferDay = 0;
+    earlyHats = 0;
     final raw = prefs.getString(_keyFor(active!.id));
     if (raw != null) {
       try {
@@ -554,6 +557,9 @@ class Progress extends ChangeNotifier {
           ..addAll((j['bdg'] as List? ?? const []).map((e) => '$e'));
         equippedBadge = j['bde'] as String? ?? '';
         hatMade = _hatList(j['hmt']);
+        earlyDeadline = (j['eo'] as num?)?.toInt() ?? 0;
+        earlyOfferDay = (j['eod'] as num?)?.toInt() ?? 0;
+        earlyHats = (j['eh'] as num?)?.toInt() ?? 0;
         cfHandle = j['cfh'] as String? ?? '';
         atcoderUser = j['acu'] as String? ?? '';
         scores
@@ -615,6 +621,9 @@ class Progress extends ChangeNotifier {
         'bd': bonusDay,
         'bdg': badges.toList(),
         'hmt': hatMade,
+        'eo': earlyDeadline,
+        'eod': earlyOfferDay,
+        'eh': earlyHats,
         'bde': equippedBadge,
         'cfh': cfHandle,
         'acu': atcoderUser,
@@ -730,6 +739,9 @@ class Progress extends ChangeNotifier {
     hatMade = [
       for (var i = 0; i < kHatTrade.length; i++) math.max(hatMade[i], hm[i])
     ];
+    earlyHats = math.max(earlyHats, (d['eh'] as num?)?.toInt() ?? 0);
+    earlyOfferDay = math.max(earlyOfferDay, (d['eod'] as num?)?.toInt() ?? 0);
+    if (earlyDeadline == 0) earlyDeadline = (d['eo'] as num?)?.toInt() ?? 0;
     if (equippedBadge.isEmpty) equippedBadge = d['bde'] as String? ?? '';
     if (!equippedBadge.startsWith('s_')) equippedBadge = '';
     if (cfHandle.isEmpty) cfHandle = d['cfh'] as String? ?? '';
@@ -789,6 +801,9 @@ class Progress extends ChangeNotifier {
           'bd': bonusDay,
           'bdg': badges.toList(),
           'hmt': hatMade,
+          'eo': earlyDeadline,
+          'eod': earlyOfferDay,
+          'eh': earlyHats,
           'bde': equippedBadge,
           'cfh': cfHandle,
           'acu': atcoderUser,
@@ -1046,7 +1061,67 @@ class Progress extends ChangeNotifier {
   }
 
   /// Gorritos Gatunos earned (one per level at most).
-  int get hats => levels.values.where((p) => p.starMask & 8 != 0).length;
+  int get hats =>
+      levels.values.where((p) => p.starMask & 8 != 0).length + earlyHats;
+
+  /// Early-bird prize: on some days the map promises a prize for coming
+  /// back tomorrow before 15:00 (sometimes 15:30). [earlyDeadline] is that
+  /// moment in ms (0 = no offer); [earlyOfferDay] the last day (yyyymmdd)
+  /// the dice were rolled, so it is decided once a day.
+  int earlyDeadline = 0, earlyOfferDay = 0, earlyHats = 0;
+  static const kEarlyChance = 0.4;
+  static const kEarlyHats = 4;
+  static const kEarlyCat = 'early_bird';
+
+  static int _ymd(DateTime d) => d.year * 10000 + d.month * 100 + d.day;
+
+  DateTime? get earlyDeadlineAt => earlyDeadline == 0
+      ? null
+      : DateTime.fromMillisecondsSinceEpoch(earlyDeadline);
+
+  /// Rolls today's dice once; true when a new offer was just made.
+  bool offerEarly(DateTime now, [math.Random? rng]) {
+    if (earlyDeadline != 0 || earlyOfferDay == _ymd(now)) return false;
+    earlyOfferDay = _ymd(now);
+    final r = rng ?? math.Random(_ymd(now));
+    final lucky = r.nextDouble() < kEarlyChance;
+    if (lucky) {
+      earlyDeadline =
+          DateTime(now.year, now.month, now.day + 1, 15, r.nextBool() ? 30 : 0)
+              .millisecondsSinceEpoch;
+    }
+    _save();
+    notifyListeners();
+    return lucky;
+  }
+
+  /// On the deadline day before the deadline: grants the prize and
+  /// returns 'cat' or 'hats'. Past it, the offer expires ('missed').
+  String? claimEarly(DateTime now, [math.Random? rng]) {
+    final dl = earlyDeadlineAt;
+    if (dl == null) return null;
+    if (now.isAfter(dl)) {
+      earlyDeadline = 0;
+      _save();
+      notifyListeners();
+      return 'missed';
+    }
+    if (now.isBefore(DateTime(dl.year, dl.month, dl.day))) return null;
+    earlyDeadline = 0;
+    final String prize;
+    if (!unlockedCats.contains(kEarlyCat) && (rng ?? _rng).nextBool()) {
+      unlockedCats.add(kEarlyCat);
+      _noteCatOrigin(kEarlyCat);
+      prize = 'cat';
+    } else {
+      earlyHats += kEarlyHats;
+      coins += kHatCoins * kEarlyHats;
+      prize = 'hats';
+    }
+    _save();
+    notifyListeners();
+    return prize;
+  }
 
   /// Gives the Gorrito Gatuno of [levelId] once; false if already owned.
   bool awardHat(String levelId) {
@@ -1212,6 +1287,8 @@ class Progress extends ChangeNotifier {
         return levels.values.fold(0, (n, p) => n + p.attempts) >= need;
       case CatTrigger.coinsN:
         return coins >= need;
+      case CatTrigger.earlyBird:
+        return false;
       case CatTrigger.halloweenN:
         return levels.entries
                 .where((e) => e.key.startsWith('hw') && e.value.solved)
