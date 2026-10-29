@@ -3,6 +3,7 @@ import '../data/worked_examples.dart';
 import 'expert_screen.dart';
 import 'hat_celebration.dart';
 import '../data/problem_texts.dart';
+import '../data/ref_solutions.dart';
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -338,7 +339,7 @@ class _LevelScreenState extends State<LevelScreen>
   /// The level's own hints, topped up to [Progress.kMaxHints] with extra
   /// ones: a tip about the current code, a hand walk-through of the
   /// sample, what to read/print, and a read-compute-print plan.
-  List<String> _hintList(L l) {
+  List<String> _baseHints(L l) {
     final lv = widget.level;
     final own = l.pickList(_hintsEs, lv.hintsEn);
     final out = [...own];
@@ -378,6 +379,35 @@ class _LevelScreenState extends State<LevelScreen>
         'Plan en 3 pasos: 1) leé los datos (cin o los parámetros de la función), 2) hacé la cuenta o el recorrido, 3) mostrá o devolvé el resultado. Probá con Correr después de cada paso.',
         'Plan in 3 steps: 1) read the data (cin or the function parameters), 2) do the computation or loop, 3) print or return the result. Use Run after each step.'));
     return out.take(Progress.kMaxHints).toList();
+  }
+
+  /// Separates a hint's spoken text from its code block.
+  static const _codeSep = '\u0001';
+  static String _hintSay(String h) => h.split(_codeSep).first;
+  static String? _hintCode(String h) {
+    final i = h.indexOf(_codeSep);
+    return i < 0 ? null : h.substring(i + 1);
+  }
+
+  /// Up to [Progress.kMaxHints] hints. With a reference solution the last
+  /// two go almost to the end: the skeleton with blanks, then the whole
+  /// solution minus one small piece.
+  List<String> _hintList(L l) {
+    final base = _baseHints(l);
+    final skel = refSkeleton(widget.level.id);
+    final almost = refAlmost(widget.level.id);
+    if (skel == null || almost == null) return base;
+    return [
+      ...base.take(Progress.kMaxHints - 2),
+      l.pick('Te muestro el esqueleto del código. Completá cada ___ y probá con Correr.',
+              'Here is the skeleton of the code. Fill in each ___ and try Run.') +
+          _codeSep +
+          skel,
+      l.pick('Casi todo el código: solo falta lo que dice ___. ¡Pensá qué va ahí antes de copiar!',
+              'Almost all the code: only the ___ is missing. Think what goes there before copying!') +
+          _codeSep +
+          almost,
+    ];
   }
 
   bool get _hybrid => widget.level.mode == EditorMode.hybrid && _grader == null;
@@ -1775,7 +1805,8 @@ class _LevelScreenState extends State<LevelScreen>
                 '${Progress.hintCost(0)} Meowdollars and each one costs more. '
                 'Cat\'s honor!',
           )
-        : hints[shown - 1];
+        : _hintSay(hints[shown - 1]);
+    final code = shown == 0 ? null : _hintCode(hints[shown - 1]);
     return SectionCard(
       title: l.t('hints'),
       child: Column(
@@ -1795,7 +1826,14 @@ class _LevelScreenState extends State<LevelScreen>
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(hints[i], style: const TextStyle(fontSize: 13)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_hintSay(hints[i]),
+                            style: const TextStyle(fontSize: 13)),
+                        if (_hintCode(hints[i]) case final c?) _hintCodeBox(c),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -1806,55 +1844,78 @@ class _LevelScreenState extends State<LevelScreen>
               spacing: 8,
               runSpacing: 4,
               children: [
-                if (shown < hints.length)
-                  Tooltip(
-                    message: l.t('buy_hint_tip'),
-                    child: FilledButton.tonalIcon(
-                      onPressed: _buyHint,
-                      icon: const Icon(Icons.lightbulb, size: 16),
-                      label: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '${l.t('buy_hint')} (${shown + 1}/${hints.length})  ',
-                          ),
-                          CoinPrice(
-                              Progress.hintCost(Progress.instance
-                                  .of(widget.level.id)
-                                  .hintsBought),
-                              size: 13),
-                        ],
-                      ),
-                    ),
-                  ),
-                if (kLeadIns.containsKey(widget.level.id) &&
-                    !widget.bonus &&
-                    !widget.examMode)
-                  Tooltip(
-                    message: l.pick(
-                      'Problemas más chicos que te llevan al truco',
-                      'Smaller problems that lead you to the trick',
-                    ),
-                    child: OutlinedButton.icon(
-                      onPressed: () => openLeadIn(context, widget.level),
-                      icon: const Icon(Icons.stairs_outlined, size: 16),
-                      label: Text(l.pick('No sé', 'I don\'t know')),
-                    ),
-                  ),
-                if (_failStreak >= 3 && !widget.examMode)
-                  Tooltip(
-                    message: l.t('tip_tutorial_open'),
-                    child: TextButton.icon(
-                      onPressed: _runTutorial,
-                      icon: const Icon(Icons.school, size: 16),
-                      label: Text(l.t('tutorial_open')),
-                    ),
-                  ),
+                if (code != null) _hintCodeBox(code),
               ],
             ),
           ),
+          _hintButtons(hints, shown),
         ],
       ),
+    );
+  }
+
+  Widget _hintCodeBox(String code) => Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(top: 6),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: SelectableText(code,
+            style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
+      );
+
+  Widget _hintButtons(List<String> hints, int shown) {
+    final l = L.instance;
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      children: [
+        if (shown < hints.length)
+          Tooltip(
+            message: l.t('buy_hint_tip'),
+            child: FilledButton.tonalIcon(
+              onPressed: _buyHint,
+              icon: const Icon(Icons.lightbulb, size: 16),
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${l.t('buy_hint')} (${shown + 1}/${hints.length})  ',
+                  ),
+                  CoinPrice(
+                      Progress.hintCost(
+                          Progress.instance.of(widget.level.id).hintsBought),
+                      size: 13),
+                ],
+              ),
+            ),
+          ),
+        if (kLeadIns.containsKey(widget.level.id) &&
+            !widget.bonus &&
+            !widget.examMode)
+          Tooltip(
+            message: l.pick(
+              'Problemas más chicos que te llevan al truco',
+              'Smaller problems that lead you to the trick',
+            ),
+            child: OutlinedButton.icon(
+              onPressed: () => openLeadIn(context, widget.level),
+              icon: const Icon(Icons.stairs_outlined, size: 16),
+              label: Text(l.pick('No sé', 'I don\'t know')),
+            ),
+          ),
+        if (_failStreak >= 3 && !widget.examMode)
+          Tooltip(
+            message: l.t('tip_tutorial_open'),
+            child: TextButton.icon(
+              onPressed: _runTutorial,
+              icon: const Icon(Icons.school, size: 16),
+              label: Text(l.t('tutorial_open')),
+            ),
+          ),
+      ],
     );
   }
 
@@ -2024,7 +2085,7 @@ class _LevelScreenState extends State<LevelScreen>
     if (_hintsShown < hints.length) {
       Progress.instance.giftHint(lv.id);
       setState(() => _hintsShown++);
-      gift = hints[_hintsShown - 1];
+      gift = _hintSay(hints[_hintsShown - 1]);
     }
     final tip = _lastTip;
     await SpotlightTutorial.show(context, [
