@@ -90,6 +90,77 @@ void _goToLevel(BuildContext context, Level lv) {
   Navigator.push(context, levelRoute(lv));
 }
 
+/// What is still missing for a locked [cat] whose goal is a count the
+/// player has not reached yet (e.g. "llevás 12 de 99 niveles"), else null.
+String? catMissing(CatMeme cat, L l) {
+  final p = Progress.instance;
+  if (p.unlockedCats.contains(cat.id)) return null;
+  (int, int, String, String)? goal;
+  switch (cat.trigger) {
+    case CatTrigger.solved10:
+      goal = (p.solvedCount, 10, 'niveles ganados', 'levels won');
+    case CatTrigger.solved25:
+      goal = (p.solvedCount, 25, 'niveles ganados', 'levels won');
+    case CatTrigger.solved50:
+      goal = (p.solvedCount, 50, 'niveles ganados', 'levels won');
+    case CatTrigger.solvedN:
+      goal = (p.solvedCount, cat.need, 'niveles ganados', 'levels won');
+    case CatTrigger.starsN:
+      goal = (p.totalStars, cat.need, 'estrellas', 'stars');
+    case CatTrigger.triesN:
+      goal = (
+        p.levels.values.fold(0, (n, x) => n + x.attempts),
+        cat.need,
+        'batallas',
+        'battles'
+      );
+    case CatTrigger.rankGold:
+      goal = (p.xp, kRanks[2].minXp, 'XP', 'XP');
+    case CatTrigger.rankIoi:
+      goal = (p.xp, kRanks.last.minXp, 'XP', 'XP');
+    default:
+      return null;
+  }
+  final (have, need, es, en) = goal;
+  if (have >= need) return null;
+  return l.pick('Llevás $have de $need $es: te faltan ${need - have}.',
+      'You have $have of $need $en: ${need - have} to go.');
+}
+
+/// Locked cat: if its goal is not reached yet, warn first, then go to
+/// the level that brings the player closer to it.
+Future<void> _goForCat(BuildContext context, CatMeme cat) async {
+  final lv = catTargetLevel(cat);
+  if (lv == null) return;
+  final l = L.instance;
+  final missing = catMissing(cat, l);
+  if (missing == null) return _goToLevel(context, lv);
+  final go = await showDialog<bool>(
+    context: context,
+    builder: (c) => AlertDialog(
+      title: Text(l.pick('⏳ Todavía te falta', '⏳ Not there yet')),
+      content: Text('${l.pick(cat.hintEs, cat.hintEn)}\n\n$missing\n\n'
+          '${l.pick('Te llevo al nivel que te acerca al premio', 'I will take you to the level that gets you closer')}: '
+          '${_levelName(lv, l)}.'),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: Text(l.pick('Ahora no', 'Not now'))),
+        Tooltip(
+          message: _levelName(lv, l),
+          child: FilledButton.icon(
+            autofocus: true,
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: Text(l.pick('Ir al nivel', 'Go to the level')),
+            onPressed: () => Navigator.pop(c, true),
+          ),
+        ),
+      ],
+    ),
+  );
+  if (go == true && context.mounted) _goToLevel(context, lv);
+}
+
 /// The day [cat] was won (yyyy-mm-dd → dd/mm/yyyy), if recorded.
 String? catWhen(CatMeme cat) {
   final o = Progress.instance.catOrigin[cat.id]?.split('|');
@@ -176,16 +247,14 @@ class _CollectionScreenState extends State<CollectionScreen> {
               ? l.pick(cat.hintEs, cat.hintEn)
               : '${l.pick(cat.hintEs, cat.hintEn)}\n'
                   '${l.pick('Tocá para ir al problema', 'Tap to go to the problem')}: '
-                  '${_levelName(catTargetLevel(cat)!, l)}',
+                  '${_levelName(catTargetLevel(cat)!, l)}'
+                  '${catMissing(cat, l) == null ? '' : '\n${catMissing(cat, l)}'}',
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: owned
               ? () => _showCat(context, cat)
-              : () {
-                  final lv = catTargetLevel(cat);
-                  if (lv != null) _goToLevel(context, lv);
-                },
+              : () => _goForCat(context, cat),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
