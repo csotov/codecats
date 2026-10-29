@@ -16,6 +16,7 @@ Future<void> main() async {
   await Sfx.init();
   await Cloud.instance.init();
   CoachStore.instance.load();
+  Progress.appStart = DateTime.now();
   BlitzClock.start();
   Cloud.instance.addListener(CoachStore.instance.load);
   Tweaks.instance.load();

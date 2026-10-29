@@ -72,6 +72,16 @@ class _MapScreenState extends State<MapScreen> {
       if (_badgePopup || !mounted) return;
       if (ModalRoute.of(context)?.isCurrent != true) return;
       if (await _earlyBird()) return;
+      if (Progress.warm &&
+          !_talkQueued &&
+          DepartamentalTalk.relevant &&
+          !Progress.instance.talkSeen(DepartamentalTalk.id)) {
+        setState(() {});
+      }
+      if (Progress.warm && Progress.instance.blitzMin >= Progress.kBlitzEvery) {
+        await maybeRunBlitz(context);
+        return;
+      }
       final coinCats = Progress.instance.checkCoinCats();
       if (coinCats.isNotEmpty) {
         _badgePopup = true;
@@ -163,6 +173,7 @@ class _MapScreenState extends State<MapScreen> {
       _badgePopup = false;
       return true;
     }
+    if (!Progress.warm) return false;
     final ymd = now.year * 10000 + now.month * 100 + now.day;
     final adminToday = Tweaks.instance.applied
         .any((t) => t['action'] == 'early_today' && t['topic'] == 'day:$ymd');
@@ -291,7 +302,8 @@ class _MapScreenState extends State<MapScreen> {
             }
           });
         }
-        if (DepartamentalTalk.relevant &&
+        if (Progress.warm &&
+            DepartamentalTalk.relevant &&
             !progress.talkSeen(DepartamentalTalk.id) &&
             !_talkQueued) {
           _talkQueued = true;

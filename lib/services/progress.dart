@@ -1188,6 +1188,12 @@ class Progress extends ChangeNotifier {
     return true;
   }
 
+  /// When the game was opened; the Profe's short challenges and offers wait
+  /// [kWarmUp] so they never pop up right on entering.
+  static DateTime appStart = DateTime.now();
+  static const kWarmUp = Duration(minutes: 1);
+  static bool get warm => DateTime.now().difference(appStart) >= kWarmUp;
+
   static const kEarlyChance = 0.4;
   static const kEarlyHats = 4;
   static const kEarlyCat = 'early_bird';
