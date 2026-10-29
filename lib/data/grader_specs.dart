@@ -343,4 +343,31 @@ final Map<String, GraderSpec> kGraderSpecs = {
           '    for (int i = 0; i < (int)r.size(); i++) cout << r[i] << endl;\n',
       'Completá fizz: devolvé un vector de textos; para i de 1 a n agregá "FIZZBUZZ" si i es múltiplo de 15, "FIZZ" si de 3, "BUZZ" si de 5, o el número como texto: to_string(i).',
       'Complete fizz: return a vector of strings; for i in 1..n add "FIZZBUZZ", "FIZZ", "BUZZ" or to_string(i).'),
+  // ---- Noche de Brujas ----------------------------------------------------
+  'hw1': const GraderSpec(
+      ['std::string grito()'],
+      '    cout << grito() << endl;\n',
+      'Completá grito: tiene que devolver exactamente "BOO!" (return "BOO!";). El grader lo grita por vos.',
+      'Complete grito: return exactly "BOO!". The grader shouts it for you.'),
+  'hw2': const GraderSpec(
+      ['int cada_uno(int n, int k)', 'int sobran(int n, int k)'],
+      '    int n, k; cin >> n >> k;\n    cout << cada_uno(n, k) << endl;\n    cout << sobran(n, k) << endl;\n',
+      'Dos funciones: cada_uno devuelve cuántos caramelos le tocan a cada gatito (n / k) y sobran los que te quedan (n % k).',
+      'Two functions: cada_uno returns n / k and sobran returns n % k.'),
+  'hw3': const GraderSpec(
+      ['std::vector<std::string> eco(int n)'],
+      '$_r1    vector<string> r = eco(n);\n'
+          '    for (int i = 0; i < (int)r.size(); i++) cout << r[i] << endl;\n',
+      'Completá eco: devolvé un vector con "Boo" repetido n veces. Usá un for y r.push_back("Boo"); el grader escribe cada uno en su línea.',
+      'Complete eco: return a vector with "Boo" n times (for + r.push_back("Boo")).'),
+  'hw4': const GraderSpec(
+      ['int murcielagos(std::vector<int> a)'],
+      '$_arr    cout << murcielagos(a) << endl;\n',
+      'El grader te pasa el vector a con los ruidos. murcielagos devuelve cuántos son pares.',
+      'The grader gives you vector a. murcielagos returns how many are even.'),
+  'hw5': const GraderSpec(
+      ['int mayor(std::vector<int> a)'],
+      '$_arr    cout << mayor(a) << endl;\n',
+      'El grader te pasa el vector a con los ingredientes. mayor devuelve el número más grande.',
+      'The grader gives you vector a. mayor returns the largest number.'),
 };
