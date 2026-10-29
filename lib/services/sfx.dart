@@ -4,12 +4,13 @@ import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'songs.dart';
 import 'music_out_io.dart' if (dart.library.js_interop) 'music_out_web.dart';
 
 /// Tiny synthesized sound effects & music — no audio assets needed.
 /// Everything is rendered to WAV in memory: a victory arpeggio plus
 /// two loopable chiptune tracks (menu: calm; battle: driving).
-enum _Track { menu, battle, boss, spooky, cozy, focus }
+enum _Track { menu, battle, boss, level, spooky, cozy, focus }
 
 class Sfx {
   Sfx._();
@@ -96,7 +97,10 @@ class Sfx {
 
   static _Track _byName(String n) => n.startsWith('boss:')
       ? _Track.boss
-      : _Track.values.firstWhere((t) => t.name == n, orElse: () => _Track.menu);
+      : n.startsWith('lv:')
+          ? _Track.level
+          : _Track.values
+              .firstWhere((t) => t.name == n, orElse: () => _Track.menu);
 
   /// Menu loop: Am–F–C–G at 92 bpm, soft arpeggios.
   static Future<void> menu() => _play(_Track.menu);
@@ -113,6 +117,16 @@ class Sfx {
 
   static String _bossFile = 'boss.mp3';
 
+  /// Level loop: each world has its base song and each level a variant
+  /// of it (some worlds, like the water one, sound completely different).
+  static Future<void> level(String world, int index) {
+    _levelKey = '$world:${index % 4}';
+    return _play(_Track.level);
+  }
+
+  static String _levelKey = 'w1:0';
+  static final _levelWavs = <String, Uint8List>{};
+
   /// World key (`w1`…`w15`, `hw`) → meme song name, for credits/tooltips.
   static const kBossSongs = {
     'w1': 'Nyan Cat',
@@ -122,7 +136,7 @@ class Sfx {
     'w5': 'Maxwell the Cat',
     'w6': 'OIIA OIIA',
     'w7': 'Caramelldansen',
-  'w8': 'Coffin Dance',
+    'w8': 'Coffin Dance',
     'w9': 'Monkeys Spinning Monkeys',
     'w10': 'Sneaky Snitch',
     'w11': 'Gigachad',
@@ -143,13 +157,27 @@ class Sfx {
   static Future<void> focus() => _play(_Track.focus);
 
   static Future<void> _play(_Track t) async {
-    final key = t == _Track.boss ? 'boss:$_bossFile' : t.name;
+    final key = switch (t) {
+      _Track.boss => 'boss:$_bossFile',
+      _Track.level => 'lv:$_levelKey',
+      _ => t.name,
+    };
     if (_track == key) return;
     _track = key;
     if (!_musicReady || muted) return;
     try {
       if (t == _Track.boss) {
         await _music.playAsset('music/$_bossFile');
+        return;
+      }
+      if (t == _Track.level) {
+        final k = _levelKey;
+        final parts = k.split(':');
+        await _music.playWav(
+            key,
+            () => _levelWavs[k] ??=
+                synthWorldSong(parts[0], int.parse(parts[1])));
+        if (_holds > 0) _music.pause();
         return;
       }
       await _music.playWav(

@@ -17,6 +17,7 @@ import '../l10n.dart';
 import '../models.dart';
 import '../services/cloud.dart';
 import '../services/progress.dart';
+import '../services/songs.dart';
 import 'account_screen.dart';
 import 'admin_screen.dart';
 import '../services/sfx.dart';
@@ -951,69 +952,110 @@ class _MapScreenState extends State<MapScreen> {
     final worldUnlocked = w.levels.any((lv) => progress.isUnlocked(lv, w)) &&
         (ph == null || phaseOpen(ph, progress));
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppTheme.card,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppTheme.cardEdge),
-                ),
-                child: Text(w.icon,
-                    style:
-                        const TextStyle(fontSize: 17, color: AppTheme.accent2)),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(l.pick(w.titleEs, w.titleEn),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 15)),
-                    Text(l.pick(w.descEs, w.descEn),
-                        style: const TextStyle(
-                            color: AppTheme.textLo, fontSize: 12)),
-                  ],
-                ),
-              ),
-              Text('$solvedInWorld/${w.levels.length}',
-                  style: const TextStyle(color: AppTheme.textLo, fontSize: 12)),
-            ],
+    final mood = worldMood(w.id);
+    final section = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (mood != WorldMood.normal)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Text(
+              mood == WorldMood.water
+                  ? l.pick(
+                      '🌊 🫧 Zona acuática: bucles que van y vuelven como olas',
+                      '🌊 🫧 Water zone: loops that come and go like waves')
+                  : l.pick(
+                      '🦇 🪨 Zona de la cueva: el laberinto suena distinto',
+                      '🦇 🪨 Cave zone: the maze sounds different'),
+              style: TextStyle(
+                  color: mood == WorldMood.water
+                      ? const Color(0xFF8BE9FF)
+                      : const Color(0xFFD9C3A0),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12),
+            ),
           ),
-          const SizedBox(height: 10),
-          if (!worldUnlocked)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
+        Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppTheme.card,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.cardEdge),
+              ),
+              child: Text(w.icon,
+                  style:
+                      const TextStyle(fontSize: 17, color: AppTheme.accent2)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.lock, size: 14, color: AppTheme.textLo),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(l.t('world_locked_msg'),
-                        style: const TextStyle(
-                            color: AppTheme.textLo, fontSize: 12)),
-                  ),
+                  Text(l.pick(w.titleEs, w.titleEn),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 15)),
+                  Text(l.pick(w.descEs, w.descEn),
+                      style: const TextStyle(
+                          color: AppTheme.textLo, fontSize: 12)),
                 ],
               ),
             ),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              for (var i = 0; i < w.levels.length; i++) _levelNode(w, i),
-            ],
+            Text('$solvedInWorld/${w.levels.length}',
+                style: const TextStyle(color: AppTheme.textLo, fontSize: 12)),
+          ],
+        ),
+        const SizedBox(height: 10),
+        if (!worldUnlocked)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              children: [
+                const Icon(Icons.lock, size: 14, color: AppTheme.textLo),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(l.t('world_locked_msg'),
+                      style: const TextStyle(
+                          color: AppTheme.textLo, fontSize: 12)),
+                ),
+              ],
+            ),
           ),
-        ],
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            for (var i = 0; i < w.levels.length; i++) _levelNode(w, i),
+          ],
+        ),
+      ],
+    );
+    if (mood == WorldMood.normal) {
+      return Padding(
+          padding: const EdgeInsets.only(bottom: 18), child: section);
+    }
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: mood == WorldMood.water
+              ? const [Color(0xFF0B4F73), Color(0xFF06283F)]
+              : const [Color(0xFF3A2E24), Color(0xFF1C1612)],
+        ),
+        border: Border.all(
+            color: mood == WorldMood.water
+                ? const Color(0xFF4DC8FF)
+                : const Color(0xFF8A7458),
+            width: 1.4),
       ),
+      child: section,
     );
   }
 
@@ -1043,7 +1085,17 @@ class _MapScreenState extends State<MapScreen> {
           width: 108,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
           decoration: BoxDecoration(
-            color: unlocked ? AppTheme.card : AppTheme.bgAlt,
+            color: unlocked
+                ? switch (worldMood(world.id)) {
+                    WorldMood.water => const Color(0xFF0F5E85),
+                    WorldMood.cave => const Color(0xFF4A3C2F),
+                    WorldMood.normal => AppTheme.card,
+                  }
+                : switch (worldMood(world.id)) {
+                    WorldMood.water => const Color(0xFF0A3550),
+                    WorldMood.cave => const Color(0xFF2B231C),
+                    WorldMood.normal => AppTheme.bgAlt,
+                  },
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: p.solved
