@@ -6,6 +6,7 @@ import '../data/worlds.dart';
 import '../data/cats.dart';
 import '../data/complexity.dart';
 import '../l10n.dart';
+import '../services/activity.dart';
 import '../services/cloud.dart';
 import 'coach_admin.dart';
 import 'keyboard_scroll.dart';
@@ -27,6 +28,9 @@ class _AdminScreenState extends State<AdminScreen> {
   String? _userId;
   List<Map<String, dynamic>> _levels = const [];
   List<Map<String, dynamic>> _events = const [];
+  List<ActiveSpan> _spans = const [];
+  // Active (non-idle) seconds per level, from level_leave windows.
+  Map<String, int> _levelActive = const {};
   bool _loading = true;
   String? _error;
 
@@ -74,6 +78,7 @@ class _AdminScreenState extends State<AdminScreen> {
       setState(() {
         _levels = lv..sort((a, b) => _order(a).compareTo(_order(b)));
         _events = ev;
+        _computeActivity();
         _loading = false;
       });
     } catch (e) {
@@ -84,6 +89,23 @@ class _AdminScreenState extends State<AdminScreen> {
         });
       }
     }
+  }
+
+  void _computeActivity() {
+    _spans = activeSpans(_events.map(_ts).whereType<DateTime>());
+    final m = <String, int>{};
+    for (final e in _of('level_leave')) {
+      final id = e['level_id'] as String?;
+      final t = _ts(e);
+      if (id == null || t == null) continue;
+      m[id] = (m[id] ?? 0) + _leaveActive(e, t);
+    }
+    _levelActive = m;
+  }
+
+  int _leaveActive(Map<String, dynamic> e, DateTime t) {
+    final s = ((_data(e)['seconds'] as num?) ?? 0).toInt();
+    return activeSeconds(_spans, t.subtract(Duration(seconds: s)), t);
   }
 
   static int _order(Map<String, dynamic> r) {
@@ -130,6 +152,10 @@ class _AdminScreenState extends State<AdminScreen> {
                     const Center(child: CircularProgressIndicator())
                   else if (_userId != null) ...[
                     _summary(l),
+                    const SizedBox(height: 12),
+                    _sessionsCard(l),
+                    const SizedBox(height: 12),
+                    _charts(l),
                     const SizedBox(height: 12),
                     _typingReport(l),
                     const SizedBox(height: 12),
@@ -179,8 +205,27 @@ class _AdminScreenState extends State<AdminScreen> {
       _of(type).fold<num>(0, (a, e) => a + ((_data(e)[key] as num?) ?? 0));
 
   Widget _summary(L l) {
-    final sessions = _events.map((e) => e['session_id']).toSet().length;
-    final secs = _sum('level_leave', 'seconds');
+    final sessions = _spans.length;
+    final rawSecs = _sum('level_leave', 'seconds');
+    final secs = _levelActive.values.fold<int>(0, (a, b) => a + b);
+    final active = _spans.fold<int>(0, (a, sp) => a + sp.length.inSeconds);
+    final longest = _spans.fold<int>(
+        0, (a, sp) => sp.length.inSeconds > a ? sp.length.inSeconds : a);
+    final firstTry = _of('fight')
+        .where((e) => _data(e)['won'] == true && _data(e)['attempt'] == 1)
+        .length;
+    num okOf(String type, String key) =>
+        _of(type).where((e) => _data(e)[key] == true).length;
+    final quick = _of('blitz_q').length +
+        _of('memory_gym').length +
+        _of('habit_quiz').length +
+        _of('obi_lesson_quiz').length +
+        _of('free_hint_quiz').length;
+    final quickOk = okOf('blitz_q', 'ok') +
+        okOf('memory_gym', 'ok') +
+        okOf('habit_quiz', 'ok') +
+        okOf('obi_lesson_quiz', 'ok') +
+        okOf('free_hint_quiz', 'right');
     final code = _sum('level_leave', 'code');
     final blocks = _sum('level_leave', 'blocks');
     final keys = _sum('typing', 'keys');
@@ -203,15 +248,31 @@ class _AdminScreenState extends State<AdminScreen> {
         ? '${(s / 3600).toStringAsFixed(1)} h'
         : '${(s / 60).round()} min';
     final rows = <List<String>>[
-      [l.pick('Sesiones', 'Sessions'), '$sessions'],
-      [l.pick('Tiempo en niveles', 'Time in levels'), fmt(secs)],
+      [
+        l.pick('Sesiones reales', 'Real sessions'),
+        '$sessions ${l.pick('(se corta tras 15 min sin tocar nada)', '(split after 15 idle min)')}'
+      ],
+      [
+        l.pick('Tiempo practicado', 'Time practiced'),
+        '${fmt(active)} · ${l.pick('promedio', 'avg')} ${fmt(sessions == 0 ? 0 : active / sessions)} · ${l.pick('la más larga', 'longest')} ${fmt(longest)}'
+      ],
+      [
+        l.pick('Tiempo en niveles', 'Time in levels'),
+        '${fmt(secs)} ${rawSecs > secs + 60 ? l.pick('(descontados ${fmt(rawSecs - secs)} con el nivel abierto sin tocar)', '(${fmt(rawSecs - secs)} idle removed)') : ''}'
+      ],
       [
         l.pick('Código vs bloques', 'Code vs blocks'),
         '$codePct% ${l.pick('código', 'code')} · ${100 - codePct}% ${l.pick('bloques', 'blocks')}'
       ],
       [
-        l.pick('Tiempo total en el juego', 'Total time in game'),
-        fmt(_sum('heartbeat', 'sec'))
+        l.pick('Victorias', 'Wins'),
+        '${l.pick('al primer intento', 'first try')} ${wins == 0 ? 0 : (100 * firstTry / wins).round()}% · ${l.pick('batallas por victoria', 'battles per win')} ${wins == 0 ? '—' : (fights / wins).toStringAsFixed(1)} · ${l.pick('pistas por victoria', 'hints per win')} ${wins == 0 ? '—' : (hints / wins).toStringAsFixed(1)}'
+      ],
+      [
+        l.pick('Preguntas rápidas y gimnasios', 'Quick questions & gyms'),
+        quick == 0
+            ? '—'
+            : '$quickOk/$quick ${l.pick('bien', 'right')} (${(100 * quickOk / quick).round()}%)'
       ],
       [
         l.pick('Tecleo', 'Typing'),
@@ -287,6 +348,7 @@ class _AdminScreenState extends State<AdminScreen> {
     final del = _charMap('del'), add = _charMap('add');
     final delF = _charMap('delF'), addF = _charMap('addF');
     final tok = _charMap('tok'), tokF = _charMap('tokF');
+    final tokD = _charMap('tokD'), tokDF = _charMap('tokDF');
     final hesit = _sum('typing', 'hesit');
     final gap = _of('typing')
         .map((e) => (_data(e)['gap'] as num?) ?? 0)
@@ -302,6 +364,11 @@ class _AdminScreenState extends State<AdminScreen> {
       [
         l.pick('Palabras que agrega tras fallar', 'Words added after a loss'),
         row(tokF)
+      ],
+      [l.pick('Palabras que borra', 'Words deleted'), row(tokD)],
+      [
+        l.pick('Palabras que borra tras fallar', 'Words deleted after a loss'),
+        row(tokDF)
       ],
       [
         l.pick('Dudas (>2.5 s sin teclear)', 'Hesitations'),
@@ -350,10 +417,9 @@ class _AdminScreenState extends State<AdminScreen> {
       final ts = _ts(e);
       if (ts == null || ts.isBefore(from) || !ts.isBefore(to)) continue;
       final d = _data(e);
-      sessions.add(e['session_id']);
       switch (e['type']) {
         case 'level_leave':
-          secs += (d['seconds'] as num?) ?? 0;
+          secs += _leaveActive(e, ts);
         case 'fight':
           fights++;
           if (d['won'] == true) wins++;
@@ -370,6 +436,11 @@ class _AdminScreenState extends State<AdminScreen> {
           bonus++;
         case 'mental_talk':
           talks++;
+      }
+    }
+    for (final sp in _spans) {
+      if (!sp.start.isBefore(from) && sp.start.isBefore(to)) {
+        sessions.add(sp.start);
       }
     }
     return {
@@ -674,8 +745,330 @@ class _AdminScreenState extends State<AdminScreen> {
     );
   }
 
+  String _hm(DateTime t) =>
+      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+  /// Last real sessions: when, how long he was active, what he did.
+  Widget _sessionsCard(L l) {
+    final recent = _spans.reversed.take(12).toList();
+    return SectionCard(
+      title: l.pick('Últimas sesiones reales (pausa >15 min = otra sesión)',
+          'Last real sessions (pause >15 min = new session)'),
+      child: recent.isEmpty
+          ? Text(l.pick('Todavía nada.', 'Nothing yet.'))
+          : SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columnSpacing: 14,
+                headingRowHeight: 32,
+                dataRowMinHeight: 28,
+                dataRowMaxHeight: 32,
+                columns: [
+                  DataColumn(label: Text(l.pick('Día', 'Day'))),
+                  DataColumn(label: Text(l.pick('Horario', 'Time'))),
+                  DataColumn(label: Text(l.pick('Activo', 'Active'))),
+                  DataColumn(
+                      label: Text(l.pick('Pausa antes', 'Pause before'))),
+                  DataColumn(label: Text(l.pick('Niveles', 'Levels'))),
+                  DataColumn(label: Text(l.pick('Ganadas', 'Won'))),
+                  DataColumn(label: Text(l.pick('Preguntas', 'Questions'))),
+                ],
+                rows: [
+                  for (final sp in recent)
+                    () {
+                      final i = _spans.indexOf(sp);
+                      final pause = i == 0
+                          ? null
+                          : sp.start.difference(_spans[i - 1].end);
+                      final inSp = _events.where((e) {
+                        final t = _ts(e);
+                        return t != null &&
+                            !t.isBefore(sp.start) &&
+                            !t.isAfter(sp.end);
+                      }).toList();
+                      final lv = inSp
+                          .where((e) => e['type'] == 'level_open')
+                          .map((e) => e['level_id'])
+                          .toSet();
+                      final won = inSp
+                          .where((e) =>
+                              e['type'] == 'fight' && _data(e)['won'] == true)
+                          .length;
+                      const qTypes = {
+                        'blitz_q',
+                        'memory_gym',
+                        'math_gym',
+                        'habit_quiz',
+                        'obi_lesson_quiz',
+                        'free_hint_quiz',
+                        'bigo_quiz',
+                      };
+                      final qs =
+                          inSp.where((e) => qTypes.contains(e['type'])).length;
+                      return DataRow(cells: [
+                        DataCell(Text(_day(sp.start).substring(5))),
+                        DataCell(Text('${_hm(sp.start)}–${_hm(sp.end)}')),
+                        DataCell(Text(_fmtMin(sp.length.inSeconds))),
+                        DataCell(Text(
+                            pause == null ? '—' : _fmtMin(pause.inSeconds))),
+                        DataCell(Text(lv.isEmpty ? '—' : lv.join(', '))),
+                        DataCell(Text('$won')),
+                        DataCell(Text('$qs')),
+                      ]);
+                    }(),
+                ],
+              ),
+            ),
+    );
+  }
+
+  /// Vertical bars; each entry is (label under the bar, stacked values).
+  Widget _bars(List<(String, List<double>, String)> data, List<Color> colors,
+      {double height = 120}) {
+    final max = data.fold<double>(
+        1,
+        (a, d) => d.$2.fold<double>(0, (x, y) => x + y) > a
+            ? d.$2.fold<double>(0, (x, y) => x + y)
+            : a);
+    return SizedBox(
+      height: height + 18,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (final d in data)
+            Expanded(
+              child: Tooltip(
+                message: d.$3,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    for (var k = d.$2.length - 1; k >= 0; k--)
+                      Container(
+                        height: height * d.$2[k] / max,
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        color: colors[k % colors.length],
+                      ),
+                    const SizedBox(height: 2),
+                    Text(d.$1,
+                        style: const TextStyle(
+                            fontSize: 10, color: AppTheme.textLo)),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Horizontal bars with a label and a value text.
+  Widget _hbars(List<(String, double, String)> data, Color color) {
+    final max = data.fold<double>(1, (a, d) => d.$2 > a ? d.$2 : a);
+    return Column(
+      children: [
+        for (final d in data)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Row(children: [
+              SizedBox(
+                  width: 150,
+                  child: Text(d.$1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontFamily: 'monospace'))),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (_, c) => Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      width: c.maxWidth * d.$2 / max,
+                      height: 14,
+                      decoration: BoxDecoration(
+                          color: color, borderRadius: BorderRadius.circular(4)),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(
+                  width: 70, child: Text(d.$3, textAlign: TextAlign.right)),
+            ]),
+          ),
+      ],
+    );
+  }
+
+  Widget _legend(List<(Color, String)> items) => Wrap(
+        spacing: 12,
+        children: [
+          for (final i in items)
+            Row(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 10, height: 10, color: i.$1),
+              const SizedBox(width: 4),
+              Text(i.$2, style: const TextStyle(fontSize: 12)),
+            ]),
+        ],
+      );
+
+  Widget _chartTitle(String t) => Padding(
+        padding: const EdgeInsets.only(top: 14, bottom: 6),
+        child: Text(t,
+            style: const TextStyle(
+                fontWeight: FontWeight.w800, color: AppTheme.textLo)),
+      );
+
+  Widget _charts(L l) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final days = [
+      for (var i = 13; i >= 0; i--) today.subtract(Duration(days: i)),
+    ];
+    // Practiced vs idle-with-level-open minutes per day.
+    final perDay = <(String, List<double>, String)>[];
+    final fightsDay = <(String, List<double>, String)>[];
+    for (final d in days) {
+      final to = d.add(const Duration(days: 1));
+      final act = activeSeconds(_spans, d, to) / 60;
+      num raw = 0, won = 0, lost = 0;
+      for (final e in _events) {
+        final t = _ts(e);
+        if (t == null || t.isBefore(d) || !t.isBefore(to)) continue;
+        if (e['type'] == 'level_leave') {
+          raw += ((_data(e)['seconds'] as num?) ?? 0) - _leaveActive(e, t);
+        } else if (e['type'] == 'fight') {
+          _data(e)['won'] == true ? won++ : lost++;
+        }
+      }
+      final label = '${d.day}';
+      perDay.add((
+        label,
+        [act, raw / 60],
+        '${_day(d)}: ${act.round()} min ${l.pick('practicando', 'practicing')} · ${(raw / 60).round()} min ${l.pick('muertos', 'idle')}'
+      ));
+      fightsDay.add((
+        label,
+        [won.toDouble(), lost.toDouble()],
+        '${_day(d)}: $won ${l.pick('ganadas', 'won')} · $lost ${l.pick('perdidas', 'lost')}'
+      ));
+    }
+    // Accuracy per activity.
+    (String, double, String)? acc(String name, String type, String key) {
+      final all = _of(type).toList();
+      if (all.isEmpty) return null;
+      final ok = all.where((e) => _data(e)[key] == true).length;
+      final p = 100 * ok / all.length;
+      return (name, p, '${p.round()}% ($ok/${all.length})');
+    }
+
+    final accs = [
+      acc(l.pick('Batallas', 'Battles'), 'fight', 'won'),
+      acc(l.pick('Relámpago', 'Blitz'), 'blitz_q', 'ok'),
+      acc(l.pick('Memoria rápida', 'Quick recall'), 'memory_gym', 'ok'),
+      acc(l.pick('Gimnasio mate', 'Math gym'), 'math_gym', 'ok'),
+      acc(l.pick('Hábitos', 'Habits'), 'habit_quiz', 'ok'),
+      acc(l.pick('Lecciones OBI', 'OBI lessons'), 'obi_lesson_quiz', 'ok'),
+      acc(l.pick('Pista gratis', 'Free hint'), 'free_hint_quiz', 'right'),
+      acc('Big O', 'bigo_quiz', 'right'),
+    ].whereType<(String, double, String)>().toList();
+    final del = _charMap('tokD').entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    // Timeline of the latest day played.
+    final lastDay = _spans.isEmpty ? null : _spans.last.start;
+    final daySpans = lastDay == null
+        ? const <ActiveSpan>[]
+        : _spans.where((s) => _day(s.start) == _day(lastDay)).toList();
+
+    return SectionCard(
+      title: l.pick('Gráficos', 'Charts'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _chartTitle(l.pick('Minutos por día (14 días)', 'Minutes per day')),
+          _bars(perDay, [AppTheme.good, AppTheme.cardEdge]),
+          _legend([
+            (AppTheme.good, l.pick('practicando', 'practicing')),
+            (
+              AppTheme.cardEdge,
+              l.pick(
+                  'nivel abierto sin tocar (no cuenta)', 'idle (not counted)')
+            ),
+          ]),
+          if (lastDay != null) ...[
+            _chartTitle(
+                '${l.pick('Línea de tiempo del', 'Timeline of')} ${_day(lastDay)}'),
+            _timeline(daySpans, l),
+          ],
+          _chartTitle(l.pick('Batallas por día', 'Battles per day')),
+          _bars(fightsDay, [AppTheme.good, AppTheme.bad], height: 80),
+          _legend([
+            (AppTheme.good, l.pick('ganadas', 'won')),
+            (AppTheme.bad, l.pick('perdidas', 'lost')),
+          ]),
+          _chartTitle(
+              l.pick('Aciertos por actividad', 'Accuracy per activity')),
+          if (accs.isEmpty)
+            Text(l.pick('Todavía nada.', 'Nothing yet.'))
+          else
+            _hbars(accs, AppTheme.accent3),
+          _chartTitle(l.pick('Palabras que más borra', 'Most deleted words')),
+          if (del.isEmpty)
+            Text(l.pick('Se empieza a medir desde esta versión.',
+                'Measured from this version on.'))
+          else
+            _hbars([
+              for (final e in del.take(10))
+                (e.key, e.value.toDouble(), '×${e.value}')
+            ], AppTheme.bad),
+        ],
+      ),
+    );
+  }
+
+  /// 24 h strip: green = active session, labels at every 3 h.
+  Widget _timeline(List<ActiveSpan> spans, L l) {
+    double frac(DateTime t) => (t.hour * 60 + t.minute) / (24 * 60);
+    return LayoutBuilder(builder: (_, c) {
+      final w = c.maxWidth;
+      return SizedBox(
+        height: 40,
+        child: Stack(children: [
+          Positioned(
+              left: 0,
+              right: 0,
+              top: 4,
+              height: 18,
+              child: Container(color: AppTheme.bgAlt)),
+          for (final s in spans)
+            Positioned(
+              left: w * frac(s.start),
+              top: 4,
+              height: 18,
+              width: (w * s.length.inMinutes / (24 * 60)).clamp(2, w),
+              child: Tooltip(
+                message:
+                    '${_hm(s.start)}–${_hm(s.end)} · ${_fmtMin(s.length.inSeconds)}',
+                child: Container(color: AppTheme.good),
+              ),
+            ),
+          for (var h = 0; h < 24; h += 3)
+            Positioned(
+              left: w * h / 24,
+              top: 24,
+              child: Text('$h',
+                  style: const TextStyle(fontSize: 10, color: AppTheme.textLo)),
+            ),
+        ]),
+      );
+    });
+  }
+
   Widget _levelTable(L l) {
     String mins(dynamic s) => '${(((s as num?) ?? 0) / 60).round()}';
+    num ratio(Map<String, dynamic> r) {
+      final raw = (r['seconds'] as num?) ?? 0;
+      return raw <= 0
+          ? 1
+          : ((_levelActive[r['level_id']] ?? 0) / raw).clamp(0, 1);
+    }
+
     return SectionCard(
       title: l.pick('Por nivel', 'Per level'),
       child: SingleChildScrollView(
@@ -705,13 +1098,15 @@ class _AdminScreenState extends State<AdminScreen> {
               DataRow(cells: [
                 DataCell(Text('${r['level_id']}')),
                 DataCell(Text('${r['opens']}')),
-                DataCell(Text(mins(r['seconds']))),
+                DataCell(Text(mins(_levelActive[r['level_id']] ?? 0))),
                 DataCell(Text('${r['fights']}')),
                 DataCell(Text('${r['wins']}')),
                 DataCell(Text('${r['hints']}')),
                 DataCell(Text('${r['compile_errors']}')),
-                DataCell(Text(mins(r['code_seconds']))),
-                DataCell(Text(mins(r['blocks_seconds']))),
+                DataCell(
+                    Text(mins(((r['code_seconds'] as num?) ?? 0) * ratio(r)))),
+                DataCell(Text(
+                    mins(((r['blocks_seconds'] as num?) ?? 0) * ratio(r)))),
                 DataCell(Text('${r['keystrokes']}/${r['backspaces']}')),
               ]),
           ],
