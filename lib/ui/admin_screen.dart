@@ -211,7 +211,7 @@ class _AdminScreenState extends State<AdminScreen> {
                     'Enviado para hoy: cuando abra el juego verá el aviso y gana el premio si gana un nivel antes de las 15:30 (o en 2 horas si ya es más tarde).',
                     'Sent for today.')
                 : l.pick(
-                    'Ofrecerle hoy el premio especial: si gana un nivel antes de las 15:30 (o en 2 horas si ya es más tarde), se lleva 4 gorritos o el Gato Madrugador.',
+                    'Ofrecerle hoy el premio especial: si gana un nivel antes de las 15:30 (o en 2 horas si ya es más tarde), se lleva 5 gorritos o el Gato Madrugador.',
                     'Offer the special prize today.'))),
         const SizedBox(width: 10),
         Tooltip(
