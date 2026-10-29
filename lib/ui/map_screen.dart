@@ -961,15 +961,14 @@ class _MapScreenState extends State<MapScreen> {
             padding: const EdgeInsets.only(bottom: 6),
             child: Text(
               mood == WorldMood.water
-                  ? l.pick(
-                      '🌊 🫧 Zona acuática: bucles que van y vuelven como olas',
-                      '🌊 🫧 Water zone: loops that come and go like waves')
+                  ? l.pick('🐟 Zona acuática · La pecera del gato',
+                      '🐟 Water zone · The cat\'s fishbowl')
                   : l.pick(
                       '🦇 🪨 Zona de la cueva: el laberinto suena distinto',
                       '🦇 🪨 Cave zone: the maze sounds different'),
               style: TextStyle(
                   color: mood == WorldMood.water
-                      ? const Color(0xFF8BE9FF)
+                      ? const Color(0xFFE8F8FF)
                       : const Color(0xFFD9C3A0),
                   fontWeight: FontWeight.w700,
                   fontSize: 12),
@@ -1037,23 +1036,68 @@ class _MapScreenState extends State<MapScreen> {
       return Padding(
           padding: const EdgeInsets.only(bottom: 18), child: section);
     }
+    if (mood == WorldMood.water) {
+      // A fishbowl: air strip with a wavy surface, a cat peeking in,
+      // and fish swimming at the bottom.
+      return Container(
+        margin: const EdgeInsets.only(bottom: 18),
+        decoration: BoxDecoration(
+          borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(10), bottom: Radius.circular(26)),
+          border: Border.all(color: const Color(0xFF9EC9E0), width: 4),
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFBFE9FF),
+              Color(0xFFBFE9FF),
+              Color(0xFF4FB3E8),
+              Color(0xFF1F7DC4),
+              Color(0xFF175E9C),
+            ],
+            stops: [0, 0.06, 0.07, 0.6, 1],
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(6), bottom: Radius.circular(22)),
+          child: Stack(children: [
+            const Positioned(
+              top: -4,
+              left: 0,
+              right: 0,
+              child:
+                  Center(child: Text('🐱🐾', style: TextStyle(fontSize: 26))),
+            ),
+            const Positioned(
+              right: 14,
+              bottom: 8,
+              child: Text('🫧  🐟   🏰', style: TextStyle(fontSize: 24)),
+            ),
+            const Positioned(
+              right: 90,
+              top: 40,
+              child: Text('🫧\n  🫧', style: TextStyle(fontSize: 14)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 30, 12, 40),
+              child: section,
+            ),
+          ]),
+        ),
+      );
+    }
     return Container(
       margin: const EdgeInsets.only(bottom: 18),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: mood == WorldMood.water
-              ? const [Color(0xFF0B4F73), Color(0xFF06283F)]
-              : const [Color(0xFF3A2E24), Color(0xFF1C1612)],
+          colors: [Color(0xFF3A2E24), Color(0xFF1C1612)],
         ),
-        border: Border.all(
-            color: mood == WorldMood.water
-                ? const Color(0xFF4DC8FF)
-                : const Color(0xFF8A7458),
-            width: 1.4),
+        border: Border.all(color: const Color(0xFF8A7458), width: 1.4),
       ),
       child: section,
     );
@@ -1087,16 +1131,28 @@ class _MapScreenState extends State<MapScreen> {
           decoration: BoxDecoration(
             color: unlocked
                 ? switch (worldMood(world.id)) {
-                    WorldMood.water => const Color(0xFF0F5E85),
+                    WorldMood.water => const Color(0x664FB3E8),
                     WorldMood.cave => const Color(0xFF4A3C2F),
                     WorldMood.normal => AppTheme.card,
                   }
                 : switch (worldMood(world.id)) {
-                    WorldMood.water => const Color(0xFF0A3550),
+                    WorldMood.water => const Color(0x33175E9C),
                     WorldMood.cave => const Color(0xFF2B231C),
                     WorldMood.normal => AppTheme.bgAlt,
                   },
-            borderRadius: BorderRadius.circular(14),
+            gradient: worldMood(world.id) == WorldMood.water && unlocked
+                ? const RadialGradient(
+                    center: Alignment(-0.5, -0.6),
+                    radius: 1.1,
+                    colors: [
+                      Color(0x99E8F8FF),
+                      Color(0x664FB3E8),
+                      Color(0x331F7DC4),
+                    ],
+                  )
+                : null,
+            borderRadius: BorderRadius.circular(
+                worldMood(world.id) == WorldMood.water ? 34 : 14),
             border: Border.all(
               color: p.solved
                   ? AppTheme.good.withOpacity(0.6)
