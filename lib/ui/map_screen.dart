@@ -154,12 +154,13 @@ class _MapScreenState extends State<MapScreen> {
         builder: (ctx) => AlertDialog(
           title: Text(l.pick('🌅 ¡Llegaste temprano!', '🌅 You came early!')),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('🎩🎩🎩🎩', style: TextStyle(fontSize: 46)),
+            Text('🧢' * Progress.kEarlyHats,
+                style: const TextStyle(fontSize: 46)),
             const SizedBox(height: 8),
             Text(
                 l.pick(
                     'Premio madrugador: +${Progress.kEarlyHats} Gorritos Gatunos y +${Progress.kHatCoins * Progress.kEarlyHats} Miaudólares.',
-                    'Early-bird prize: +${Progress.kEarlyHats} Cat Beanies and +${Progress.kHatCoins * Progress.kEarlyHats} Meowdollars.'),
+                    'Early-bird prize: +${Progress.kEarlyHats} Cat caps and +${Progress.kHatCoins * Progress.kEarlyHats} Meowdollars.'),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 17)),
           ]),
