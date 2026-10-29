@@ -1,6 +1,7 @@
 import 'package:codecats/data/belts.dart';
 import 'package:codecats/data/usaco_bronze.dart';
 import 'package:codecats/data/worlds.dart';
+import 'package:codecats/ui/level_screen.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -32,6 +33,7 @@ void main() {
       final st = usacoSubtasks(l.id)!;
       expect(st.fold<int>(0, (a, s) => a + s.points), 100);
       expect(levelById(l.id), same(l));
+      expect(autoRemoteJudge(l), isTrue, reason: l.id);
     }
     final w8 = kWorlds.firstWhere((w) => w.id == 'w8');
     for (final l in kUsacoPractice) {
