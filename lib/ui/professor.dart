@@ -192,6 +192,10 @@ class ProfessorAvatar extends StatefulWidget {
   final bool talking;
   final Speaker speaker;
 
+  /// True while a level of the water world is open: the professor wears
+  /// swim goggles over his glasses (and no Halloween hat).
+  static final underwater = ValueNotifier<bool>(false);
+
   @override
   State<ProfessorAvatar> createState() => _ProfessorAvatarState();
 }
@@ -216,30 +220,41 @@ class _ProfessorAvatarState extends State<ProfessorAvatar>
         height: s,
         fit: BoxFit.contain,
         filterQuality: FilterQuality.medium);
+    final wet =
+        widget.speaker == Speaker.profe && ProfessorAvatar.underwater.value;
     // During the Halloween event the professor wears a witch hat.
-    final img = widget.speaker == Speaker.profe && Halloween.active
+    final img = wet
         ? SizedBox.square(
             dimension: s,
             child: Stack(children: [
-              // Shrink the photo so the hat fits inside the square and
-              // never gets clipped by cards or rows.
-              Positioned(
-                left: s * 0.11,
-                top: s * 0.22,
-                width: s * 0.78,
-                height: s * 0.78,
-                child: photo,
-              ),
-              Positioned(
-                left: s * 0.29,
-                top: 0,
-                width: s * 0.42,
-                height: s * 0.36,
-                child: const CustomPaint(painter: _WitchHatPainter()),
-              ),
+              photo,
+              Positioned.fill(
+                  child: CustomPaint(painter: const _GogglesPainter())),
             ]),
           )
-        : photo;
+        : widget.speaker == Speaker.profe && Halloween.active
+            ? SizedBox.square(
+                dimension: s,
+                child: Stack(children: [
+                  // Shrink the photo so the hat fits inside the square and
+                  // never gets clipped by cards or rows.
+                  Positioned(
+                    left: s * 0.11,
+                    top: s * 0.22,
+                    width: s * 0.78,
+                    height: s * 0.78,
+                    child: photo,
+                  ),
+                  Positioned(
+                    left: s * 0.29,
+                    top: 0,
+                    width: s * 0.42,
+                    height: s * 0.36,
+                    child: const CustomPaint(painter: _WitchHatPainter()),
+                  ),
+                ]),
+              )
+            : photo;
     return AnimatedBuilder(
       animation: _t,
       child: img,
@@ -261,6 +276,42 @@ class _ProfessorAvatarState extends State<ProfessorAvatar>
       },
     );
   }
+}
+
+/// Swim goggles resting on the forehead, just above the glasses of
+/// assets/profe.png (glasses sit at about x 31–64%, y 14–27%).
+class _GogglesPainter extends CustomPainter {
+  const _GogglesPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width, h = size.height;
+    final strap = Paint()
+      ..color = const Color(0xFF1E88E5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = h * 0.035
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+        Offset(w * 0.27, h * 0.10), Offset(w * 0.69, h * 0.10), strap);
+    final rim = Paint()
+      ..color = const Color(0xFFFFB300)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = h * 0.022;
+    final glass = Paint()..color = const Color(0x8840C4FF);
+    for (final cx in [0.40, 0.56]) {
+      final r = Rect.fromCenter(
+          center: Offset(w * cx, h * 0.095), width: w * 0.14, height: h * 0.09);
+      canvas.drawOval(r, glass);
+      canvas.drawOval(r, rim);
+      canvas.drawCircle(Offset(w * (cx - 0.03), h * 0.08), w * 0.018,
+          Paint()..color = const Color(0xCCFFFFFF));
+    }
+    canvas.drawLine(Offset(w * 0.47, h * 0.095), Offset(w * 0.49, h * 0.095),
+        rim..strokeWidth = h * 0.02);
+  }
+
+  @override
+  bool shouldRepaint(_GogglesPainter old) => false;
 }
 
 class _WitchHatPainter extends CustomPainter {

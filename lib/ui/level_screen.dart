@@ -250,6 +250,8 @@ class _LevelScreenState extends State<LevelScreen>
   @override
   void initState() {
     super.initState();
+    ProfessorAvatar.underwater.value =
+        worldMood(worldOf(widget.level)?.id ?? '') == WorldMood.water;
     _runner = createRunner();
     if (_remoteJudge) (_remote ??= RemoteRunner()).warm();
     _openLevels++;
@@ -502,6 +504,7 @@ class _LevelScreenState extends State<LevelScreen>
 
   @override
   void dispose() {
+    ProfessorAvatar.underwater.value = false;
     _modeTick?.cancel();
     _flushTyping();
     Cloud.instance.log(
@@ -1309,94 +1312,116 @@ class _LevelScreenState extends State<LevelScreen>
     final lv = widget.level;
     final w = worldOf(lv);
     final color = worldColor(lv);
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: _onPopInvoked,
-      child: Scaffold(
-        backgroundColor: switch (worldMood(w?.id ?? '')) {
-          WorldMood.water => const Color(0xFF071F33),
-          WorldMood.cave => const Color(0xFF17120E),
-          WorldMood.normal => null,
-        },
-        appBar: AppBar(
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(3),
-            child: Container(height: 3, color: color),
-          ),
-          title: Row(
-            children: [
-              if (lv.boss)
-                const Padding(
-                  padding: EdgeInsets.only(right: 6),
-                  child: Icon(
-                    Icons.local_fire_department,
-                    color: AppTheme.bad,
-                    size: 20,
+    final wet = worldMood(w?.id ?? '') == WorldMood.water;
+    final base = Theme.of(context);
+    return Theme(
+      data: !wet
+          ? base
+          : base.copyWith(
+              colorScheme:
+                  base.colorScheme.copyWith(surface: const Color(0xFF1B6AA5)),
+              cardTheme: base.cardTheme.copyWith(
+                color: const Color(0xFF1B6AA5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  side: const BorderSide(color: Color(0xFF8FDCFF), width: 1.4),
+                ),
+              ),
+            ),
+      child: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: _onPopInvoked,
+        child: Scaffold(
+          backgroundColor: switch (worldMood(w?.id ?? '')) {
+            WorldMood.water => const Color(0xFF135A93),
+            WorldMood.cave => const Color(0xFF17120E),
+            WorldMood.normal => null,
+          },
+          appBar: AppBar(
+            backgroundColor: worldMood(w?.id ?? '') == WorldMood.water
+                ? const Color(0xFF2E8FD0)
+                : null,
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(3),
+              child: Container(height: 3, color: color),
+            ),
+            title: Row(
+              children: [
+                if (lv.boss)
+                  const Padding(
+                    padding: EdgeInsets.only(right: 6),
+                    child: Icon(
+                      Icons.local_fire_department,
+                      color: AppTheme.bad,
+                      size: 20,
+                    ),
+                  ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        Halloween.isEventLevel(lv.id)
+                            ? '🎃 Halloween · ${lv.boss ? l.t('boss') : '${l.t('level')} ${kHalloweenLevels.indexWhere((e) => e.id == lv.id) + 1}'}'
+                            : '${l.t('world')} ${w == null ? '' : kWorlds.indexOf(w) + 1}'
+                                ' · ${lv.boss ? l.t('boss') : '${l.t('level')} ${levelIndexInWorld(lv) + 1}'}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: color,
+                        ),
+                      ),
+                      Text(
+                        l.pick(lv.titleEs, lv.titleEn),
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
                   ),
                 ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      Halloween.isEventLevel(lv.id)
-                          ? '🎃 Halloween · ${lv.boss ? l.t('boss') : '${l.t('level')} ${kHalloweenLevels.indexWhere((e) => e.id == lv.id) + 1}'}'
-                          : '${l.t('world')} ${w == null ? '' : kWorlds.indexOf(w) + 1}'
-                              ' · ${lv.boss ? l.t('boss') : '${l.t('level')} ${levelIndexInWorld(lv) + 1}'}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: color,
-                      ),
-                    ),
-                    Text(
-                      l.pick(lv.titleEs, lv.titleEn),
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
-                ),
+              ],
+            ),
+            actions: [
+              const MusicButton(),
+              const CoinBadge(),
+              IconButton(
+                tooltip: l.t('tip_restart'),
+                icon: const Icon(Icons.restart_alt),
+                onPressed: _busy ? null : _restart,
               ),
             ],
           ),
-          actions: [
-            const MusicButton(),
-            const CoinBadge(),
-            IconButton(
-              tooltip: l.t('tip_restart'),
-              icon: const Icon(Icons.restart_alt),
-              onPressed: _busy ? null : _restart,
-            ),
-          ],
-        ),
-        body: Stack(
-          children: [
-            Column(
-              children: [
-                Expanded(
-                  child: KeyboardScroll(
-                    controller: _scroll,
-                    child: ListView(
+          body: Stack(
+            children: [
+              Column(
+                children: [
+                  Expanded(
+                    child: KeyboardScroll(
                       controller: _scroll,
-                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-                      children: [
-                        KeyedSubtree(key: _missionKey, child: _missionCard()),
-                        KeyedSubtree(key: _hintsKey, child: _hintsCard()),
-                        KeyedSubtree(key: _programKey, child: _editorSection()),
-                        if (_console.isNotEmpty)
-                          KeyedSubtree(key: _consoleKey, child: _consoleCard()),
-                      ],
+                      child: ListView(
+                        controller: _scroll,
+                        padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+                        children: [
+                          KeyedSubtree(key: _missionKey, child: _missionCard()),
+                          KeyedSubtree(key: _hintsKey, child: _hintsCard()),
+                          KeyedSubtree(
+                              key: _programKey, child: _editorSection()),
+                          if (_console.isNotEmpty)
+                            KeyedSubtree(
+                                key: _consoleKey, child: _consoleCard()),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                _actionBar(),
-              ],
-            ),
-            if (_showIntro)
-              Positioned.fill(
-                child: LevelIntro(level: lv, onDone: _introDone),
+                  _actionBar(),
+                ],
               ),
-          ],
+              if (_showIntro)
+                Positioned.fill(
+                  child: LevelIntro(level: lv, onDone: _introDone),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -2029,9 +2054,11 @@ class _LevelScreenState extends State<LevelScreen>
     final l = L.instance;
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-      decoration: const BoxDecoration(
-        color: AppTheme.bgAlt,
-        border: Border(top: BorderSide(color: AppTheme.cardEdge)),
+      decoration: BoxDecoration(
+        color: worldMood(worldOf(widget.level)?.id ?? '') == WorldMood.water
+            ? const Color(0xFF0E4A7A)
+            : AppTheme.bgAlt,
+        border: const Border(top: BorderSide(color: AppTheme.cardEdge)),
       ),
       child: SafeArea(
         child: Row(
