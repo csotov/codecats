@@ -86,6 +86,14 @@ void main() {
     }
   });
 
+  test('math gym lap bonus: 20 the first time, 5 on reviews', () {
+    final p = Progress.instance;
+    final c = p.coins;
+    expect(p.mathLapDone('mcd', 1), 20);
+    expect(p.mathLapDone('mcd', 2), 5);
+    expect(p.coins, c + 25);
+  });
+
   test('blitz Leitner: due reviews first, then new cards in order', () {
     final p = Progress.instance;
     p.blitzCards.clear();

@@ -202,6 +202,48 @@ class _MathTopicScreenState extends State<MathTopicScreen> {
       _placed = null;
       _selected = null;
     });
+    final n = t.questions.length;
+    if (_idx > 0 && _idx % n == 0) _lapDone(_idx ~/ n);
+  }
+
+  Future<void> _lapDone(int lap) async {
+    final t = widget.topic;
+    final l = L.instance;
+    final bonus = Progress.instance.mathLapDone(t.id, lap);
+    final right = Progress.instance.mathGym[t.id]?[1] ?? 0;
+    Cloud.instance.log('math_gym_done', data: {'topic': t.id, 'lap': lap});
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l.pick('🏆 ¡Tema completado!', '🏆 Topic complete!'),
+            textAlign: TextAlign.center),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('😺🎉', style: TextStyle(fontSize: 56)),
+            const SizedBox(height: 8),
+            Text(l.pick(t.titleEs, t.titleEn),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Text(
+                l.pick(
+                    '+$bonus Miaudólares de premio · $right respuestas bien en total',
+                    '+$bonus Meowdollars bonus · $right right answers in total'),
+                textAlign: TextAlign.center),
+          ],
+        ),
+        actions: [
+          Tooltip(
+            message: l.pick('Volver al gimnasio', 'Back to the gym'),
+            child: FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(l.pick('¡Genial!', 'Great!'))),
+          ),
+        ],
+      ),
+    );
+    if (mounted) Navigator.pop(context);
   }
 
   Widget _tileBox(String text, {Color? color, Color? edge}) {
