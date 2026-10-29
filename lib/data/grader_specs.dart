@@ -37,6 +37,64 @@ class GraderSpec {
     }
   }
 
+  /// Parameters of all functions, in order, without repeats: `(type, name)`.
+  List<(String, String)> get params {
+    final out = <(String, String)>[];
+    for (final sig in sigs) {
+      final inside = sig.substring(sig.indexOf('(') + 1, sig.lastIndexOf(')'));
+      for (final p in inside.split(',')) {
+        final m = RegExp(r'^\s*(.+?)\s*&?\s*(\w+)\s*$').firstMatch(p);
+        if (m == null) continue;
+        final t = m.group(1)!.replaceAll('std::', '').replaceAll('const ', '');
+        if (!out.any((e) => e.$2 == m.group(2))) out.add((t, m.group(2)!));
+      }
+    }
+    return out;
+  }
+
+  /// What the function receives, e.g. `vector<int> a`.
+  String get receives => params.map((p) => '${p.$1} ${p.$2}').join(', ');
+
+  /// Return types, e.g. `int`.
+  String get returns => sigs
+      .map((s) => s
+          .substring(0, s.indexOf(RegExp(r'\s\w+\s*\(')))
+          .replaceAll('std::', '')
+          .trim())
+      .toSet()
+      .join(', ');
+
+  /// The sample input as the function sees it, e.g. `5\n1 2 3 4 6` →
+  /// `a = {1, 2, 3, 4, 6}`. Null when it can't be mapped.
+  String? args(String input) {
+    final ps = params;
+    if (ps.isEmpty) return null;
+    final tk = input.trim().split(RegExp(r'\s+')).where((t) => t.isNotEmpty);
+    final it = tk.toList();
+    var i = 0;
+    final out = <String>[];
+    for (final (t, n) in ps) {
+      if (t.startsWith('vector')) {
+        if (i >= it.length) return null;
+        final c = int.tryParse(it[i++]);
+        if (c == null || c < 0 || i + c > it.length) return null;
+        final xs = it.sublist(i, i + c);
+        i += c;
+        final q = t.contains('string') ? '"' : '';
+        out.add('$n = {${xs.map((x) => '$q$x$q').join(', ')}}');
+      } else {
+        if (i >= it.length) return null;
+        final x = it[i++];
+        out.add(t == 'string'
+            ? '$n = "$x"'
+            : t == 'char'
+                ? "$n = '$x'"
+                : '$n = $x');
+      }
+    }
+    return i == it.length ? out.join(', ') : null;
+  }
+
   /// Name of the problem's header, like `placa.h` in the OBI zip.
   String get name => RegExp(r'(\w+)\s*\(').firstMatch(sigs.first)!.group(1)!;
 

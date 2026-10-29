@@ -341,7 +341,13 @@ class _LevelScreenState extends State<LevelScreen>
   /// sample, what to read/print, and a read-compute-print plan.
   List<String> _baseHints(L l) {
     final lv = widget.level;
-    final own = l.pickList(_hintsEs, lv.hintsEn);
+    final g = _grader;
+    // cin/cout tips belong to the classic format: in grader mode the
+    // function gets its parameters instead.
+    final own = [
+      for (final h in l.pickList(_hintsEs, lv.hintsEn))
+        if (g == null || !RegExp(r'\bcin\b|\bcout\b').hasMatch(h)) h
+    ];
     final out = [...own];
     // Follows the code until revealed, then stays frozen.
     if (out.length < Progress.kMaxHints && _hintsShown <= own.length) {
@@ -365,13 +371,24 @@ class _LevelScreenState extends State<LevelScreen>
     }
     if (_dynHint != null) out.add(_dynHint!);
     for (final s in lv.samples.take(1)) {
+      final a = g?.args(s.input);
+      if (g != null && a != null) {
+        out.add(l.pick(
+            'Hacelo a mano con el ejemplo: tu función recibe $a y tiene que devolver lo que da «${s.output.trim()}». Anotá qué pasos hiciste y escribilos en código, uno por línea.',
+            'Do the sample by hand: your function gets $a and must return what gives «${s.output.trim()}». Write down your steps and turn each into a line of code.'));
+        continue;
+      }
       out.add(l.pick(
           'Hacelo a mano con el ejemplo: entra «${s.input.trim()}» y tiene que salir «${s.output.trim()}». Anotá qué pasos hiciste y escribilos en código, uno por línea.',
           'Do the sample by hand: input «${s.input.trim()}» must give «${s.output.trim()}». Write down your steps and turn each into a line of code.'));
     }
     final inp = l.pick(lv.inputEs, lv.inputEn).trim();
     final outp = l.pick(lv.outputEs, lv.outputEn).trim();
-    if (inp.isNotEmpty || outp.isNotEmpty) {
+    if (g != null && g.params.isNotEmpty) {
+      out.add(l.pick(
+          'Tu función recibe: ${g.receives}\nDevuelve: ${g.returns}. El grader ya lee los datos e imprime lo que devolvés: no uses cin ni cout.',
+          'Your function gets: ${g.receives}\nReturns: ${g.returns}. The grader already reads the data and prints what you return: no cin or cout.'));
+    } else if (inp.isNotEmpty || outp.isNotEmpty) {
       out.add(l.pick('Lo que leés: $inp\nLo que imprimís: $outp',
           'What you read: $inp\nWhat you print: $outp'));
     }
@@ -1205,6 +1222,12 @@ class _LevelScreenState extends State<LevelScreen>
               const SizedBox(height: 8),
               SelectableText(s.input.trim().isEmpty ? '(—)' : s.input.trim(),
                   style: const TextStyle(fontFamily: 'monospace')),
+              if (_grader?.args(s.input) case final a?) ...[
+                const SizedBox(height: 4),
+                Text(l.pick('Tu función recibe: $a', 'Your function gets: $a'),
+                    style: const TextStyle(
+                        fontFamily: 'monospace', color: Color(0xFFFF9F1C))),
+              ],
             ],
           ),
         ),
@@ -1710,7 +1733,12 @@ class _LevelScreenState extends State<LevelScreen>
             ),
           ],
           const SizedBox(height: 10),
-          _specRow(l.t('input_spec'), l.pick(lv.inputEs, lv.inputEn)),
+          if (_grader != null && _grader.params.isNotEmpty) ...[
+            _specRow(l.pick('Recibe', 'Gets'), _grader.receives),
+            _specRow(l.pick('El grader lee', 'Grader reads'),
+                l.pick(lv.inputEs, lv.inputEn)),
+          ] else
+            _specRow(l.t('input_spec'), l.pick(lv.inputEs, lv.inputEn)),
           _specRow(l.t('output_spec'), l.pick(lv.outputEs, lv.outputEn)),
           if (l.pickList(lv.constraintsEs, lv.constraintsEn).isNotEmpty)
             _specRow(
@@ -1769,6 +1797,17 @@ class _LevelScreenState extends State<LevelScreen>
                 ),
                 const SizedBox(height: 2),
                 MonoBox(text: s.input.isEmpty ? '(vacío)' : s.input),
+                if (_grader?.args(s.input) case final a?) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    L.instance.pick(
+                        'Tu función recibe: $a', 'Your function gets: $a'),
+                    style: const TextStyle(
+                        color: Color(0xFFFF9F1C),
+                        fontSize: 11.5,
+                        fontFamily: 'monospace'),
+                  ),
+                ],
               ],
             ),
           ),
