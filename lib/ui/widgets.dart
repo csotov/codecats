@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../data/belts.dart';
+import 'phase_exam.dart';
+
 import '../l10n.dart';
 import '../services/progress.dart';
 import 'theme.dart';
@@ -26,64 +29,113 @@ class StarsRow extends StatelessWidget {
   }
 }
 
-/// Current rank chip + XP progress toward the next rank.
+/// Current belt with its 4 stripes and progress toward the belt exam.
 class RankXpBar extends StatelessWidget {
   const RankXpBar({super.key});
 
   @override
   Widget build(BuildContext context) {
     final l = L.instance;
-    final xp = Progress.instance.xp;
-    final rank = rankForXp(xp);
-    final next = nextRank(xp);
-    final span = next == null ? 1 : (next.minXp - rank.minXp);
-    final frac =
-        next == null ? 1.0 : ((xp - rank.minXp) / span).clamp(0.0, 1.0);
-
+    final p = Progress.instance;
+    final belt = kBelts[p.belt];
+    final stripes = beltStripes(belt, p);
+    final total = belt.levels.length;
+    final frac = total == 0
+        ? 1.0
+        : (beltSolved(belt, p) / (kStripeAt.last * total)).clamp(0.0, 1.0);
+    final missing = levelsToNextStripe(belt, p);
+    final top = p.belt >= kBelts.length - 1;
+    final resume = p.examActive && p.examPhase == kBeltExamBase + belt.n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Color(rank.color).withOpacity(0.15),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Color(rank.color)),
-              ),
-              child: Text(
-                l.t(rank.key),
-                style: TextStyle(
-                    color: Color(rank.color),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13),
-              ),
-            ),
+            const BeltChip(),
             const SizedBox(width: 8),
-            Text('$xp ${l.t('xp')}',
+            Text('${p.xp} ${l.t('xp')}',
                 style: const TextStyle(color: AppTheme.textLo, fontSize: 12)),
           ],
         ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: frac,
-            minHeight: 6,
-            backgroundColor: AppTheme.cardEdge,
-            valueColor: AlwaysStoppedAnimation(Color(rank.color)),
-          ),
-        ),
-        if (next != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              '${l.t('rank')}: ${l.t(next.key)} → ${next.minXp} ${l.t('xp')}',
-              style: const TextStyle(color: AppTheme.textLo, fontSize: 11),
+        if (!top) ...[
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: frac,
+              minHeight: 6,
+              backgroundColor: AppTheme.cardEdge,
+              valueColor: AlwaysStoppedAnimation(Color(belt.color)),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: stripes < 4
+                ? Text(
+                    l.pick(
+                        'Franja ${stripes + 1}: ${missing == 1 ? 'falta 1 nivel' : 'faltan $missing niveles'}. Con las 4 franjas das el examen de cinturón.',
+                        'Stripe ${stripes + 1}: $missing more levels. With 4 stripes you take the belt exam.'),
+                    style:
+                        const TextStyle(color: AppTheme.textLo, fontSize: 11))
+                : p.beltExamOpen || resume
+                    ? Tooltip(
+                        message: l.pick(
+                            'Problemas de tu cinturón, sin pistas y con reloj',
+                            'Problems of your belt, no hints, with a clock'),
+                        child: FilledButton.tonalIcon(
+                          icon: const Icon(Icons.sports_martial_arts, size: 16),
+                          label: Text(resume
+                              ? l.pick('Seguir el examen de cinturón',
+                                  'Resume the belt exam')
+                              : l.pick(
+                                  '🥋 Examen de cinturón', '🥋 Belt exam')),
+                          onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => PhaseExamScreen(belt: belt))),
+                        ),
+                      )
+                    : Text(
+                        l.pick(
+                            'Mañana podés volver a dar el examen de cinturón.',
+                            'You can retake the belt exam tomorrow.'),
+                        style: const TextStyle(
+                            color: AppTheme.textLo, fontSize: 11)),
+          ),
+        ],
       ],
+    );
+  }
+}
+
+/// Belt name with its stripes (▮ earned, ▯ missing).
+class BeltChip extends StatelessWidget {
+  const BeltChip({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = Progress.instance;
+    final belt = kBelts[p.belt];
+    final s = beltStripes(belt, p);
+    final top = p.belt >= kBelts.length - 1;
+    final c = Color(belt.color);
+    return Tooltip(
+      message: L.instance.pick(
+          'Tu cinturón. Cada franja sale al resolver niveles de sus mundos; el cinturón siguiente, aprobando el examen.',
+          'Your belt. Stripes come from solving its levels; the next belt from passing the exam.'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: c.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: c),
+        ),
+        child: Text(
+          '🥋 ${L.instance.pick(belt.es, belt.en)}'
+          '${top ? '' : '  ${'▮' * s}${'▯' * (4 - s)}'}',
+          style: TextStyle(color: c, fontWeight: FontWeight.bold, fontSize: 13),
+        ),
+      ),
     );
   }
 }
