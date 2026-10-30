@@ -589,6 +589,7 @@ class Progress extends ChangeNotifier {
     earlyWon = false;
     earlyFrom = 0;
     earlyAdminDl = 0;
+    earlyClaimed = 0;
     final raw = prefs.getString(_keyFor(active!.id));
     if (raw != null) {
       try {
@@ -632,6 +633,7 @@ class Progress extends ChangeNotifier {
         earlyWon = j['ew'] == true;
         earlyFrom = (j['ef'] as num?)?.toInt() ?? 0;
         earlyAdminDl = (j['ead'] as num?)?.toInt() ?? 0;
+        earlyClaimed = (j['ecl'] as num?)?.toInt() ?? 0;
         cfHandle = j['cfh'] as String? ?? '';
         atcoderUser = j['acu'] as String? ?? '';
         scores
@@ -707,6 +709,7 @@ class Progress extends ChangeNotifier {
         'ew': earlyWon,
         'ef': earlyFrom,
         'ead': earlyAdminDl,
+        'ecl': earlyClaimed,
         'bde': equippedBadge,
         'cfh': cfHandle,
         'acu': atcoderUser,
@@ -828,7 +831,11 @@ class Progress extends ChangeNotifier {
     ];
     earlyHats = math.max(earlyHats, (d['eh'] as num?)?.toInt() ?? 0);
     earlyOfferDay = math.max(earlyOfferDay, (d['eod'] as num?)?.toInt() ?? 0);
-    if (earlyDeadline == 0) earlyDeadline = (d['eo'] as num?)?.toInt() ?? 0;
+    earlyClaimed = math.max(earlyClaimed, (d['ecl'] as num?)?.toInt() ?? 0);
+    final eo = (d['eo'] as num?)?.toInt() ?? 0;
+    // A claimed offer must not come back from an older cloud copy.
+    if (earlyDeadline == 0 && eo > earlyClaimed) earlyDeadline = eo;
+    if (earlyDeadline != 0 && earlyDeadline <= earlyClaimed) earlyDeadline = 0;
     earlyTodayDay = math.max(earlyTodayDay, (d['etd'] as num?)?.toInt() ?? 0);
     earlyWon = earlyWon || d['ew'] == true;
     earlyFrom = math.max(earlyFrom, (d['ef'] as num?)?.toInt() ?? 0);
@@ -905,6 +912,7 @@ class Progress extends ChangeNotifier {
           'ew': earlyWon,
           'ef': earlyFrom,
           'ead': earlyAdminDl,
+          'ecl': earlyClaimed,
           'bde': equippedBadge,
           'cfh': cfHandle,
           'acu': atcoderUser,
@@ -1248,6 +1256,10 @@ class Progress extends ChangeNotifier {
   /// only once even after the prize is claimed.
   int earlyAdminDl = 0;
 
+  /// Deadline (ms) of the last prize claimed: each offer pays once, and at
+  /// most one prize per day.
+  int earlyClaimed = 0;
+
   /// Admin-scheduled offer: come in before [deadline] (no win needed).
   bool offerEarlyOn(DateTime now, DateTime deadline) {
     final ms = deadline.millisecondsSinceEpoch;
@@ -1308,6 +1320,16 @@ class Progress extends ChangeNotifier {
     }
     if (now.isBefore(DateTime(dl.year, dl.month, dl.day))) return null;
     if (earlyIsToday && !earlyWon) return null;
+    final claimedDay = earlyClaimed == 0
+        ? 0
+        : _ymd(DateTime.fromMillisecondsSinceEpoch(earlyClaimed));
+    if (earlyDeadline == earlyClaimed || claimedDay == _ymd(now)) {
+      earlyDeadline = 0;
+      _save();
+      notifyListeners();
+      return null;
+    }
+    earlyClaimed = earlyDeadline;
     earlyDeadline = 0;
     earlyWon = false;
     final String prize;

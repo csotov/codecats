@@ -53,13 +53,30 @@ void main() {
     expect(p.claimEarly(dl.add(const Duration(minutes: 1))), 'missed');
     expect(p.earlyDeadlineAt, isNull);
 
-    // The cat comes at most once.
-    p.earlyDeadline = dl.millisecondsSinceEpoch;
-    expect(p.claimEarly(DateTime(dl.year, dl.month, dl.day, 9), _AlwaysTrue()),
+    // The cat comes at most once (next offer, another day).
+    final dlB = dl.add(const Duration(days: 1));
+    p.earlyDeadline = dlB.millisecondsSinceEpoch;
+    expect(
+        p.claimEarly(DateTime(dlB.year, dlB.month, dlB.day, 9), _AlwaysTrue()),
         'cat');
     expect(p.unlockedCats, contains(Progress.kEarlyCat));
-    p.earlyDeadline = dl.millisecondsSinceEpoch;
-    expect(p.claimEarly(DateTime(dl.year, dl.month, dl.day, 9), _AlwaysTrue()),
+    // The same offer (e.g. back from an old cloud copy) never pays twice,
+    // and no second prize on the same day.
+    p.earlyDeadline = dlB.millisecondsSinceEpoch;
+    expect(
+        p.claimEarly(DateTime(dlB.year, dlB.month, dlB.day, 10), _AlwaysTrue()),
+        isNull);
+    expect(p.earlyDeadline, 0);
+    final dl2 = DateTime(dlB.year, dlB.month, dlB.day, 23, 0);
+    p.earlyDeadline = dl2.millisecondsSinceEpoch;
+    expect(
+        p.claimEarly(DateTime(dlB.year, dlB.month, dlB.day, 11), _AlwaysTrue()),
+        isNull);
+    final next = dlB.add(const Duration(days: 1));
+    p.earlyDeadline = next.millisecondsSinceEpoch;
+    expect(
+        p.claimEarly(
+            DateTime(next.year, next.month, next.day, 9), _AlwaysTrue()),
         'hats');
   });
 
