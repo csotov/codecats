@@ -464,6 +464,7 @@ class _MapScreenState extends State<MapScreen> {
               controller: _scroll,
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 30),
               children: [
+                if (MediaQuery.sizeOf(context).shortestSide < 600) _phoneCard(),
                 if (Halloween.active) _halloweenBanner(),
                 const RankXpBar(),
                 const SizedBox(height: 6),
@@ -755,6 +756,107 @@ class _MapScreenState extends State<MapScreen> {
                   style: const TextStyle(color: AppTheme.bad, fontSize: 11)),
             ],
           ]),
+        ],
+      ),
+    );
+  }
+
+  /// On phones, start with what works by touch: drag-and-drop and buttons,
+  /// no typing.
+  Widget _phoneCard() {
+    final l = L.instance;
+    final p = Progress.instance;
+    final block = allLevels
+        .where((lv) => lv.mode == EditorMode.blocks && !p.of(lv.id).solved);
+    Widget big(String emoji, String title, String sub, String tip,
+            VoidCallback onTap) =>
+        Tooltip(
+          message: tip,
+          child: Card(
+            margin: const EdgeInsets.only(top: 8),
+            color: AppTheme.bg,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: onTap,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                child: Row(children: [
+                  Text(emoji, style: const TextStyle(fontSize: 30)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title,
+                            style: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w800)),
+                        Text(sub,
+                            style: const TextStyle(
+                                fontSize: 12, color: AppTheme.textLo)),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, color: AppTheme.accent2),
+                ]),
+              ),
+            ),
+          ),
+        );
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppTheme.accent2, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l.pick('📱 Para jugar con el dedo', '📱 Play with your finger'),
+              style:
+                  const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+          Text(
+              l.pick('Arrastrá, soltá y tocá botones: sin teclado.',
+                  'Drag, drop and tap: no keyboard.'),
+              style: const TextStyle(fontSize: 12, color: AppTheme.textLo)),
+          if (block.isNotEmpty)
+            big(
+                '🧩',
+                l.pick('Nivel con bloques', 'Blocks level'),
+                l.pick(block.first.titleEs, block.first.titleEn),
+                l.pick('Armá el programa arrastrando bloques',
+                    'Build the program by dragging blocks'),
+                () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => LevelScreen(level: block.first)))),
+          big(
+              '⚡',
+              l.pick('Memoria rápida', 'Quick recall'),
+              l.pick('arrastrá las fichas al lugar del código',
+                  'drag the tiles into the code'),
+              l.pick('Arrastrar y soltar fichas de código',
+                  'Drag and drop code tiles'),
+              () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const ModeIntro(
+                          id: 'memory', child: MemoryGymScreen())))),
+          if (mathTopicsFor(p).isNotEmpty)
+            big(
+                '🧮',
+                l.pick('Gimnasio de matemática', 'Math gym'),
+                l.pick(
+                    'elegí o arrastrá la respuesta', 'pick or drag the answer'),
+                l.pick('Problemas de olimpiada con botones',
+                    'Olympiad problems with buttons'),
+                () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ModeIntro(
+                            id: 'mathgym', child: MathGymScreen())))),
         ],
       ),
     );
