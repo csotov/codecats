@@ -257,6 +257,17 @@ final List<CatBadge> kShopBadges = [
 
 final List<CatBadge> kGoalBadges = [
   CatBadge(
+      id: 'g_early',
+      nameEs: 'Madrugador',
+      nameEn: 'Early bird',
+      art: '🌅',
+      cat: 'madrugador',
+      phrase: 'EARLY BIRD',
+      goalEs: 'Cobrá un premio madrugador.',
+      goalEn: 'Claim an early-bird prize.',
+      earned: (p) =>
+          p.earlyHats > 0 || p.unlockedCats.contains(Progress.kEarlyCat)),
+  CatBadge(
       id: 'g_cpp',
       nameEs: 'C++ brillante',
       nameEn: 'Shiny C++',

@@ -590,6 +590,7 @@ class Progress extends ChangeNotifier {
     earlyFrom = 0;
     earlyAdminDl = 0;
     earlyClaimed = 0;
+    earlyDone = 0;
     final raw = prefs.getString(_keyFor(active!.id));
     if (raw != null) {
       try {
@@ -634,6 +635,7 @@ class Progress extends ChangeNotifier {
         earlyFrom = (j['ef'] as num?)?.toInt() ?? 0;
         earlyAdminDl = (j['ead'] as num?)?.toInt() ?? 0;
         earlyClaimed = (j['ecl'] as num?)?.toInt() ?? 0;
+        earlyDone = (j['edn'] as num?)?.toInt() ?? 0;
         cfHandle = j['cfh'] as String? ?? '';
         atcoderUser = j['acu'] as String? ?? '';
         scores
@@ -710,6 +712,7 @@ class Progress extends ChangeNotifier {
         'ef': earlyFrom,
         'ead': earlyAdminDl,
         'ecl': earlyClaimed,
+        'edn': earlyDone,
         'bde': equippedBadge,
         'cfh': cfHandle,
         'acu': atcoderUser,
@@ -832,10 +835,12 @@ class Progress extends ChangeNotifier {
     earlyHats = math.max(earlyHats, (d['eh'] as num?)?.toInt() ?? 0);
     earlyOfferDay = math.max(earlyOfferDay, (d['eod'] as num?)?.toInt() ?? 0);
     earlyClaimed = math.max(earlyClaimed, (d['ecl'] as num?)?.toInt() ?? 0);
+    earlyDone = math.max(
+        earlyDone, math.max(earlyClaimed, (d['edn'] as num?)?.toInt() ?? 0));
     final eo = (d['eo'] as num?)?.toInt() ?? 0;
-    // A claimed offer must not come back from an older cloud copy.
-    if (earlyDeadline == 0 && eo > earlyClaimed) earlyDeadline = eo;
-    if (earlyDeadline != 0 && earlyDeadline <= earlyClaimed) earlyDeadline = 0;
+    // A claimed or missed offer must not come back from an older cloud copy.
+    if (earlyDeadline == 0 && eo > earlyDone) earlyDeadline = eo;
+    if (earlyDeadline != 0 && earlyDeadline <= earlyDone) earlyDeadline = 0;
     earlyTodayDay = math.max(earlyTodayDay, (d['etd'] as num?)?.toInt() ?? 0);
     earlyWon = earlyWon || d['ew'] == true;
     earlyFrom = math.max(earlyFrom, (d['ef'] as num?)?.toInt() ?? 0);
@@ -913,6 +918,7 @@ class Progress extends ChangeNotifier {
           'ef': earlyFrom,
           'ead': earlyAdminDl,
           'ecl': earlyClaimed,
+          'edn': earlyDone,
           'bde': equippedBadge,
           'cfh': cfHandle,
           'acu': atcoderUser,
@@ -1060,6 +1066,9 @@ class Progress extends ChangeNotifier {
     mathGym['rp'] = [run, min];
     return run <= kPaidReplays;
   }
+
+  @visibleForTesting
+  void mergeSnapshotForTest(Map<String, dynamic> d) => _mergeFrom(d);
 
   @visibleForTesting
   bool payReplayAt(DateTime now) => _payReplay(now);
@@ -1260,6 +1269,9 @@ class Progress extends ChangeNotifier {
   /// most one prize per day.
   int earlyClaimed = 0;
 
+  /// Deadline (ms) of the last offer that ended (claimed or missed).
+  int earlyDone = 0;
+
   /// Admin-scheduled offer: come in before [deadline] (no win needed).
   bool offerEarlyOn(DateTime now, DateTime deadline) {
     final ms = deadline.millisecondsSinceEpoch;
@@ -1281,7 +1293,7 @@ class Progress extends ChangeNotifier {
   static const kWarmUp = Duration(seconds: 10);
   static bool get warm => DateTime.now().difference(appStart) >= kWarmUp;
 
-  static const kEarlyChance = 0.4;
+  static const kEarlyChance = 1.0;
   static const kEarlyHats = 5;
   static const kEarlyCat = 'early_bird';
 
@@ -1312,7 +1324,14 @@ class Progress extends ChangeNotifier {
   String? claimEarly(DateTime now, [math.Random? rng]) {
     final dl = earlyDeadlineAt;
     if (dl == null) return null;
+    if (earlyDeadline <= earlyDone) {
+      earlyDeadline = 0;
+      _save();
+      notifyListeners();
+      return null;
+    }
     if (now.isAfter(dl)) {
+      earlyDone = earlyDeadline;
       earlyDeadline = 0;
       _save();
       notifyListeners();
@@ -1329,7 +1348,7 @@ class Progress extends ChangeNotifier {
       notifyListeners();
       return null;
     }
-    earlyClaimed = earlyDeadline;
+    earlyClaimed = earlyDone = earlyDeadline;
     earlyDeadline = 0;
     earlyWon = false;
     final String prize;
@@ -1737,6 +1756,9 @@ class Progress extends ChangeNotifier {
     bonusDay = 0;
     contestIds = const [];
     contestEndMs = 0;
+    earlyDeadline = earlyOfferDay = earlyHats = earlyTodayDay = 0;
+    earlyWon = false;
+    earlyFrom = earlyAdminDl = earlyClaimed = earlyDone = 0;
     final prefs = await SharedPreferences.getInstance();
     if (active != null) {
       await prefs.remove(_keyFor(active!.id));
