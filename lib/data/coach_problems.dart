@@ -88,7 +88,9 @@ class CoachProblem {
         outputEs: outputDesc,
         outputEn: outputDesc,
         samples: [
-          for (final s in samples) SampleIO(input: s[0], output: s[1]),
+          for (final s in samples)
+            SampleIO(
+                input: s[0], output: s[1], explain: s.length > 2 ? s[2] : ''),
         ],
         tests: [
           for (final s in samples) TestCase(input: s[0], output: s[1]),
@@ -112,20 +114,21 @@ class CoachProblem {
 }
 
 /// Parse tests written as blocks separated by a line `---`, each block
-/// being input, a line `===`, then the expected output.
+/// being input, a line `===`, then the expected output (optionally another
+/// `===` and an explanation of the sample).
 List<List<String>> parseTests(String text) {
   final out = <List<String>>[];
   for (final block in text.split(RegExp(r'^\s*---\s*$', multiLine: true))) {
     if (block.trim().isEmpty) continue;
     final parts = block.split(RegExp(r'^\s*===\s*$', multiLine: true));
-    if (parts.length != 2) continue;
-    out.add([parts[0].trim(), parts[1].trim()]);
+    if (parts.length != 2 && parts.length != 3) continue;
+    out.add([for (final p in parts) p.trim()]);
   }
   return out;
 }
 
 String formatTests(List<List<String>> tests) =>
-    tests.map((t) => '${t[0]}\n===\n${t[1]}').join('\n---\n');
+    tests.map((t) => t.join('\n===\n')).join('\n---\n');
 
 /// Loaded coach problems, cached locally so they work offline.
 class CoachStore extends ChangeNotifier {

@@ -137,9 +137,9 @@ class L {
     },
     'onboarding_tip': {
       'es':
-          'Consejo: lee la misión, mira los ejemplos y prueba tu código antes de combatir.',
+          'Consejo: lee la misión y mira la explicación de cada ejemplo antes de programar.',
       'en':
-          'Tip: read the mission, check the examples, and test your code before fighting.'
+          'Tip: read the mission and the explanation of each example before coding.'
     },
     // --- profiles & dashboard -------------------------------------------
     'who_plays': {'es': '¿Quién juega?', 'en': "Who's playing?"},

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../data/topic_tutorials.dart';
 import '../l10n.dart';
 import '../services/cloud.dart';
 import '../services/progress.dart';
@@ -9,13 +10,7 @@ import '../services/speech.dart';
 import 'professor.dart';
 import 'theme.dart';
 
-/// One page of a first-time tutorial; [example] is shown as code/table.
-class IntroStep {
-  const IntroStep(this.titleEs, this.titleEn, this.textEs, this.textEn,
-      {this.example});
-  final String titleEs, titleEn, textEs, textEn;
-  final String? example;
-}
+export '../data/topic_tutorials.dart' show IntroStep;
 
 /// Rule: every new kind of activity opens with a short tutorial the first
 /// time, and finishing it gives a small reward.
@@ -173,19 +168,42 @@ class _ModeIntroState extends State<ModeIntro> {
 Future<void> showModeIntro(BuildContext context, String id,
     {bool force = false}) async {
   final steps = kModeIntros[id];
+  if (steps == null) return;
+  final done = await _showSteps(context, 'intro_$id', steps, force: force);
+  if (done != null) {
+    Cloud.instance.log('mode_intro', data: {'id': id, 'done': done});
+  }
+}
+
+/// Topic tutorial of [levelId] (what it is, what it is for, how to write
+/// it), shown the first time the level opens; [force] replays it.
+Future<void> showTopicTutorial(BuildContext context, String levelId,
+    {bool force = false}) async {
+  final steps = topicTutorialFor(levelId);
+  if (steps == null) return;
+  final done = await _showSteps(context, 'topic_$levelId', steps, force: force);
+  if (done != null) {
+    Cloud.instance.log('topic_tutorial',
+        levelId: levelId, data: {'done': done, 'replay': force});
+  }
+}
+
+/// Null when it was not shown; otherwise whether it was finished.
+Future<bool?> _showSteps(
+    BuildContext context, String key, List<IntroStep> steps,
+    {bool force = false}) async {
   final p = Progress.instance;
-  final key = 'intro_$id';
-  if (steps == null || (!force && p.talkSeen(key))) return;
+  if (!force && p.talkSeen(key)) return null;
   final first = !p.talkSeen(key);
   p.markTalkSeen(key);
   final finished = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (_) => _IntroDialog(steps: steps, prize: first));
-  Cloud.instance.log('mode_intro', data: {'id': id, 'done': finished == true});
   if (first && finished == true) {
     p.addCoins(kIntroCoins);
   }
+  return finished == true;
 }
 
 class _IntroDialog extends StatefulWidget {

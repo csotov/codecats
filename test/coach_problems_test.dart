@@ -37,4 +37,20 @@ void main() {
     expect(lv.tests.length, 2);
     expect(p.isCodeforces, isFalse);
   });
+
+  test('sample explanations survive admin editing and reach the level', () {
+    const text =
+        '7\n===\nCHICO\n===\n7 es menor que 10.\n---\n15\n===\nMEDIANO';
+    final t = parseTests(text);
+    expect(t, [
+      ['7', 'CHICO', '7 es menor que 10.'],
+      ['15', 'MEDIANO'],
+    ]);
+    expect(parseTests(formatTests(t)), t);
+    final lv =
+        CoachProblem(id: 'abcdef1234567', title: 'x', samples: t).toLevel();
+    expect(lv.samples.first.explain, '7 es menor que 10.');
+    expect(lv.samples.last.explain, '');
+    expect(lv.tests.length, 2);
+  });
 }

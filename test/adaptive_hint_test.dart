@@ -29,11 +29,18 @@ void main() {
   test('only default return', () {
     expect(kind("int suma(int a, int b) {\n  return 0;\n}"), 'default_return');
   });
-  test('compile error from last run', () {
-    expect(
-        kind('int suma(int a, int b){ return a+b }',
-            run: const RunOutput(ok: false, detail: '3:20 expected ;')),
-        'run_error');
+  test('compile error gives no semicolon/brace tip', () {
+    final h = AdaptiveHint.analyze(
+      code: 'int suma(int a, int b){ return a+b }',
+      starter: starter,
+      sigs: sigs,
+      lastRun: const RunOutput(ok: false, detail: '3:20 expected ;'),
+      sampleInput: '2 3',
+      sampleOutput: '5',
+      hintsEs: const ['Sumá a y b.'],
+    );
+    expect(h.kind, 'level_hint');
+    expect(h.tip.es, isNot(contains(';')));
   });
   test('sample mismatch', () {
     expect(
@@ -41,7 +48,14 @@ void main() {
             run: const RunOutput(ok: true, output: '-1')),
         'sample_mismatch');
   });
-  test('never ran', () {
-    expect(kind('int suma(int a, int b){ return a+b; }'), 'never_ran');
+  test('never ran falls back to the level hints, not "run first"', () {
+    final h = AdaptiveHint.analyze(
+      code: 'int suma(int a, int b){ return a+b; }',
+      starter: starter,
+      sigs: sigs,
+      hintsEs: const ['Sumá a y b.'],
+    );
+    expect(h.kind, 'level_hint');
+    expect(kind('int suma(int a, int b){ return a+b; }'), 'general');
   });
 }
