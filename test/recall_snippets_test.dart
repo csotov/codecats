@@ -21,6 +21,37 @@ void main() {
     }
   });
 
+  test('curly quotes and extra blank lines are accepted', () {
+    const code = 'cout << "Hola";\nreturn 0;';
+    expect(recallGrade(code, 'cout << \u201CHola\u201D;\n\n\nreturn 0;\n\n'),
+        RecallGrade.perfect);
+  });
+
+  test('one small slip is accepted as almost; more is wrong', () {
+    const code = 'int a, b;\ncin >> a >> b;\ncout << a + b << endl;';
+    expect(
+        recallGrade(code, 'int a, b;\ncin >> a >> b;\ncout << a + b << end;'),
+        RecallGrade.almost);
+    expect(recallGrade(code, 'int a;\ncin >> a;\ncout << a << endl;'),
+        RecallGrade.wrong);
+  });
+
+  test('splitting or adding a line does not mark the rest wrong', () {
+    const code = 'for (int x : a) {\n    cout << x << " ";\n}';
+    expect(recallLineCheck(code, 'for (int x : a)\n{\ncout << x << " ";\n}'),
+        [false, true, true]);
+    expect(recallGrade(code, 'for (int x : a)\n{\ncout << x << " ";\n}'),
+        RecallGrade.perfect);
+    final r = recallLineCheck(
+        'int a, b;\ncin >> a >> b;\ncout << a + b << endl;',
+        'int a, b;\nint z;\ncin >> a >> b;\ncout << a + b << endl;');
+    expect(r, [true, true, true]);
+    expect(
+        recallExtraLines('int a, b;\ncin >> a >> b;\ncout << a + b << endl;',
+            'int a, b;\nint z;\ncin >> a >> b;\ncout << a + b << endl;'),
+        ['int z;']);
+  });
+
   test('short pieces first: several under 4 lines, then up to 6', () {
     final first = kRecallSnippets.take(5);
     expect(first.every((s) => s.lines <= 3), isTrue);
