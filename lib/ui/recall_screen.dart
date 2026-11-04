@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../data/recall_snippets.dart';
 import '../data/worlds.dart';
 import '../l10n.dart';
+import '../services/cloud.dart';
 import '../services/progress.dart';
 import 'keyboard_scroll.dart';
 import 'theme.dart';
@@ -140,6 +141,8 @@ class _RecallDrillState extends State<RecallDrill> {
   int _peeks = 0;
   Timer? _timer;
   List<bool> _check = const [];
+  List<String?> _typedLines = const [];
+  RecallGrade _grade = RecallGrade.wrong;
   int _earned = 0;
 
   RecallSnippet get s => widget.snippet;
@@ -189,8 +192,19 @@ class _RecallDrillState extends State<RecallDrill> {
 
   void _checkIt() {
     _timer?.cancel();
-    final ok = recallKey(_text.text) == recallKey(s.code);
+    _grade = recallGrade(s.code, _text.text);
+    final ok = _grade != RecallGrade.wrong;
     _check = recallLineCheck(s.code, _text.text);
+    _typedLines = recallLineMatch(s.code, _text.text);
+    Cloud.instance.log('recall_check', data: {
+      'id': s.id,
+      'grade': _grade.name,
+      'dist': recallDistance(s.code, _text.text, cap: 20),
+      'secs': _elapsed,
+      'peeks': _peeks,
+      'typed':
+          _text.text.length > 600 ? _text.text.substring(0, 600) : _text.text,
+    });
     _earned =
         ok && _peeks == 0 ? Progress.instance.recallDone(s.id, _elapsed) : 0;
     setState(() => _phase = _Phase.result);
@@ -203,7 +217,7 @@ class _RecallDrillState extends State<RecallDrill> {
     _look();
   }
 
-  bool get _allOk => recallKey(_text.text) == recallKey(s.code);
+  bool get _allOk => _grade != RecallGrade.wrong;
 
   @override
   Widget build(BuildContext context) {
@@ -321,12 +335,16 @@ class _RecallDrillState extends State<RecallDrill> {
     final lines = s.code.split('\n');
     return [
       Text(
-        ok
+        _grade == RecallGrade.perfect
             ? l.pick('¡Miaugnífico! 🎉 Lo escribiste perfecto en $_elapsed s.',
                 'Meowgnificent! 🎉 Perfect in $_elapsed s.')
-            : l.pick(
-                'Casi, casi. 😼 Las líneas en rojo no coinciden. ¡Probá de nuevo!',
-                'So close. 😼 The red lines do not match. Try again!'),
+            : ok
+                ? l.pick(
+                    '¡Aceptado! 🎉 En $_elapsed s. Se te escapó una letrita: mirala en amarillo.',
+                    'Accepted! 🎉 In $_elapsed s. One tiny slip: see it in yellow.')
+                : l.pick(
+                    'Casi, casi. 😼 En rojo está lo que va; abajo, en gris, lo que escribiste. ¡Probá de nuevo!',
+                    'So close. 😼 Red is what goes; below, in grey, what you typed. Try again!'),
         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
       ),
       if (ok && _peeks > 0)
@@ -341,10 +359,22 @@ class _RecallDrillState extends State<RecallDrill> {
       _box(Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (var i = 0; i < lines.length; i++)
+          for (var i = 0; i < lines.length; i++) ...[
             Text('${_check[i] ? '✓' : '✗'} ${lines[i]}',
                 style: _mono.copyWith(
-                    color: _check[i] ? AppTheme.good : AppTheme.bad)),
+                    color: _check[i]
+                        ? AppTheme.good
+                        : ok
+                            ? Colors.amber
+                            : AppTheme.bad)),
+            if (!_check[i])
+              Text(
+                  '   ${l.pick('vos', 'you')}: ${_typedLines[i]?.trim() ?? l.pick('(falta)', '(missing)')}',
+                  style: _mono.copyWith(color: AppTheme.textLo)),
+          ],
+          for (final x in recallExtraLines(s.code, _text.text))
+            Text('+ ${l.pick('sobra', 'extra')}: $x',
+                style: _mono.copyWith(color: ok ? Colors.amber : AppTheme.bad)),
         ],
       )),
       const SizedBox(height: 16),
