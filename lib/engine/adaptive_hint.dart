@@ -35,11 +35,11 @@ class AdaptiveHint {
                 es: 'Todavía no cambiaste nada, ¡como un gato mirando la pared! 🐱 '
                     'Mirá el recuadro naranja: tu función $fn recibe los datos '
                     'entre paréntesis. Resolvé el ejemplo 1 a mano y después '
-                    'escribí esos mismos pasos dentro de las llaves { }.',
+                    'escribí esos mismos pasos en tu función.',
                 en: 'You have not changed anything yet, like a cat staring at a wall! 🐱 '
                     'Look at the orange box: your function $fn gets the data '
                     'inside the parentheses. Solve example 1 by hand, then '
-                    'write those same steps inside the braces { }.',
+                    'write those same steps in your function.',
               )
             : (
                 es: 'Todavía no cambiaste nada. Resolvé el ejemplo 1 a mano, '
@@ -91,24 +91,10 @@ class AdaptiveHint {
       );
     }
 
-    if (lastRun != null && !lastRun.ok) {
-      final line = RegExp(r'(\d+):(\d+)').firstMatch(lastRun.detail);
-      final es = line != null ? ' cerca de la línea ${line[1]}' : '';
-      final en = line != null ? ' near line ${line[1]}' : '';
-      return (
-        kind: 'run_error',
-        tip: (
-          es: 'La última vez que ejecutaste, el programa se trabó$es. '
-              'Revisá que cada instrucción termine en ; y que cada { tenga '
-              'su }. Los gatos cierran todas las puertas... ¡bueno, casi! 🚪',
-          en: 'The last time you ran it, the program got stuck$en. '
-              'Check that every statement ends with ; and every { has its }. '
-              'Cats close every door... well, almost! 🚪',
-        ),
-      );
-    }
-
-    if (lastRun != null && !lastRunMatched && sampleOutput.isNotEmpty) {
+    if (lastRun != null &&
+        lastRun.ok &&
+        !lastRunMatched &&
+        sampleOutput.isNotEmpty) {
       final got = lastRun.output.trim();
       final inp = sampleInput.trim().isEmpty ? '(vacía)' : sampleInput.trim();
       final inpEn = sampleInput.trim().isEmpty ? '(empty)' : sampleInput.trim();
@@ -130,18 +116,6 @@ class AdaptiveHint {
     if (lastReport != null && !lastReport.allPassed) {
       final tip = Coach.analyze(lastReport, failStreak: 0);
       if (tip != null) return (kind: 'fight_fail', tip: tip);
-    }
-
-    if (lastRun == null && lastReport == null) {
-      return (
-        kind: 'never_ran',
-        tip: (
-          es: 'Todavía no probaste tu código. Tocá "Ejecutar": así ves qué '
-              'da con el ejemplo antes de pelear. ¡Probar es gratis! 😼',
-          en: 'You have not tested your code yet. Tap "Run" to see what it '
-              'gives on the example before fighting. Testing is free! 😼',
-        ),
-      );
     }
 
     if (hintsShown < hintsEs.length) {

@@ -1,6 +1,8 @@
 import '../data/expert_solutions.dart';
+import '../data/topic_tutorials.dart';
 import '../data/worked_examples.dart';
 import 'expert_screen.dart';
+import 'mode_intro.dart';
 import 'hat_celebration.dart';
 import '../data/problem_texts.dart';
 import '../data/ref_solutions.dart';
@@ -95,6 +97,9 @@ class _LevelScreenState extends State<LevelScreen>
 
   /// Title card covering the screen while the level opens.
   bool _showIntro = true;
+
+  /// Worked example to open once the title card and tutorial are done.
+  WorkedExample? _autoExample;
 
   /// "You can do it" cat when the player keeps working but stops
   /// advancing: only active seconds (an edit or run in the last minute)
@@ -461,11 +466,7 @@ class _LevelScreenState extends State<LevelScreen>
         !Progress.instance.of(widget.level.id).solved &&
         (!Progress.instance.talkSeen(exKey) ||
             Tweaks.instance.has('example', widget.level.id))) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        Progress.instance.markTalkSeen(exKey);
-        _showExample(ex, auto: true);
-      });
+      _autoExample = ex;
     }
     _modeTick = Timer.periodic(const Duration(seconds: 5), (_) {
       _tickStuck(5);
@@ -539,6 +540,19 @@ class _LevelScreenState extends State<LevelScreen>
         speaker: Speaker.boss,
         lastLabel: Boss.replyLabel(),
       );
+      if (!mounted) return;
+    }
+    // New topic: the Profe explains it first, then the worked example.
+    if (!widget.examMode &&
+        !widget.bonus &&
+        !Progress.instance.of(widget.level.id).solved) {
+      await showTopicTutorial(context, widget.level.id);
+      if (!mounted) return;
+    }
+    if (_autoExample case final ex?) {
+      _autoExample = null;
+      Progress.instance.markTalkSeen('wex_${widget.level.id}');
+      await _showExample(ex, auto: true);
       if (!mounted) return;
     }
     await _teachBigO();
@@ -1597,6 +1611,14 @@ class _LevelScreenState extends State<LevelScreen>
               ],
             ),
             actions: [
+              if (topicTutorialFor(lv.id) != null && !widget.examMode)
+                IconButton(
+                  tooltip: l.pick(
+                      'Ver el tutorial del tema', 'See the topic tutorial'),
+                  icon: const Text('🎓', style: TextStyle(fontSize: 20)),
+                  onPressed: () =>
+                      showTopicTutorial(context, lv.id, force: true),
+                ),
               if (workedExampleFor(lv.id) != null && !widget.examMode)
                 IconButton(
                   tooltip: l.pick(
@@ -1784,6 +1806,26 @@ class _LevelScreenState extends State<LevelScreen>
     final s = widget.level.samples[i];
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _sampleRow(i, s),
+          if (s.explain.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '${L.instance.pick('Explicación', 'Explanation')}: ${s.explain}',
+                style: const TextStyle(fontSize: 12, height: 1.3),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sampleRow(int i, SampleIO s) {
+    return Padding(
+      padding: EdgeInsets.zero,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

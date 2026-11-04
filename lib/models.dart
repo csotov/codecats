@@ -3,9 +3,13 @@ library;
 
 /// A single input/output pair used as a visible example.
 class SampleIO {
-  const SampleIO({required this.input, required this.output});
+  const SampleIO(
+      {required this.input, required this.output, this.explain = ''});
   final String input;
   final String output;
+
+  /// Why this input gives this output (shown under the sample).
+  final String explain;
 }
 
 /// A judge test case (may be hidden from the player).
