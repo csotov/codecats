@@ -1011,8 +1011,8 @@ const kCats = <CatMeme>[
   ),
   CatMeme(
     id: 'early_bird',
-    nameEs: 'Gato Madrugador',
-    nameEn: 'Early Bird Cat',
+    nameEs: 'Gato Madrugador (Stray)',
+    nameEn: 'Early Bird Cat (Stray)',
     rarity: CatRarity.legendario,
     trigger: CatTrigger.earlyBird,
     hintEs:

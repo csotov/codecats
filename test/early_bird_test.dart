@@ -27,7 +27,7 @@ void main() {
         p.earlyDeadline = 0;
       }
     }
-    expect(offers, inInclusiveRange(3, 25));
+    expect(offers, 30);
 
     // Offer tomorrow at 15:00/15:30; not claimable today.
     p.earlyOfferDay = 0;
@@ -49,8 +49,14 @@ void main() {
     expect(p.earlyDeadlineAt, isNull);
 
     // Missing the deadline expires the offer without a prize.
-    p.earlyDeadline = dl.millisecondsSinceEpoch;
-    expect(p.claimEarly(dl.add(const Duration(minutes: 1))), 'missed');
+    final dlM = dl.add(const Duration(hours: 1));
+    p.earlyDeadline = dlM.millisecondsSinceEpoch;
+    expect(p.claimEarly(dlM.add(const Duration(minutes: 1))), 'missed');
+    expect(p.earlyDeadlineAt, isNull);
+
+    // The same missed offer coming back is dropped silently.
+    p.earlyDeadline = dlM.millisecondsSinceEpoch;
+    expect(p.claimEarly(dlM.add(const Duration(minutes: 2))), isNull);
     expect(p.earlyDeadlineAt, isNull);
 
     // The cat comes at most once (next offer, another day).
@@ -125,6 +131,21 @@ void main() {
     expect(p.claimEarly(now), isNull);
     expect(p.claimEarly(DateTime(2026, 11, 8, 14), _AlwaysFalse()), 'hats');
     expect(p.offerEarlyOn(DateTime(2026, 11, 8, 14), dl), isFalse);
+  });
+
+  test('a missed offer does not come back from the cloud', () async {
+    SharedPreferences.setMockInitialValues({});
+    final p = Progress.instance;
+    await p.ensureLoaded();
+    await p.reset();
+    final now = DateTime(2026, 11, 7, 15, 40);
+    final dl = DateTime(2026, 11, 8, 15);
+    expect(p.offerEarlyOn(now, dl), isTrue);
+    final snap = p.toSnapshot();
+    expect(p.claimEarly(DateTime(2026, 11, 8, 20)), 'missed');
+    p.mergeSnapshotForTest(snap);
+    expect(p.earlyDeadlineAt, isNull);
+    expect(p.claimEarly(DateTime(2026, 11, 8, 20, 1)), isNull);
   });
 }
 

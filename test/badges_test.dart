@@ -19,7 +19,11 @@ void main() {
     for (final b in kGoalBadges) {
       expect(b.id, isNot(startsWith('s_')));
       expect(b.earned, isNotNull);
-      expect(b.art, isNotEmpty);
+      expect(b.art.isNotEmpty || b.cat != null, isTrue);
+      if (b.cat != null) {
+        expect(File('assets/badges/${b.cat}.jpg').existsSync(), isTrue);
+        expect(File('assets/memes/${b.cat}.mp4').existsSync(), isFalse);
+      }
     }
   });
 }
