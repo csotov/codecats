@@ -51,4 +51,23 @@ void main() {
             'int a, b;\nint z;\ncin >> a >> b;\ncout << a + b << endl;'),
         ['int z;']);
   });
+
+  test('short pieces first: several under 4 lines, then up to 6', () {
+    final first = kRecallSnippets.take(5);
+    expect(first.every((s) => s.lines <= 3), isTrue);
+    for (final w in {for (final s in kRecallSnippets) s.world}) {
+      final ls = [
+        for (final s in kRecallSnippets)
+          if (s.world == w) s.lines
+      ];
+      if (w <= 2) {
+        expect(ls.where((n) => n <= 3).length, greaterThanOrEqualTo(3),
+            reason: 'world $w');
+        expect(ls.last, lessThanOrEqualTo(6), reason: 'world $w');
+      }
+      for (var i = 1; i < ls.length; i++) {
+        expect(ls[i] >= ls[i - 1], isTrue, reason: 'world $w: $ls');
+      }
+    }
+  });
 }
