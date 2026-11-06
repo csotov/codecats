@@ -412,19 +412,26 @@ class _LevelScreenState extends State<LevelScreen>
   }
 
   /// Up to [Progress.kMaxHints] hints. With a reference solution the last
-  /// two go almost to the end: the skeleton with blanks, then the whole
-  /// solution minus one small piece.
+  /// ones show code little by little: the skeleton with blanks, half of
+  /// the blanks filled (when there are several), then the whole solution
+  /// minus one small piece.
   List<String> _hintList(L l) {
     final base = _baseHints(l);
     final skel = refSkeleton(widget.level.id);
     final almost = refAlmost(widget.level.id);
     if (skel == null || almost == null) return base;
+    final half = refHalf(widget.level.id);
     return [
-      ...base.take(Progress.kMaxHints - 2),
+      ...base.take(Progress.kMaxHints - (half == null ? 2 : 3)),
       l.pick('Te muestro el esqueleto del código. Completá cada ___ y probá con Correr.',
               'Here is the skeleton of the code. Fill in each ___ and try Run.') +
           _codeSep +
           skel,
+      if (half != null)
+        l.pick('Te completé la mitad de los huecos. Pensá qué va en los ___ que quedan.',
+                'I filled in half of the blanks. Think what goes in the ___ left.') +
+            _codeSep +
+            half,
       l.pick('Casi todo el código: solo falta lo que dice ___. ¡Pensá qué va ahí antes de copiar!',
               'Almost all the code: only the ___ is missing. Think what goes there before copying!') +
           _codeSep +
@@ -1879,11 +1886,11 @@ class _LevelScreenState extends State<LevelScreen>
     final shown = math.min(_hintsShown, hints.length);
     final speech = shown == 0
         ? l.pick(
-            '¿Te trabaste? Te vendo hasta ${hints.length} pistas: la primera '
-                'cuesta ${Progress.hintCost(0)} Miaudólares y cada una sale '
-                'más cara. ¡Palabra de gato!',
-            'Stuck? I sell up to ${hints.length} hints: the first costs '
-                '${Progress.hintCost(0)} Meowdollars and each one costs more. '
+            '¿Te trabaste? Tengo ${hints.length} pistas: las '
+                '${Progress.kFreeHints} primeras son gratis y después cada una '
+                'cuesta un poco más. ¡Palabra de gato!',
+            'Stuck? I have ${hints.length} hints: the first '
+                '${Progress.kFreeHints} are free, then each one costs a bit more. '
                 'Cat\'s honor!',
           )
         : _hintSay(hints[shown - 1]);
@@ -1949,13 +1956,15 @@ class _LevelScreenState extends State<LevelScreen>
 
   Widget _hintButtons(List<String> hints, int shown) {
     final l = L.instance;
+    final cost =
+        Progress.hintCost(Progress.instance.of(widget.level.id).hintsBought);
     return Wrap(
       spacing: 8,
       runSpacing: 4,
       children: [
         if (shown < hints.length)
           Tooltip(
-            message: l.t('buy_hint_tip'),
+            message: l.t(cost == 0 ? 'free_hint_tip' : 'buy_hint_tip'),
             child: FilledButton.tonalIcon(
               onPressed: _buyHint,
               icon: const Icon(Icons.lightbulb, size: 16),
@@ -1963,12 +1972,13 @@ class _LevelScreenState extends State<LevelScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '${l.t('buy_hint')} (${shown + 1}/${hints.length})  ',
+                    '${l.t(cost == 0 ? 'free_hint_btn' : 'buy_hint')} (${shown + 1}/${hints.length})  ',
                   ),
-                  CoinPrice(
-                      Progress.hintCost(
-                          Progress.instance.of(widget.level.id).hintsBought),
-                      size: 13),
+                  if (cost == 0)
+                    Text(l.pick('gratis', 'free'),
+                        style: const TextStyle(fontWeight: FontWeight.w800))
+                  else
+                    CoinPrice(cost, size: 13),
                 ],
               ),
             ),

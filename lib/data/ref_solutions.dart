@@ -356,6 +356,22 @@ String? refSkeleton(String levelId) {
   return _shape(levelId, s.replaceAll(_hide4, blank).replaceAll(_hide5, blank));
 }
 
+/// Between hints 4 and 5: the skeleton with half of its pieces already
+/// filled in (only when it has at least two).
+String? refHalf(String levelId) {
+  final s = kRefSolutions[levelId];
+  if (s == null) return null;
+  final n = _hide4.allMatches(s).length;
+  if (n < 2) return null;
+  var i = 0;
+  final code = s.replaceAllMapped(
+      _hide4,
+      (m) => i++ < n ~/ 2
+          ? m[0]!.substring(1, m[0]!.length - 1).replaceAll(_hide5, blank)
+          : blank);
+  return _shape(levelId, code.replaceAll(_hide5, blank));
+}
+
 /// Hint 5: the whole solution minus one small piece.
 String? refAlmost(String levelId) {
   final s = kRefSolutions[levelId];

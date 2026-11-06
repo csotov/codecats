@@ -214,6 +214,11 @@ class L {
       'en': 'Your Meowdollars: win levels to earn them, spend them on hints'
     },
     'buy_hint': {'es': 'Comprar pista', 'en': 'Buy hint'},
+    'free_hint_btn': {'es': 'Ver pista', 'en': 'See hint'},
+    'free_hint_tip': {
+      'es': 'Las 2 primeras pistas de cada nivel son gratis',
+      'en': 'The first 2 hints of each level are free'
+    },
     'buy_hint_tip': {
       'es': 'Gasta Miaudólares para ver una ayuda',
       'en': 'Spend Meowdollars to see a clue'

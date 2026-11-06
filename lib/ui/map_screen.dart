@@ -147,20 +147,34 @@ class _MapScreenState extends State<MapScreen> {
       _badgePopup = false;
       return true;
     }
-    if (prize == 'hats') {
+    if (prize == 'hats' || prize == 'coins' || prize == 'badge') {
+      final badge = kShopBadges
+          .where((b) => prize == 'badge' && b.id == p.earlyPrizeBadge)
+          .firstOrNull;
+      final msg = switch (prize) {
+        'coins' => l.pick(
+            'Premio madrugador: +${Progress.kEarlyCoins} Miaudólares.',
+            'Early-bird prize: +${Progress.kEarlyCoins} Meowdollars.'),
+        'badge' => l.pick(
+            'Premio madrugador: la insignia «${badge?.nameEs ?? ''}», gratis. Ya es tuya: podés ponértela desde las insignias.',
+            'Early-bird prize: the «${badge?.nameEn ?? ''}» badge, free. It is yours: wear it from the badges.'),
+        _ => l.pick(
+            'Premio madrugador: +${Progress.kEarlyHats} Gorritos Gatunos y +${Progress.kHatCoins * Progress.kEarlyHats} Miaudólares.',
+            'Early-bird prize: +${Progress.kEarlyHats} Cat caps and +${Progress.kHatCoins * Progress.kEarlyHats} Meowdollars.'),
+      };
       _badgePopup = true;
       await showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text(l.pick('🌅 ¡Llegaste temprano!', '🌅 You came early!')),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('🧢' * Progress.kEarlyHats,
-                style: const TextStyle(fontSize: 46)),
+            if (badge != null)
+              BadgeArt(badge, size: 120)
+            else
+              Text(prize == 'coins' ? '🪙' * 5 : '🧢' * Progress.kEarlyHats,
+                  style: const TextStyle(fontSize: 46)),
             const SizedBox(height: 8),
-            Text(
-                l.pick(
-                    'Premio madrugador: +${Progress.kEarlyHats} Gorritos Gatunos y +${Progress.kHatCoins * Progress.kEarlyHats} Miaudólares.',
-                    'Early-bird prize: +${Progress.kEarlyHats} Cat caps and +${Progress.kHatCoins * Progress.kEarlyHats} Meowdollars.'),
+            Text(msg,
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 17)),
           ]),
@@ -213,11 +227,11 @@ class _MapScreenState extends State<MapScreen> {
               child: ProfessorSays(
             text: today
                 ? l.pick(
-                    '🌅 ¡Premio madrugador de hoy! Si ganás un nivel $win, te llevás un premio especial: ${Progress.kEarlyHats} Gorritos Gatunos o un gato que no se consigue de ninguna otra forma. ¿Te animás?',
-                    '🌅 Today\'s early-bird prize! Win a level $win and get a special prize: ${Progress.kEarlyHats} Cat Beanies or a cat you can\'t get any other way. Deal?')
+                    '🌅 ¡Premio madrugador de hoy! Si ganás un nivel $win, te llevás un premio sorpresa, distinto cada vez. ¿Te animás?',
+                    '🌅 Today\'s early-bird prize! Win a level $win and get a surprise prize, different every time. Deal?')
                 : l.pick(
-                    '🌅 ¡Premio madrugador! Si mañana entrás antes de las ${_hm(dl)}, te espera un premio especial: ${Progress.kEarlyHats} Gorritos Gatunos o un gato súper especial que no se consigue de ninguna otra forma. ¿Te animás?',
-                    '🌅 Early-bird prize! Come back tomorrow before ${_hm(dl)} and a special prize awaits: ${Progress.kEarlyHats} Cat Beanies or a cat you can\'t get any other way. Deal?'),
+                    '🌅 ¡Premio madrugador! Si mañana entrás antes de las ${_hm(dl)}, te espera un premio sorpresa, distinto cada vez. ¿Te animás?',
+                    '🌅 Early-bird prize! Come back tomorrow before ${_hm(dl)} and a surprise prize awaits, different every time. Deal?'),
             footer: Align(
               alignment: Alignment.centerRight,
               child: FilledButton(
@@ -1530,7 +1544,7 @@ class _MapScreenState extends State<MapScreen> {
   }
 }
 
-/// "Come back tomorrow before 15:00" with a live countdown.
+/// "Come back tomorrow before 15:30" with a live countdown.
 class _EarlyCountdown extends StatefulWidget {
   const _EarlyCountdown(this.deadline);
   final DateTime deadline;
@@ -1564,11 +1578,10 @@ class _EarlyCountdownState extends State<_EarlyCountdown> {
     return Tooltip(
       message: Progress.instance.earlyIsToday
           ? l.pick(
-              'Ganá un nivel antes de esa hora y te llevás ${Progress.kEarlyHats} gorritos o un gato exclusivo',
-              'Win a level before then to get ${Progress.kEarlyHats} beanies or an exclusive cat')
-          : l.pick(
-              'Entrá mañana antes de esa hora y ganás ${Progress.kEarlyHats} gorritos o un gato exclusivo',
-              'Come back tomorrow before then to win ${Progress.kEarlyHats} beanies or an exclusive cat'),
+              'Ganá un nivel antes de esa hora y te llevás un premio sorpresa',
+              'Win a level before then to get a surprise prize')
+          : l.pick('Entrá mañana antes de esa hora y ganás un premio sorpresa',
+              'Come back tomorrow before then to win a surprise prize'),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(

@@ -29,7 +29,7 @@ void main() {
     }
     expect(offers, 30);
 
-    // Offer tomorrow at 15:00/15:30; not claimable today.
+    // Offer tomorrow at 15:30; not claimable today.
     p.earlyOfferDay = 0;
     day = DateTime(2026, 12, 1, 19);
     while (!p.offerEarly(day)) {
@@ -39,13 +39,14 @@ void main() {
     final dl = p.earlyDeadlineAt!;
     expect(dl.day, day.add(const Duration(days: 1)).day);
     expect(dl.hour, 15);
+    expect(dl.minute, 30);
     expect(p.claimEarly(day.add(const Duration(hours: 2))), isNull);
 
-    final hats = p.hats;
+    // First prize: the Early Bird Cat.
     final prize =
         p.claimEarly(DateTime(dl.year, dl.month, dl.day, 14), _AlwaysFalse());
-    expect(prize, 'hats');
-    expect(p.hats, hats + Progress.kEarlyHats);
+    expect(prize, 'cat');
+    expect(p.unlockedCats, contains(Progress.kEarlyCat));
     expect(p.earlyDeadlineAt, isNull);
 
     // Missing the deadline expires the offer without a prize.
@@ -59,13 +60,14 @@ void main() {
     expect(p.claimEarly(dlM.add(const Duration(minutes: 2))), isNull);
     expect(p.earlyDeadlineAt, isNull);
 
-    // The cat comes at most once (next offer, another day).
+    // Next offer, another day: a different prize.
     final dlB = dl.add(const Duration(days: 1));
     p.earlyDeadline = dlB.millisecondsSinceEpoch;
+    final coins = p.coins;
     expect(
         p.claimEarly(DateTime(dlB.year, dlB.month, dlB.day, 9), _AlwaysTrue()),
-        'cat');
-    expect(p.unlockedCats, contains(Progress.kEarlyCat));
+        'coins');
+    expect(p.coins, coins + Progress.kEarlyCoins);
     // The same offer (e.g. back from an old cloud copy) never pays twice,
     // and no second prize on the same day.
     p.earlyDeadline = dlB.millisecondsSinceEpoch;
@@ -83,7 +85,43 @@ void main() {
     expect(
         p.claimEarly(
             DateTime(next.year, next.month, next.day, 9), _AlwaysTrue()),
-        'hats');
+        'badge');
+    expect(p.badges, contains(p.earlyPrizeBadge));
+  });
+
+  test('every early-bird prize differs from the previous one', () async {
+    SharedPreferences.setMockInitialValues({});
+    final p = Progress.instance;
+    await p.ensureLoaded();
+    await p.reset();
+    var last = '';
+    final got = <String>[];
+    for (var i = 0; i < 12; i++) {
+      final dl = DateTime(2027, 1, 1 + i, 15, 30);
+      p.earlyDeadline = dl.millisecondsSinceEpoch;
+      final prize = p.claimEarly(DateTime(2027, 1, 1 + i, 10));
+      expect(prize, isNotNull);
+      expect(prize, isNot(last));
+      got.add(prize!);
+      last = prize;
+    }
+    expect(got.where((k) => k == 'cat').length, 1);
+    expect(got.toSet(), {'cat', 'coins', 'badge', 'hats'});
+
+    // An old profile that already got hats and the cat gets coins next.
+    await p.reset();
+    p.unlockedCats.add(Progress.kEarlyCat);
+    p.earlyHats = Progress.kEarlyHats;
+    expect(p.nextEarlyPrize(), 'coins');
+
+    // The last prize kind travels with the cloud copy.
+    p.earlyDeadline = DateTime(2027, 2, 1, 15, 30).millisecondsSinceEpoch;
+    expect(p.claimEarly(DateTime(2027, 2, 1, 9)), 'coins');
+    final snap = p.toSnapshot();
+    await p.reset();
+    p.mergeSnapshotForTest(snap);
+    expect(p.earlyLastPrize, 'coins');
+    expect(p.nextEarlyPrize(), 'badge');
   });
 
   test('same-day offer from the admin needs a level won', () async {
@@ -99,7 +137,7 @@ void main() {
     expect(p.claimEarly(now.add(const Duration(minutes: 5))), isNull);
     p.recordSolve('w1l1', 10, 1);
     expect(p.claimEarly(now.add(const Duration(minutes: 30)), _AlwaysFalse()),
-        'hats');
+        'cat');
     expect(p.earlyDeadlineAt, isNull);
   });
 
@@ -129,7 +167,7 @@ void main() {
     expect(p.offerEarlyOn(now, dl), isFalse);
     expect(p.earlyIsToday, isFalse);
     expect(p.claimEarly(now), isNull);
-    expect(p.claimEarly(DateTime(2026, 11, 8, 14), _AlwaysFalse()), 'hats');
+    expect(p.claimEarly(DateTime(2026, 11, 8, 14), _AlwaysFalse()), 'cat');
     expect(p.offerEarlyOn(DateTime(2026, 11, 8, 14), dl), isFalse);
   });
 

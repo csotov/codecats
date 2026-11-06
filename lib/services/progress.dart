@@ -1,3 +1,4 @@
+import '../data/badges.dart';
 import '../data/belts.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -135,8 +136,11 @@ class Progress extends ChangeNotifier {
   static const kHintCost = 10;
 
   /// Up to 5 hints per level; each one costs more than the previous.
-  static const kMaxHints = 5;
-  static const kHintCosts = [10, 15, 25, 40, 60];
+  static const kMaxHints = 8;
+
+  /// Per level the first [kFreeHints] hints are free, then each costs more.
+  static const kFreeHints = 2;
+  static const kHintCosts = [0, 0, 10, 15, 20, 30, 45, 60];
   static int hintCost(int bought) =>
       kHintCosts[math.min(bought, kHintCosts.length - 1)];
 
@@ -591,6 +595,7 @@ class Progress extends ChangeNotifier {
     earlyAdminDl = 0;
     earlyClaimed = 0;
     earlyDone = 0;
+    earlyLastPrize = '';
     final raw = prefs.getString(_keyFor(active!.id));
     if (raw != null) {
       try {
@@ -636,6 +641,7 @@ class Progress extends ChangeNotifier {
         earlyAdminDl = (j['ead'] as num?)?.toInt() ?? 0;
         earlyClaimed = (j['ecl'] as num?)?.toInt() ?? 0;
         earlyDone = (j['edn'] as num?)?.toInt() ?? 0;
+        earlyLastPrize = j['elp'] as String? ?? '';
         cfHandle = j['cfh'] as String? ?? '';
         atcoderUser = j['acu'] as String? ?? '';
         scores
@@ -713,6 +719,7 @@ class Progress extends ChangeNotifier {
         'ead': earlyAdminDl,
         'ecl': earlyClaimed,
         'edn': earlyDone,
+        'elp': earlyLastPrize,
         'bde': equippedBadge,
         'cfh': cfHandle,
         'acu': atcoderUser,
@@ -834,7 +841,11 @@ class Progress extends ChangeNotifier {
     ];
     earlyHats = math.max(earlyHats, (d['eh'] as num?)?.toInt() ?? 0);
     earlyOfferDay = math.max(earlyOfferDay, (d['eod'] as num?)?.toInt() ?? 0);
-    earlyClaimed = math.max(earlyClaimed, (d['ecl'] as num?)?.toInt() ?? 0);
+    final ecl = (d['ecl'] as num?)?.toInt() ?? 0;
+    if (ecl > earlyClaimed || earlyLastPrize.isEmpty) {
+      earlyLastPrize = d['elp'] as String? ?? earlyLastPrize;
+    }
+    earlyClaimed = math.max(earlyClaimed, ecl);
     earlyDone = math.max(
         earlyDone, math.max(earlyClaimed, (d['edn'] as num?)?.toInt() ?? 0));
     final eo = (d['eo'] as num?)?.toInt() ?? 0;
@@ -919,6 +930,7 @@ class Progress extends ChangeNotifier {
           'ead': earlyAdminDl,
           'ecl': earlyClaimed,
           'edn': earlyDone,
+          'elp': earlyLastPrize,
           'bde': equippedBadge,
           'cfh': cfHandle,
           'acu': atcoderUser,
@@ -1210,7 +1222,7 @@ class Progress extends ChangeNotifier {
       levels.values.where((p) => p.starMask & 8 != 0).length + earlyHats;
 
   /// Early-bird prize: on some days the map promises a prize for coming
-  /// back tomorrow before 15:00 (sometimes 15:30). [earlyDeadline] is that
+  /// back tomorrow before 15:30. [earlyDeadline] is that
   /// moment in ms (0 = no offer); [earlyOfferDay] the last day (yyyymmdd)
   /// the dice were rolled, so it is decided once a day.
   int earlyDeadline = 0, earlyOfferDay = 0, earlyHats = 0;
@@ -1272,6 +1284,13 @@ class Progress extends ChangeNotifier {
   /// Deadline (ms) of the last offer that ended (claimed or missed).
   int earlyDone = 0;
 
+  /// Kind of the last early-bird prize (see [kEarlyPrizes]): the next one
+  /// is always a different kind.
+  String earlyLastPrize = '';
+
+  /// Shop badge given by the last 'badge' prize (for the popup).
+  String earlyPrizeBadge = '';
+
   /// Admin-scheduled offer: come in before [deadline] (no win needed).
   bool offerEarlyOn(DateTime now, DateTime deadline) {
     final ms = deadline.millisecondsSinceEpoch;
@@ -1296,6 +1315,29 @@ class Progress extends ChangeNotifier {
   static const kEarlyChance = 1.0;
   static const kEarlyHats = 5;
   static const kEarlyCat = 'early_bird';
+  static const kEarlyCoins = 50;
+  static const kEarlyPrizes = ['cat', 'coins', 'badge', 'hats'];
+
+  /// Kind of prize the next early-bird claim gives: the next one in
+  /// [kEarlyPrizes] that is still available, never the same as last time.
+  String nextEarlyPrize() {
+    final last = earlyLastPrize.isNotEmpty
+        ? earlyLastPrize
+        : earlyHats > 0
+            ? 'hats'
+            : '';
+    final start = kEarlyPrizes.indexOf(last) + 1;
+    for (var i = 0; i < kEarlyPrizes.length; i++) {
+      final k = kEarlyPrizes[(start + i) % kEarlyPrizes.length];
+      if (k == last) continue;
+      if (k == 'cat' && unlockedCats.contains(kEarlyCat)) continue;
+      if (k == 'badge' && kShopBadges.every((b) => badges.contains(b.id))) {
+        continue;
+      }
+      return k;
+    }
+    return 'coins';
+  }
 
   static int _ymd(DateTime d) => d.year * 10000 + d.month * 100 + d.day;
 
@@ -1310,9 +1352,8 @@ class Progress extends ChangeNotifier {
     final r = rng ?? math.Random(_ymd(now));
     final lucky = r.nextDouble() < kEarlyChance;
     if (lucky) {
-      earlyDeadline =
-          DateTime(now.year, now.month, now.day + 1, 15, r.nextBool() ? 30 : 0)
-              .millisecondsSinceEpoch;
+      earlyDeadline = DateTime(now.year, now.month, now.day + 1, 15, 30)
+          .millisecondsSinceEpoch;
     }
     _save();
     notifyListeners();
@@ -1351,15 +1392,24 @@ class Progress extends ChangeNotifier {
     earlyClaimed = earlyDone = earlyDeadline;
     earlyDeadline = 0;
     earlyWon = false;
-    final String prize;
-    if (!unlockedCats.contains(kEarlyCat) && (rng ?? _rng).nextBool()) {
-      unlockedCats.add(kEarlyCat);
-      _noteCatOrigin(kEarlyCat);
-      prize = 'cat';
-    } else {
-      earlyHats += kEarlyHats;
-      coins += kHatCoins * kEarlyHats;
-      prize = 'hats';
+    final prize = nextEarlyPrize();
+    earlyLastPrize = prize;
+    switch (prize) {
+      case 'cat':
+        unlockedCats.add(kEarlyCat);
+        _noteCatOrigin(kEarlyCat);
+      case 'coins':
+        coins += kEarlyCoins;
+      case 'badge':
+        final free = [
+          for (final b in kShopBadges)
+            if (!badges.contains(b.id)) b.id
+        ];
+        earlyPrizeBadge = free[(rng ?? _rng).nextInt(free.length)];
+        badges.add(earlyPrizeBadge);
+      default:
+        earlyHats += kEarlyHats;
+        coins += kHatCoins * kEarlyHats;
     }
     _save();
     notifyListeners();
@@ -1757,6 +1807,7 @@ class Progress extends ChangeNotifier {
     contestIds = const [];
     contestEndMs = 0;
     earlyDeadline = earlyOfferDay = earlyHats = earlyTodayDay = 0;
+    earlyLastPrize = '';
     earlyWon = false;
     earlyFrom = earlyAdminDl = earlyClaimed = earlyDone = 0;
     final prefs = await SharedPreferences.getInstance();
