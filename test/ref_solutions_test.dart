@@ -18,6 +18,20 @@ void main() {
     }
   });
 
+  test('half hint sits between the skeleton and the almost-solution', () {
+    var halves = 0;
+    for (final id in kRefSolutions.keys) {
+      final half = refHalf(id);
+      if (half == null) continue;
+      halves++;
+      expect(half.contains(blank), isTrue, reason: id);
+      expect(half, isNot(refSkeleton(id)), reason: id);
+      expect(half, isNot(refAlmost(id)), reason: id);
+      expect(half.length, greaterThan(refSkeleton(id)!.length), reason: id);
+    }
+    expect(halves, greaterThan(0));
+  });
+
   test('reference solutions pass every test (g++)', () async {
     if (Process.runSync('which', ['g++']).exitCode != 0) return;
     final levels = {

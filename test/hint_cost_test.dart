@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('each hint costs more than the previous, up to 5', () async {
+  test('first two hints are free, then each costs more', () async {
     SharedPreferences.setMockInitialValues({});
     final p = Progress.instance;
     await p.ensureLoaded();
@@ -18,7 +18,8 @@ void main() {
       paid.add(before - p.coins);
     }
     expect(paid, Progress.kHintCosts);
-    for (var i = 1; i < paid.length; i++) {
+    expect(paid.take(Progress.kFreeHints), everyElement(0));
+    for (var i = Progress.kFreeHints + 1; i < paid.length; i++) {
       expect(paid[i], greaterThan(paid[i - 1]));
     }
   });

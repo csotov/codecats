@@ -19,19 +19,22 @@ void main() {
     expect(LevelProgress.fromJson(LevelProgress().toJson()).hintsBought, 0);
   });
 
-  test('hints cost 10 Miaudólares and fail without charging when broke',
+  test('two free hints, then they cost and fail without charging when broke',
       () async {
     SharedPreferences.setMockInitialValues({});
     final pr = Progress.instance;
     await pr.ensureLoaded();
     expect(pr.coins, Progress.kStartCoins);
     expect(pr.buyHint('w1l1'), isTrue);
-    expect(pr.coins, Progress.kStartCoins - Progress.kHintCost);
-    expect(pr.of('w1l1').hintsBought, 1);
+    expect(pr.buyHint('w1l1'), isTrue);
+    expect(pr.coins, Progress.kStartCoins);
+    expect(pr.buyHint('w1l1'), isTrue);
+    expect(pr.coins, Progress.kStartCoins - Progress.kHintCosts[2]);
+    expect(pr.of('w1l1').hintsBought, 3);
     pr.coins = 5;
     expect(pr.buyHint('w1l1'), isFalse);
     expect(pr.coins, 5);
-    expect(pr.of('w1l1').hintsBought, 1);
+    expect(pr.of('w1l1').hintsBought, 3);
   });
 
   test('dramatic cat is in the Gatoteca', () {
