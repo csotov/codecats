@@ -9,6 +9,7 @@ import 'app.dart';
 import 'services/cloud.dart';
 import 'services/progress.dart';
 import 'services/sfx.dart';
+import 'services/speech.dart';
 import 'services/tweaks.dart';
 
 Future<void> main() async {
@@ -24,6 +25,7 @@ Future<void> main() async {
   await Progress.instance.ensureLoaded();
   if (Cloud.instance.signedIn) unawaited(Progress.instance.linkAccount());
   await GraderPref.load();
+  warmUpVoices();
   runApp(CodeCatsApp());
   Sfx.menu(); // fire-and-forget; browsers may delay audio until first tap
   // A key press also counts as a user gesture for the browser.
