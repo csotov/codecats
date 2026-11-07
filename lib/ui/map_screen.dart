@@ -540,7 +540,7 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  /// Today's training missions: day streak + ghost rival + daily
+  /// Today's training missions: day streak + daily
   /// challenge + adaptive recommendation + pending count.
   Widget _missionsCard() {
     final l = L.instance;
@@ -550,9 +550,6 @@ class _MapScreenState extends State<MapScreen> {
     final pending = p.pendingIds;
     final bonusId = p.bonusLevelId;
     final bonus = bonusId == null ? null : levelById(bonusId);
-    final ghost = p.ghostSolved;
-    final you = p.solvedCount;
-    final losing = ghost > you;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -565,32 +562,9 @@ class _MapScreenState extends State<MapScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text('🔥 ${p.dayStreak} ${l.t('streak_days')}',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w800, fontSize: 13)),
-              const Spacer(),
-              Text(
-                '🤖 ${l.t('rival_name')} $ghost · ${l.pick('tú', 'you')} $you',
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: losing ? AppTheme.bad : AppTheme.good),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            losing
-                ? '${l.t('rival_ahead')} (${ghost - you} ${l.pick('nivel(es) de ventaja', 'level(s) ahead')})'
-                : ghost == you
-                    ? l.pick(
-                        '¡empate! El que gane el próximo nivel pasa adelante 🏁',
-                        "it's a tie! Whoever wins the next level takes the lead 🏁")
-                    : l.t('rival_behind'),
-            style: const TextStyle(color: AppTheme.textLo, fontSize: 11),
-          ),
+          Text('🔥 ${p.dayStreak} ${l.t('streak_days')}',
+              style:
+                  const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
           if (Progress.instance.earlyDeadlineAt != null) ...[
             const SizedBox(height: 8),
             _EarlyCountdown(Progress.instance.earlyDeadlineAt!),
