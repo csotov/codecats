@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'sound_panel.dart';
 
@@ -10,6 +12,7 @@ import '../models.dart';
 import '../l10n.dart';
 import '../services/progress.dart';
 import '../services/sfx.dart';
+import 'cat_reveal.dart';
 import 'keyboard_scroll.dart';
 import 'level_intro.dart';
 import 'meme_player.dart';
@@ -180,12 +183,31 @@ class CollectionScreen extends StatefulWidget {
 
 class _CollectionScreenState extends State<CollectionScreen> {
   final _scroll = ScrollController();
+  static const _countKey = 'gatoteca_count';
+
+  /// Cat count at the last visit: the counter counts up from there.
+  int? _from;
+  int _run = 0;
 
   @override
   void initState() {
     super.initState();
     Sfx.cozy();
+    _loadCount();
   }
+
+  Future<void> _loadCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = Progress.instance.unlockedCats.length;
+    final before = prefs.getInt(_countKey) ?? 0;
+    await prefs.setInt(_countKey, now);
+    if (mounted) setState(() => _from = math.min(before, now));
+  }
+
+  void _replay() => setState(() {
+        _from = 0;
+        _run++;
+      });
 
   @override
   void dispose() {
@@ -206,15 +228,33 @@ class _CollectionScreenState extends State<CollectionScreen> {
               style: const TextStyle(fontWeight: FontWeight.w800)),
           actions: [
             const MusicButton(),
+            if (!reduceMotion(context))
+              IconButton(
+                tooltip: l.pick('Repetir animación', 'Replay animation'),
+                icon: const Icon(Icons.play_arrow_rounded),
+                onPressed: _replay,
+              ),
             Center(
               child: Padding(
                 padding: const EdgeInsets.only(right: 14),
-                child: Text('${p.unlockedCats.length}/${kCats.length}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w800, color: AppTheme.accent2)),
+                child: CountUp(
+                  key: ValueKey('n$_run-${_from != null}'),
+                  from: _from ?? p.unlockedCats.length,
+                  to: p.unlockedCats.length,
+                  builder: (v) => Text('$v/${kCats.length}',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.accent2)),
+                ),
               ),
             ),
           ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(6),
+            child: FillBar(
+                key: ValueKey('b$_run'),
+                value: p.unlockedCats.length / kCats.length),
+          ),
         ),
         body: KeyboardScroll(
           controller: _scroll,
@@ -231,7 +271,12 @@ class _CollectionScreenState extends State<CollectionScreen> {
             itemBuilder: (context, i) {
               final cat = kCats[i];
               final owned = p.unlockedCats.contains(cat.id);
-              return _catCard(context, l, cat, owned);
+              final card = _catCard(context, l, cat, owned);
+              if (i >= 30 || reduceMotion(context)) return card;
+              return card
+                  .animate(key: ValueKey('c$_run-$i'), delay: (i * 35).ms)
+                  .fadeIn(duration: 300.ms)
+                  .slideY(begin: 0.15, end: 0, curve: Curves.easeOut);
             },
           ),
         ),
@@ -262,11 +307,19 @@ class _CollectionScreenState extends State<CollectionScreen> {
                 child: Container(
                   color: AppTheme.bgAlt,
                   child: owned
-                      ? Image.asset('assets/memes/${cat.id}.jpg',
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Center(
-                              child:
-                                  Text('🐱', style: TextStyle(fontSize: 34))))
+                      ? Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.asset('assets/memes/${cat.id}.jpg',
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => const Center(
+                                    child: Text('🐱',
+                                        style: TextStyle(fontSize: 34)))),
+                            if (!Progress.instance.shownCats.contains(cat.id))
+                              const Positioned(
+                                  top: 6, left: 6, child: NewTag()),
+                          ],
+                        )
                       // Locked: a static grey silhouette of the cat
                       // (bright pixels become opaque, the dark backdrop
                       // fades away), like a character still to unlock.
@@ -351,6 +404,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   void _showCat(BuildContext context, CatMeme cat) {
     final l = L.instance;
+    Progress.instance.markSeen(cat.id);
     final screen = MediaQuery.sizeOf(context);
     // Clips are square: a square window shows the whole cat, uncropped,
     // big enough to enjoy but never bigger than the screen.

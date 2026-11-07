@@ -19,6 +19,7 @@ dependencies:
   video_player: ^2.9.2
   supabase_flutter: ^2.18.3
   http: ^1.6.0
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:
