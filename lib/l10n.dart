@@ -184,15 +184,6 @@ class L {
       'en': 'Levels you tried but did not beat — clear them!'
     },
     'recommended': {'es': 'Recomendado', 'en': 'Recommended'},
-    'rival_name': {'es': 'GatoBot', 'en': 'CatBot'},
-    'rival_ahead': {
-      'es': '¡te va ganando! Entrena hoy',
-      'en': 'is ahead! Train today'
-    },
-    'rival_behind': {
-      'es': 'le vas ganando, ¡sigue así!',
-      'en': "you're ahead — keep it up!"
-    },
     // ---- Optional olympiad-style contest -------------------------------
     'contest': {'es': 'Simulacro', 'en': 'Contest'},
     'contest_desc': {

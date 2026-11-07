@@ -1140,15 +1140,6 @@ class Progress extends ChangeNotifier {
     ghostStartDay = ghostStartDay == 0 ? _epochDay(now) : ghostStartDay;
   }
 
-  /// Ghost rival: 2 levels a day since the first solve, but always
-  /// close to the player (2 behind to 3 ahead) so the race stays alive.
-  int get ghostSolved {
-    if (ghostStartDay == 0) return 0;
-    final raw = (_epochDay(DateTime.now()) - ghostStartDay) * 2 + 1;
-    final you = solvedCount;
-    return raw.clamp(math.max(0, you - 2), you + 3);
-  }
-
   /// Upsolving queue: attempted but never beaten.
   List<String> get pendingIds => [
         for (final e in levels.entries)
