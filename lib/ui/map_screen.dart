@@ -1578,10 +1578,11 @@ class _EarlyCountdownState extends State<_EarlyCountdown> {
     return Tooltip(
       message: Progress.instance.earlyIsToday
           ? l.pick(
-              'Ganá un nivel antes de esa hora y te llevás un premio sorpresa',
-              'Win a level before then to get a surprise prize')
-          : l.pick('Entrá mañana antes de esa hora y ganás un premio sorpresa',
-              'Come back tomorrow before then to win a surprise prize'),
+              'Ganá un nivel antes de esa hora y te llevás un premio sorpresa, distinto cada vez',
+              'Win a level before then to get a surprise prize, different every time')
+          : l.pick(
+              'Entrá mañana antes de esa hora y ganás un premio sorpresa, distinto cada vez',
+              'Come back tomorrow before then to win a surprise prize, different every time'),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
