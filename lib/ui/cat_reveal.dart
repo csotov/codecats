@@ -7,58 +7,10 @@ import '../data/cats.dart';
 import '../l10n.dart';
 import '../services/progress.dart';
 import 'meme_player.dart';
+import 'motion.dart';
 import 'theme.dart';
 
-/// Motion rules shared with the BenchRubric dashboard: numbers count up,
-/// items enter one by one, what matters beats, bars fill, ▶ replays, and
-/// nothing moves when the device asks for reduced motion.
-bool reduceMotion(BuildContext context) =>
-    MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-
-/// A number counting up from [from] to [to].
-class CountUp extends StatelessWidget {
-  const CountUp(
-      {super.key, required this.from, required this.to, required this.builder});
-
-  final int from, to;
-  final Widget Function(int value) builder;
-
-  @override
-  Widget build(BuildContext context) {
-    if (reduceMotion(context) || from == to) return builder(to);
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: from.toDouble(), end: to.toDouble()),
-      duration: Duration(
-          milliseconds: (400 + 40 * (to - from).abs()).clamp(400, 1400)),
-      curve: Curves.easeOutCubic,
-      builder: (_, v, __) => builder(v.round()),
-    );
-  }
-}
-
-/// A bar filling from empty up to [value] (0..1).
-class FillBar extends StatelessWidget {
-  const FillBar({super.key, required this.value});
-
-  final double value;
-
-  @override
-  Widget build(BuildContext context) {
-    Widget bar(double v) => LinearProgressIndicator(
-          value: v,
-          minHeight: 6,
-          color: AppTheme.accent2,
-          backgroundColor: AppTheme.bgAlt,
-        );
-    if (reduceMotion(context)) return bar(value);
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: value),
-      duration: const Duration(milliseconds: 900),
-      curve: Curves.easeOutCubic,
-      builder: (_, v, __) => bar(v),
-    );
-  }
-}
+export 'motion.dart';
 
 /// "¡NUEVO!" tag that beats until the cat's video is watched.
 class NewTag extends StatelessWidget {
