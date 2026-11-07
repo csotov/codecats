@@ -11,6 +11,7 @@ import '../models.dart';
 import '../services/activity.dart';
 import '../services/cloud.dart';
 import '../services/practice_report.dart';
+import '../services/progress.dart';
 import '../services/tweaks.dart';
 import 'coach_admin.dart';
 import 'keyboard_scroll.dart';
@@ -930,6 +931,9 @@ class _AdminScreenState extends State<AdminScreen> {
               '🛠️ Acierta poco: simplificar o explicar antes',
               '🛠️ Low success: simplify or explain first'),
           ModeAdvice.ok => l.pick('🟢 Desafío justo', '🟢 Fair challenge'),
+          ModeAdvice.ungraded => l.pick(
+              '📝 No se corrige: leé sus explicaciones en los eventos',
+              '📝 Not graded: read his explanations in the events'),
         };
     String ago(DateTime? t) {
       if (t == null) return '—';
@@ -938,7 +942,8 @@ class _AdminScreenState extends State<AdminScreen> {
     }
 
     const lo = TextStyle(fontSize: 12, color: AppTheme.textLo);
-    final ladder = [for (var n = 1; n <= 5; n++) h.byN[n] ?? 0];
+    final top = h.byN.keys.fold(Progress.kMaxHints, (a, n) => n > a ? n : a);
+    final ladder = [for (var n = 1; n <= top; n++) h.byN[n] ?? 0];
     final old = h.unnumbered;
     final topLv = h.byLevel.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -989,30 +994,31 @@ class _AdminScreenState extends State<AdminScreen> {
                   ],
                 ),
               ),
-          _chartTitle(l.pick('Pistas compradas por número (1ª a 5ª)',
-              'Hints bought by number (1st to 5th)')),
-          if (ladder.every((n) => n == 0))
+          _chartTitle(l.pick('Pistas compradas por número (1ª a $top)',
+              'Hints bought by number (1st to ${top}th)')),
+          if (h.bought == 0)
             Text(l.pick('Ninguna todavía.', 'None yet.'))
           else ...[
-            _hbars([
-              for (var n = 1; n <= 5; n++)
-                (
-                  l.pick('Pista $n', 'Hint $n'),
-                  ladder[n - 1].toDouble(),
-                  '${ladder[n - 1]}'
-                )
-            ], AppTheme.accent),
+            if (ladder.any((n) => n > 0))
+              _hbars([
+                for (var n = 1; n <= top; n++)
+                  (
+                    l.pick('Pista $n', 'Hint $n'),
+                    ladder[n - 1].toDouble(),
+                    '${ladder[n - 1]}'
+                  )
+              ], AppTheme.accent),
             Text(
                 l.pick(
                     'Gastó ${h.coins} Miaudólares en pistas'
                         '${h.denied > 0 ? ' · ${h.denied} veces no le alcanzó' : ''}'
                         '${old > 0 ? ' · $old pistas son de antes de numerarlas' : ''}. '
-                        'Si llega seguido a la 4ª o 5ª, el nivel necesita un '
+                        'Si llega seguido a las últimas, el nivel necesita un '
                         'paso intermedio.',
                     'Spent ${h.coins} Miaudólares on hints'
                         '${h.denied > 0 ? ' · ${h.denied} times not enough' : ''}'
                         '${old > 0 ? ' · $old hints predate numbering' : ''}. '
-                        'Reaching the 4th or 5th often means the level needs '
+                        'Reaching the last ones often means the level needs '
                         'an intermediate step.'),
                 style: lo),
             if (topLv.isNotEmpty)

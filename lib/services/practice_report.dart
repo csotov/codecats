@@ -7,9 +7,11 @@ class ModeStat {
   DateTime? last;
   final Map<String, List<int>> items = {};
 
-  double? get rate => total == 0 ? null : ok / total;
-  double? get rateCur => cur == 0 ? null : okCur / cur;
-  double? get ratePrev => prev == 0 ? null : okPrev / prev;
+  /// False when answers are not checked (written explanations).
+  bool get graded => !_ungraded.contains(key);
+  double? get rate => total == 0 || !graded ? null : ok / total;
+  double? get rateCur => cur == 0 || !graded ? null : okCur / cur;
+  double? get ratePrev => prev == 0 || !graded ? null : okPrev / prev;
 
   /// Item keys (deck, topic, snippet…) with the lowest success, ≥2 tries.
   List<(String, int, int)> get hardest {
@@ -25,6 +27,7 @@ class ModeStat {
     if (cur == 0 && prev > 0 && _voluntary.contains(key)) {
       return ModeAdvice.dropped;
     }
+    if (!graded) return ModeAdvice.ungraded;
     final r = rate!;
     if (r >= 0.9) return ModeAdvice.tooEasy;
     if (r < 0.6) return ModeAdvice.tooHard;
@@ -35,11 +38,17 @@ class ModeStat {
 /// Modes he opens by choice (the rest are asked by the game).
 const _voluntary = {'memory_gym', 'recall_check', 'math_gym', 'trace_check'};
 
-enum ModeAdvice { littleData, dropped, tooEasy, tooHard, ok }
+enum ModeAdvice { littleData, dropped, tooEasy, tooHard, ok, ungraded }
+
+const _ungraded = {'habit_write'};
 
 const _modes = <String, (String, String)>{
   'fight': ('⚔️ Batallas de niveles (ganadas)', '⚔️ Level battles (won)'),
-  'habit_quiz': ('🗣️ Explicáselo al Profe', '🗣️ Explain it to the Profe'),
+  'habit_quiz': ('🗣️ Explicáselo al Profe (elegir)', '🗣️ Explain it (pick)'),
+  'habit_write': (
+    '🗣️ Explicáselo al Profe (escrito, sin corregir)',
+    '🗣️ Explain it (written, ungraded)'
+  ),
   'recall_check': ('✍️ Escribir de memoria', '✍️ Write from memory'),
   'memory_gym': ('⚡ Memoria rápida', '⚡ Quick memory'),
   'math_gym': ('🧮 Gimnasio de matemática', '🧮 Math gym'),
@@ -78,7 +87,11 @@ List<ModeStat> practiceModes(List<Map<String, dynamic>> events, DateTime now) {
       e.key: ModeStat(e.key, e.value.$1, e.value.$2)
   };
   for (final e in events) {
-    final s = m[e['type']];
+    final d0 = e['data'] as Map? ?? const {};
+    final type = e['type'] == 'habit_quiz' && d0['mode'] == 'write'
+        ? 'habit_write'
+        : e['type'];
+    final s = m[type];
     if (s == null) continue;
     final ts = DateTime.tryParse(e['ts'] as String? ?? '')?.toLocal();
     final d = e['data'] as Map? ?? const {};
@@ -115,9 +128,9 @@ class HintLadder {
   int coins = 0, denied = 0;
 
   /// Bought before hints were numbered 1–5.
-  int get unnumbered => byN.entries
-      .where((e) => e.key < 1 || e.key > 5)
-      .fold(0, (a, e) => a + e.value);
+  int get unnumbered =>
+      byN.entries.where((e) => e.key < 1).fold(0, (a, e) => a + e.value);
+  int get bought => byN.values.fold(0, (a, n) => a + n);
 }
 
 HintLadder hintLadder(List<Map<String, dynamic>> events) {
