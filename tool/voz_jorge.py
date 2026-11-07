@@ -9,7 +9,7 @@ import edge_tts
 
 VOICE = 'es-MX-JorgeNeural'
 OUT = 'web/voz'
-MIN = 80  # kVoiceMinChars
+MIN = 20  # mode_intro and voice: true speak short lines too
 EMOJI = re.compile('[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F\u200D]')
 LIT = r"""(?:'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*")"""
 SEQ = re.compile(r'(?<![r\w])' + LIT + r'(?:\s*' + LIT + r')*')
