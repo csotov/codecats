@@ -13,6 +13,7 @@ import '../services/cloud.dart';
 import '../services/practice_report.dart';
 import '../services/progress.dart';
 import '../services/tweaks.dart';
+import '../services/weekly_summary.dart';
 import 'coach_admin.dart';
 import 'keyboard_scroll.dart';
 import 'replay_view.dart';
@@ -161,6 +162,8 @@ class _AdminScreenState extends State<AdminScreen> {
                     const Center(child: CircularProgressIndicator())
                   else if (_userId != null) ...[
                     _summary(l),
+                    const SizedBox(height: 12),
+                    _weekly(l),
                     const SizedBox(height: 12),
                     _earlyToday(l),
                     const SizedBox(height: 12),
@@ -682,6 +685,40 @@ class _AdminScreenState extends State<AdminScreen> {
       'talks': talks,
       'bonus': bonus,
     };
+  }
+
+  /// Written weekly summary with one suggested next step.
+  Widget _weekly(L l) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final cur = _window(today.subtract(const Duration(days: 6)),
+        today.add(const Duration(days: 1)));
+    final prev = _window(today.subtract(const Duration(days: 13)),
+        today.subtract(const Duration(days: 6)));
+    final diags = diagnoseLevels(_events, _levelActive)
+        .where((d) => levelById(d.id) != null)
+        .toList();
+    final cs = conceptStats(diags, _topicsOf).values;
+    final lines = weeklySummary(
+      cur: cur,
+      prev: prev,
+      modes: practiceModes(_events, now),
+      weakTopics: [for (final c in cs.where((c) => c.weak)) c.concept],
+      strongTopics: [for (final c in cs.where((c) => c.strong)) c.concept],
+    );
+    return SectionCard(
+      title: l.pick('📝 Resumen de la semana', '📝 Weekly summary'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final x in lines)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text(l.pick(x.$1, x.$2)),
+            ),
+        ],
+      ),
+    );
   }
 
   /// This week against the previous one: is the training trend up or down?
