@@ -13,6 +13,7 @@ import '../services/cloud.dart';
 import '../services/tweaks.dart';
 import 'coach_admin.dart';
 import 'keyboard_scroll.dart';
+import 'motion.dart';
 import 'replay_view.dart';
 import 'theme.dart';
 import 'widgets.dart';
@@ -20,10 +21,24 @@ import 'widgets.dart';
 /// Parent/admin view: what each player actually does in the game.
 /// Reads telemetry events from Supabase (admin role only).
 class AdminScreen extends StatefulWidget {
-  const AdminScreen({super.key});
+  const AdminScreen({super.key, this.data});
+
+  /// Canned rows instead of the cloud (tests and previews).
+  final AdminData? data;
 
   @override
   State<AdminScreen> createState() => _AdminScreenState();
+}
+
+class AdminData {
+  const AdminData({
+    required this.students,
+    required this.levelStats,
+    required this.events,
+    this.tweaks = const [],
+  });
+
+  final List<Map<String, dynamic>> students, levelStats, events, tweaks;
 }
 
 class _AdminScreenState extends State<AdminScreen> {
@@ -37,6 +52,7 @@ class _AdminScreenState extends State<AdminScreen> {
   Map<String, int> _levelActive = const {};
   List<Map<String, dynamic>> _tweaks = const [];
   bool _loading = true;
+  int _run = 0;
   String? _error;
 
   @override
@@ -53,7 +69,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Future<void> _loadStudents() async {
     try {
-      final s = await Cloud.instance.students();
+      final s = widget.data?.students ?? await Cloud.instance.students();
       if (!mounted) return;
       setState(() => _students = s);
       final first = s.cast<Map<String, dynamic>?>().firstWhere(
@@ -77,9 +93,11 @@ class _AdminScreenState extends State<AdminScreen> {
       _loading = true;
     });
     try {
-      final lv = await Cloud.instance.levelStats(id);
-      final ev = await Cloud.instance.recentEvents(id);
-      final tw = await Tweaks.instance.forStudent(id);
+      final lv = widget.data == null
+          ? await Cloud.instance.levelStats(id)
+          : [...widget.data!.levelStats];
+      final ev = widget.data?.events ?? await Cloud.instance.recentEvents(id);
+      final tw = widget.data?.tweaks ?? await Tweaks.instance.forStudent(id);
       if (!mounted) return;
       setState(() {
         _levels = lv..sort((a, b) => _order(a).compareTo(_order(b)));
@@ -128,6 +146,12 @@ class _AdminScreenState extends State<AdminScreen> {
         title: Text(l.pick('Panel de admin', 'Admin panel')),
         actions: [
           const MusicButton(),
+          if (!reduceMotion(context))
+            IconButton(
+              tooltip: l.pick('Repetir animación', 'Replay animation'),
+              icon: const Icon(Icons.play_arrow_rounded),
+              onPressed: () => setState(() => _run++),
+            ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: Tooltip(
@@ -158,38 +182,29 @@ class _AdminScreenState extends State<AdminScreen> {
                   if (_loading)
                     const Center(child: CircularProgressIndicator())
                   else if (_userId != null) ...[
-                    _summary(l),
-                    const SizedBox(height: 12),
-                    _earlyToday(l),
-                    const SizedBox(height: 12),
-                    _decisions(l),
-                    const SizedBox(height: 12),
-                    _sessionsCard(l),
-                    const SizedBox(height: 12),
-                    _charts(l),
-                    const SizedBox(height: 12),
-                    _typingReport(l),
-                    const SizedBox(height: 12),
-                    _fluency(l),
-                    const SizedBox(height: 12),
-                    SectionCard(
-                      title:
-                          l.pick('🎬 Repetición del código', '🎬 Code replay'),
-                      child: ReplayView(
-                          replays: Replay.fromEvents(_of('code_replay'))),
-                    ),
-                    const SizedBox(height: 12),
-                    _weekCompare(l),
-                    const SizedBox(height: 12),
-                    _trend(l),
-                    const SizedBox(height: 12),
-                    _mastery(l),
-                    const SizedBox(height: 12),
-                    _hours(l),
-                    const SizedBox(height: 12),
-                    _cats(l),
-                    const SizedBox(height: 12),
-                    _levelTable(l),
+                    for (final (i, s) in [
+                      _week(l),
+                      _earlyToday(l),
+                      _decisions(l),
+                      _charts(l),
+                      _summary(l),
+                      _sessionsCard(l),
+                      _typingReport(l),
+                      _fluency(l),
+                      SectionCard(
+                        title: l.pick(
+                            '🎬 Repetición del código', '🎬 Code replay'),
+                        child: ReplayView(
+                            replays: Replay.fromEvents(_of('code_replay'))),
+                      ),
+                      _mastery(l),
+                      _hours(l),
+                      _cats(l),
+                      _levelTable(l),
+                    ].indexed) ...[
+                      Enter(key: ValueKey('s$_run-$i'), index: i, child: s),
+                      const SizedBox(height: 12),
+                    ],
                   ],
                 ],
               ),
@@ -305,43 +320,42 @@ class _AdminScreenState extends State<AdminScreen> {
     String fmt(num s) => s >= 3600
         ? '${(s / 3600).toStringAsFixed(1)} h'
         : '${(s / 60).round()} min';
+    final tiles = [
+      _Kpi(l.pick('Sesiones reales', 'Real sessions'), sessions,
+          note: l.pick(
+              'pausa >15 min = otra sesión', 'pause >15 min = new session')),
+      _Kpi(l.pick('Minutos practicados', 'Minutes practiced'), active ~/ 60,
+          note:
+              '${l.pick('promedio', 'avg')} ${fmt(sessions == 0 ? 0 : active / sessions)} · ${l.pick('la más larga', 'longest')} ${fmt(longest)}'),
+      _Kpi(l.pick('Ganadas al primer intento', 'Won on first try'),
+          wins == 0 ? 0 : (100 * firstTry / wins).round(),
+          unit: '%',
+          note:
+              '$firstTry ${l.pick('de', 'of')} $wins ${l.pick('victorias', 'wins')}'),
+      _Kpi(l.pick('Preguntas rápidas y gimnasios', 'Quick questions & gyms'),
+          quick == 0 ? 0 : (100 * quickOk / quick).round(),
+          unit: '%', note: '$quickOk/$quick ${l.pick('bien', 'right')}'),
+      _Kpi(l.pick('Escribe en código', 'Writes code'), codePct,
+          unit: '%',
+          note: '${100 - codePct}% ${l.pick('con bloques', 'with blocks')}'),
+      _Kpi(l.pick('Teclas borradas', 'Keys deleted'), typo,
+          unit: '%',
+          note:
+              '$back ${l.pick('de', 'of')} $keys ${l.pick('teclas', 'keys')}'),
+    ];
     final rows = <List<String>>[
-      [
-        l.pick('Sesiones reales', 'Real sessions'),
-        '$sessions ${l.pick('(se corta tras 15 min sin tocar nada)', '(split after 15 idle min)')}'
-      ],
-      [
-        l.pick(
-            'Tiempo practicado (todo el juego)', 'Time practiced (whole game)'),
-        '${fmt(active)} · ${l.pick('promedio', 'avg')} ${fmt(sessions == 0 ? 0 : active / sessions)} · ${l.pick('la más larga', 'longest')} ${fmt(longest)}'
-      ],
       [
         l.pick('Tiempo dentro de niveles', 'Time inside levels'),
         '${fmt(secs)} ${rawSecs > secs + 60 ? l.pick('(descontados ${fmt(rawSecs - secs)} con el nivel abierto sin tocar)', '(${fmt(rawSecs - secs)} idle removed)') : ''}'
       ],
       [
-        l.pick('Código vs bloques', 'Code vs blocks'),
-        '$codePct% ${l.pick('código', 'code')} · ${100 - codePct}% ${l.pick('bloques', 'blocks')}'
-      ],
-      [
-        l.pick('Victorias', 'Wins'),
-        '${l.pick('al primer intento', 'first try')} ${wins == 0 ? 0 : (100 * firstTry / wins).round()}% · ${l.pick('batallas por victoria', 'battles per win')} ${wins == 0 ? '—' : (fights / wins).toStringAsFixed(1)} · ${l.pick('pistas por victoria', 'hints per win')} ${wins == 0 ? '—' : (hints / wins).toStringAsFixed(1)}'
-      ],
-      [
-        l.pick('Preguntas rápidas y gimnasios', 'Quick questions & gyms'),
-        quick == 0
-            ? '—'
-            : '$quickOk/$quick ${l.pick('bien', 'right')} (${(100 * quickOk / quick).round()}%)'
-      ],
-      [
-        l.pick('Tecleo', 'Typing'),
-        '$keys ${l.pick('teclas', 'keys')}, $back ${l.pick('borrados', 'deletes')} ($typo% ${l.pick('corrección', 'correction')})'
-      ],
-      [
         l.pick('Batallas', 'Battles'),
-        '$fights · ${l.pick('ganadas', 'won')} $wins · ${l.pick('errores de compilación', 'compile errors')} $compileErr'
+        '$fights · ${l.pick('ganadas', 'won')} $wins · ${l.pick('por victoria', 'per win')} ${wins == 0 ? '—' : (fights / wins).toStringAsFixed(1)} · ${l.pick('errores de compilación', 'compile errors')} $compileErr'
       ],
-      [l.pick('Pistas compradas', 'Hints bought'), '$hints'],
+      [
+        l.pick('Pistas compradas', 'Hints bought'),
+        '$hints · ${l.pick('por victoria', 'per win')} ${wins == 0 ? '—' : (hints / wins).toStringAsFixed(1)}'
+      ],
       [l.pick('Tutoriales (3 fallos)', 'Tutorials (3 fails)'), '$tutorials'],
       [
         l.pick('Niveles abiertos sin ganar', 'Levels opened but not won'),
@@ -349,9 +363,12 @@ class _AdminScreenState extends State<AdminScreen> {
       ],
     ];
     return SectionCard(
-      title: l.pick('Resumen', 'Summary'),
+      title: l.pick('📈 Todo el historial', '📈 Whole history'),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _kpiGrid(tiles, l),
+          const SizedBox(height: 10),
           for (final r in rows)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 3),
@@ -680,151 +697,170 @@ class _AdminScreenState extends State<AdminScreen> {
     };
   }
 
-  /// This week against the previous one: is the training trend up or down?
-  Widget _weekCompare(L l) {
+  /// Last 7 days against the 7 before: one headline, then a tile per metric.
+  Widget _week(L l) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final cur = _window(today.subtract(const Duration(days: 6)),
         today.add(const Duration(days: 1)));
     final prev = _window(today.subtract(const Duration(days: 13)),
         today.subtract(const Duration(days: 6)));
-    String pct(num a, num b) => b == 0 ? '—' : '${(100 * a / b).round()}%';
-    String arrow(num a, num b) => a > b
-        ? ' ▲'
-        : a < b
-            ? ' ▼'
-            : '';
-    final rows = <List<String>>[
-      [
-        l.pick('Sesiones', 'Sessions'),
-        '${cur['sessions']}${arrow(cur['sessions']!, prev['sessions']!)}',
-        '${prev['sessions']}'
-      ],
-      [
-        l.pick('Tiempo', 'Time'),
-        '${_fmtMin(cur['secs']!)}${arrow(cur['secs']!, prev['secs']!)}',
-        _fmtMin(prev['secs']!)
-      ],
-      [
-        l.pick('Batallas / ganadas', 'Battles / won'),
-        '${cur['fights']} / ${cur['wins']} (${pct(cur['wins']!, cur['fights']!)})',
-        '${prev['fights']} / ${prev['wins']} (${pct(prev['wins']!, prev['fights']!)})'
-      ],
-      [
-        l.pick('Errores de compilación', 'Compile errors'),
-        '${cur['compile']}',
-        '${prev['compile']}'
-      ],
-      [l.pick('Pistas', 'Hints'), '${cur['hints']}', '${prev['hints']}'],
-      [
-        l.pick('Preguntas Big O acertadas', 'Big O checks right'),
-        '${cur['quizOk']}/${cur['quiz']}',
-        '${prev['quizOk']}/${prev['quiz']}'
-      ],
-      [
-        l.pick('Repasos del cuaderno', 'Notebook reviews'),
-        '${cur['reviews']}',
-        '${prev['reviews']}'
-      ],
-      [
-        l.pick('Bonus dorados ganados', 'Golden Bonus won'),
-        '${cur['bonus']}',
-        '${prev['bonus']}'
-      ],
-      [
-        l.pick('Charlas de mentalidad', 'Mindset talks'),
-        '${cur['talks']}',
-        '${prev['talks']}'
-      ],
+    int c(String k) => cur[k]!.round();
+    int p(String k) => prev[k]!.round();
+    final secs = c('secs'), before = p('secs');
+    final trend = before == 0
+        ? (secs == 0
+            ? ''
+            : l.pick(' (la semana anterior no practicó)',
+                ' (no practice the week before)'))
+        : ' (${secs >= before ? '▲' : '▼'} ${(100 * (secs - before) / before).abs().round()}% ${l.pick('vs la semana anterior', 'vs the week before')})';
+    final headline = secs == 0 && c('fights') == 0
+        ? l.pick('No practicó en los últimos 7 días.',
+            'No practice in the last 7 days.')
+        : l.pick(
+            'Practicó ${_fmtMin(secs)} en ${c('sessions')} sesiones$trend y ganó ${c('wins')} de ${c('fights')} batallas.',
+            'Practiced ${_fmtMin(secs)} in ${c('sessions')} sessions$trend and won ${c('wins')} of ${c('fights')} battles.');
+    final tiles = [
+      _Kpi(l.pick('Sesiones', 'Sessions'), c('sessions'), prev: p('sessions')),
+      _Kpi(l.pick('Minutos practicados', 'Minutes practiced'), secs ~/ 60,
+          prev: before ~/ 60),
+      _Kpi(l.pick('Batallas ganadas', 'Battles won'), c('wins'),
+          prev: p('wins'), note: '${l.pick('de', 'of')} ${c('fights')}'),
+      _Kpi(l.pick('Errores de compilación', 'Compile errors'), c('compile'),
+          prev: p('compile'), better: -1),
+      _Kpi(l.pick('Pistas', 'Hints'), c('hints'), prev: p('hints'), better: 0),
+      _Kpi(l.pick('Big O acertadas', 'Big O right'), c('quizOk'),
+          prev: p('quizOk'), note: '${l.pick('de', 'of')} ${c('quiz')}'),
+      _Kpi(l.pick('Repasos del cuaderno', 'Notebook reviews'), c('reviews'),
+          prev: p('reviews')),
+      _Kpi(l.pick('Bonus dorados', 'Golden Bonus'), c('bonus'),
+          prev: p('bonus')),
+      _Kpi(l.pick('Charlas de mentalidad', 'Mindset talks'), c('talks'),
+          prev: p('talks'), better: 0),
     ];
     return SectionCard(
-      title: l.pick('Esta semana vs la anterior', 'This week vs last'),
+      title: l.pick('📊 Últimos 7 días vs los 7 anteriores',
+          '📊 Last 7 days vs the previous 7'),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const SizedBox(width: 190),
-              Expanded(
-                  child: Text(l.pick('Últimos 7 días', 'Last 7 days'),
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 12))),
-              Expanded(
-                  child: Text(l.pick('7 anteriores', 'Previous 7'),
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 12))),
-            ],
-          ),
-          for (final r in rows)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 3),
-              child: Row(
-                children: [
-                  SizedBox(
-                      width: 190,
-                      child: Text(r[0],
-                          style: const TextStyle(fontWeight: FontWeight.w600))),
-                  Expanded(child: Text(r[1])),
-                  Expanded(
-                      child: Text(r[2],
-                          style: const TextStyle(color: AppTheme.textLo))),
-                ],
-              ),
-            ),
+          Text(headline,
+              style:
+                  const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 10),
+          _kpiGrid(tiles, l),
         ],
       ),
     );
   }
 
-  /// Day by day over the last 14 days.
-  Widget _trend(L l) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final days = [
-      for (var i = 13; i >= 0; i--) today.subtract(Duration(days: i)),
-    ];
-    return SectionCard(
-      title: l.pick('Últimos 14 días', 'Last 14 days'),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          columnSpacing: 14,
-          headingRowHeight: 32,
-          dataRowMinHeight: 28,
-          dataRowMaxHeight: 32,
-          columns: [
-            DataColumn(label: Text(l.pick('Día', 'Day'))),
-            DataColumn(label: Text(l.pick('Sesiones', 'Sess.'))),
-            DataColumn(label: Text(l.pick('Tiempo', 'Time'))),
-            DataColumn(label: Text(l.pick('Batallas', 'Battles'))),
-            DataColumn(label: Text(l.pick('Ganadas', 'Won'))),
-            DataColumn(label: Text(l.pick('Pistas', 'Hints'))),
-            const DataColumn(label: Text('Big O')),
-            DataColumn(label: Text(l.pick('Repasos', 'Reviews'))),
-          ],
-          rows: [
-            for (final d in days)
-              () {
-                final w = _window(d, d.add(const Duration(days: 1)));
-                final idle = w['sessions'] == 0;
-                final style = TextStyle(
-                    color: idle ? AppTheme.textLo : null, fontSize: 12);
-                return DataRow(cells: [
-                  DataCell(Text(_day(d).substring(5), style: style)),
-                  DataCell(Text('${w['sessions']}', style: style)),
-                  DataCell(
-                      Text(idle ? '—' : _fmtMin(w['secs']!), style: style)),
-                  DataCell(Text('${w['fights']}', style: style)),
-                  DataCell(Text('${w['wins']}', style: style)),
-                  DataCell(Text('${w['hints']}', style: style)),
-                  DataCell(Text(
-                      w['quiz'] == 0 ? '—' : '${w['quizOk']}/${w['quiz']}',
-                      style: style)),
-                  DataCell(Text('${w['reviews']}', style: style)),
-                ]);
-              }(),
+  /// Two tiles per row on a phone, fixed-width tiles on wider screens.
+  Widget _kpiGrid(List<_Kpi> tiles, L l) => LayoutBuilder(
+        builder: (_, c) {
+          final w = c.maxWidth < 560 ? (c.maxWidth - 10) / 2 : 168.0;
+          return Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              for (final (i, k) in tiles.indexed)
+                Enter(index: i, child: _kpiTile(k, l, w)),
+            ],
+          );
+        },
+      );
+
+  Widget _kpiTile(_Kpi k, L l, double width) => Container(
+        width: width,
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+        decoration: BoxDecoration(
+          color: AppTheme.bgAlt,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppTheme.cardEdge),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(k.label,
+                maxLines: 2,
+                style: const TextStyle(
+                    fontSize: 11,
+                    color: AppTheme.textLo,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                CountUp(
+                    to: k.value,
+                    builder: (v) => Text('$v${k.unit}',
+                        style: const TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.w900))),
+                if (k.prev != null) ...[
+                  const SizedBox(width: 8),
+                  Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: _delta(k, l)),
+                ],
+              ],
+            ),
+            if (k.note != null)
+              Text(k.note!,
+                  maxLines: 2,
+                  style: const TextStyle(fontSize: 10, color: AppTheme.textLo)),
           ],
         ),
+      );
+
+  /// ▲/▼ against the previous 7 days; green when better, red (beating a
+  /// few times) when worse, grey when the metric is neutral.
+  Widget _delta(_Kpi k, L l) {
+    final p = k.prev!, d = k.value - p;
+    final text = d == 0
+        ? '='
+        : p == 0
+            ? '▲ ${l.pick('nuevo', 'new')}'
+            : '${d > 0 ? '▲' : '▼'} ${(100 * d / p).abs().round()}%';
+    final worse = k.better != 0 && d * k.better < 0;
+    final color = d == 0 || k.better == 0
+        ? AppTheme.textLo
+        : worse
+            ? AppTheme.bad
+            : AppTheme.good;
+    final chip = Tooltip(
+      message: '${l.pick('7 días anteriores', 'Previous 7 days')}: $p',
+      child: Text(text,
+          style: TextStyle(
+              fontSize: 12, fontWeight: FontWeight.w800, color: color)),
+    );
+    return worse ? Pulse(scale: 1.12, times: 6, child: chip) : chip;
+  }
+
+  /// Right (green) vs wrong (red) as one bar grown to [t].
+  Widget _split(int right, int wrong, double t) => LayoutBuilder(
+        builder: (_, c) {
+          final all = (right + wrong) == 0 ? 1 : right + wrong;
+          return Row(children: [
+            Container(
+                width: c.maxWidth * t * right / all,
+                height: 12,
+                color: AppTheme.good),
+            Container(
+                width: c.maxWidth * t * wrong / all,
+                height: 12,
+                color: AppTheme.bad),
+          ]);
+        },
+      );
+
+  Widget _heat(dynamic v, num max, Color c) {
+    final n = (v as num?) ?? 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: n == 0 ? null : c.withValues(alpha: 0.12 + 0.55 * n / max),
+        borderRadius: BorderRadius.circular(4),
       ),
+      child: Text('$n'),
     );
   }
 
@@ -872,11 +908,40 @@ class _AdminScreenState extends State<AdminScreen> {
           if (quiz.isEmpty)
             row('—', l.pick('todavía ninguna', 'none yet'))
           else
-            for (final e in quiz.entries)
-              row(
-                  kBigO[e.key]?.notation ?? e.key,
-                  '${e.value[0]} ${l.pick('bien', 'right')} · ${e.value[1]} ${l.pick('mal', 'wrong')}'
-                  '${e.value[1] > e.value[0] ? '  ⚠️ ${l.pick('repasar', 'review')}' : ''}'),
+            for (final (i, e) in quiz.entries.indexed)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(children: [
+                  SizedBox(
+                      width: 190,
+                      child: Text(kBigO[e.key]?.notation ?? e.key,
+                          style: const TextStyle(fontWeight: FontWeight.w600))),
+                  Expanded(
+                    child: Grow(
+                      index: i,
+                      builder: (t) => _split(e.value[0], e.value[1], t),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 120,
+                    child: Text(
+                        '${e.value[0]} ${l.pick('bien', 'right')} · ${e.value[1]} ${l.pick('mal', 'wrong')}',
+                        style: const TextStyle(fontSize: 12)),
+                  ),
+                  SizedBox(
+                    width: 90,
+                    child: e.value[1] > e.value[0]
+                        ? Pulse(
+                            times: 6,
+                            child: Text('⚠️ ${l.pick('repasar', 'review')}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    color: AppTheme.bad)))
+                        : null,
+                  ),
+                ]),
+              ),
           const SizedBox(height: 8),
           Text(l.pick('Cuaderno de errores', 'Error notebook'),
               style: const TextStyle(
@@ -922,10 +987,13 @@ class _AdminScreenState extends State<AdminScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Container(
-                        height: 70 * counts[h] / max,
-                        margin: const EdgeInsets.symmetric(horizontal: 1),
-                        color: Colors.deepPurpleAccent,
+                      Grow(
+                        index: h,
+                        builder: (t) => Container(
+                          height: 70 * t * counts[h] / max,
+                          margin: const EdgeInsets.symmetric(horizontal: 1),
+                          color: Colors.deepPurpleAccent,
+                        ),
                       ),
                       if (h % 6 == 0)
                         Text('$h', style: const TextStyle(fontSize: 10)),
@@ -1057,19 +1125,27 @@ class _AdminScreenState extends State<AdminScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          for (final d in data)
+          for (final (i, d) in data.indexed)
             Expanded(
               child: Tooltip(
                 message: d.$3,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    for (var k = d.$2.length - 1; k >= 0; k--)
-                      Container(
-                        height: height * d.$2[k] / max,
-                        margin: const EdgeInsets.symmetric(horizontal: 2),
-                        color: colors[k % colors.length],
+                    Grow(
+                      index: i,
+                      builder: (t) => Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (var k = d.$2.length - 1; k >= 0; k--)
+                            Container(
+                              height: height * t * d.$2[k] / max,
+                              margin: const EdgeInsets.symmetric(horizontal: 2),
+                              color: colors[k % colors.length],
+                            ),
+                        ],
                       ),
+                    ),
                     const SizedBox(height: 2),
                     Text(d.$1,
                         style: const TextStyle(
@@ -1088,7 +1164,7 @@ class _AdminScreenState extends State<AdminScreen> {
     final max = data.fold<double>(1, (a, d) => d.$2 > a ? d.$2 : a);
     return Column(
       children: [
-        for (final d in data)
+        for (final (i, d) in data.indexed)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 2),
             child: Row(children: [
@@ -1101,11 +1177,15 @@ class _AdminScreenState extends State<AdminScreen> {
                 child: LayoutBuilder(
                   builder: (_, c) => Align(
                     alignment: Alignment.centerLeft,
-                    child: Container(
-                      width: c.maxWidth * d.$2 / max,
-                      height: 14,
-                      decoration: BoxDecoration(
-                          color: color, borderRadius: BorderRadius.circular(4)),
+                    child: Grow(
+                      index: i,
+                      builder: (t) => Container(
+                        width: c.maxWidth * t * d.$2 / max,
+                        height: 14,
+                        decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(4)),
+                      ),
                     ),
                   ),
                 ),
@@ -1148,6 +1228,7 @@ class _AdminScreenState extends State<AdminScreen> {
     final fightsDay = <(String, List<double>, String)>[];
     for (final d in days) {
       final to = d.add(const Duration(days: 1));
+      final w = _window(d, to);
       final act = activeSeconds(_spans, d, to) / 60;
       num raw = 0, won = 0, lost = 0;
       for (final e in _events) {
@@ -1164,6 +1245,8 @@ class _AdminScreenState extends State<AdminScreen> {
         label,
         [act, raw / 60],
         '${_day(d)}: ${act.round()} min ${l.pick('practicando', 'practicing')} · ${(raw / 60).round()} min ${l.pick('muertos', 'idle')}'
+            ' · ${w['sessions']} ${l.pick('sesiones', 'sessions')} · ${w['hints']} ${l.pick('pistas', 'hints')}'
+            ' · Big O ${w['quizOk']}/${w['quiz']} · ${w['reviews']} ${l.pick('repasos', 'reviews')}'
       ));
       fightsDay.add((
         label,
@@ -1204,6 +1287,12 @@ class _AdminScreenState extends State<AdminScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _chartTitle(l.pick('Minutos por día (14 días)', 'Minutes per day')),
+          Text(
+              l.pick(
+                  'Pasá el mouse o mantené apretada una barra para ver el detalle del día.',
+                  'Hover or long-press a bar for the day detail.'),
+              style: const TextStyle(fontSize: 11, color: AppTheme.textLo)),
+          const SizedBox(height: 6),
           _bars(perDay, [AppTheme.good, AppTheme.cardEdge]),
           _legend([
             (AppTheme.good, l.pick('practicando', 'practicing')),
@@ -1705,8 +1794,15 @@ class _AdminScreenState extends State<AdminScreen> {
           : ((_levelActive[r['level_id']] ?? 0) / raw).clamp(0, 1);
     }
 
+    num maxOf(String k) => _levels.fold<num>(1, (a, r) {
+          final v = (r[k] as num?) ?? 0;
+          return v > a ? v : a;
+        });
+    final mF = maxOf('fights'), mH = maxOf('hints');
+    final mC = maxOf('compile_errors');
     return SectionCard(
-      title: l.pick('Por nivel', 'Per level'),
+      title: l.pick('Por nivel (más color = más peleas, pistas o errores)',
+          'Per level (more color = more fights, hints or errors)'),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
@@ -1735,10 +1831,10 @@ class _AdminScreenState extends State<AdminScreen> {
                 DataCell(Text('${r['level_id']}')),
                 DataCell(Text('${r['opens']}')),
                 DataCell(Text(mins(_levelActive[r['level_id']] ?? 0))),
-                DataCell(Text('${r['fights']}')),
+                DataCell(_heat(r['fights'], mF, AppTheme.accent3)),
                 DataCell(Text('${r['wins']}')),
-                DataCell(Text('${r['hints']}')),
-                DataCell(Text('${r['compile_errors']}')),
+                DataCell(_heat(r['hints'], mH, Colors.amber)),
+                DataCell(_heat(r['compile_errors'], mC, AppTheme.bad)),
                 DataCell(
                     Text(mins(((r['code_seconds'] as num?) ?? 0) * ratio(r)))),
                 DataCell(Text(
@@ -1750,4 +1846,18 @@ class _AdminScreenState extends State<AdminScreen> {
       ),
     );
   }
+}
+
+class _Kpi {
+  const _Kpi(this.label, this.value,
+      {this.prev, this.unit = '', this.note, this.better = 1});
+
+  final String label;
+  final int value;
+  final int? prev;
+  final String unit;
+  final String? note;
+
+  /// 1 = higher is better, -1 = lower is better, 0 = neutral.
+  final int better;
 }

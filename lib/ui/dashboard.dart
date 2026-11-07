@@ -10,6 +10,7 @@ import 'golden_card.dart';
 import '../models.dart';
 import '../services/progress.dart';
 import 'keyboard_scroll.dart';
+import 'motion.dart';
 import 'theme.dart';
 import 'widgets.dart';
 
@@ -236,18 +237,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Text('${rows[i][0]}',
                                 style: const TextStyle(
                                     fontSize: 10, fontWeight: FontWeight.w700)),
-                          Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 5),
-                            height: 4 + 56 * (rows[i][0] + rows[i][1]) / maxBar,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(4),
-                              color: rows[i][0] > 0
-                                  ? AppTheme.good
-                                  : rows[i][1] > 0
-                                      ? AppTheme.bad.withValues(alpha: 0.7)
-                                      : AppTheme.bgAlt,
-                            ),
-                          ),
+                          Grow(
+                              index: i,
+                              builder: (t) => Container(
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 5),
+                                    height: 4 +
+                                        56 *
+                                            t *
+                                            (rows[i][0] + rows[i][1]) /
+                                            maxBar,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(4),
+                                      color: rows[i][0] > 0
+                                          ? AppTheme.good
+                                          : rows[i][1] > 0
+                                              ? AppTheme.bad
+                                                  .withValues(alpha: 0.7)
+                                              : AppTheme.bgAlt,
+                                    ),
+                                  )),
                           const SizedBox(height: 3),
                           Text(
                               l.isEs
@@ -331,6 +340,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _chip(String emoji, String text) => Text('$emoji $text',
       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600));
 
+  static const _statStyle =
+      TextStyle(fontSize: 17, fontWeight: FontWeight.w800);
+
   Widget _stat(
       BuildContext context, IconData icon, String value, String label) {
     return Expanded(
@@ -341,9 +353,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Icon(icon, color: AppTheme.accent, size: 20),
               const SizedBox(height: 6),
-              Text(value,
-                  style: const TextStyle(
-                      fontSize: 17, fontWeight: FontWeight.w800)),
+              switch (int.tryParse(value)) {
+                final n? =>
+                  CountUp(to: n, builder: (v) => Text('$v', style: _statStyle)),
+                _ => Text(value, style: _statStyle),
+              },
               Text(label,
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: AppTheme.textLo, fontSize: 11)),
