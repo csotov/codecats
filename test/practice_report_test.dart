@@ -58,4 +58,23 @@ void main() {
     expect(h.byN, {1: 1, 2: 1});
     expect([h.coins, h.denied, h.byLevel['w1']], [25, 1, 2]);
   });
+
+  test('written explanations are not counted as correct', () {
+    final m = practiceModes([
+      for (var i = 0; i < 5; i++)
+        ev('habit_quiz', 1, {'ok': true, 'mode': 'write'}),
+      ev('habit_quiz', 1, {'ok': false, 'mode': 'pick'}),
+    ], now);
+    final w = m.firstWhere((s) => s.key == 'habit_write');
+    expect([w.total, w.rate, w.advice], [5, null, ModeAdvice.ungraded]);
+    expect(m.firstWhere((s) => s.key == 'habit_quiz').rate, 0);
+  });
+
+  test('hints above 5 stay numbered; missing n is unnumbered', () {
+    final h = hintLadder([
+      ev('hint_buy', 0, {'n': 7, 'ok': true, 'cost': 90}),
+      ev('hint_buy', 0, {'ok': true, 'cost': 10}),
+    ]);
+    expect([h.byN[7], h.unnumbered, h.bought], [1, 1, 2]);
+  });
 }
