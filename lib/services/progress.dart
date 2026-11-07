@@ -419,6 +419,19 @@ class Progress extends ChangeNotifier {
   /// `talk_<id>` so they sync with the rest of the progress.
   bool talkSeen(String id) => mathGym.containsKey('talk_$id');
 
+  /// Raise the Miaudólares paid for OBI task [id] to [target]; [legacyPaid]
+  /// is what the old 1-per-5-points rule already paid. Returns the top-up.
+  int topUpObi(String id, int target, int legacyPaid) {
+    final paid = mathGym['obi_$id']?[0] ?? legacyPaid;
+    final d = target - paid;
+    if (d <= 0) return 0;
+    mathGym['obi_$id'] = [target, 0];
+    coins += d;
+    _save();
+    notifyListeners();
+    return d;
+  }
+
   void addCoins(int n) {
     coins += n;
     _save();

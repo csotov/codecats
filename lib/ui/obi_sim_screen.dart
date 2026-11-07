@@ -25,6 +25,21 @@ int obiBest(ObiTask t) {
   return sum;
 }
 
+/// Official Clasificatoria problems are hard: 1 Miaudólar per point and
+/// +50 at 100/100. Practice tasks pay 1 per 5 points.
+int obiCoins(ObiTask t, int best) =>
+    t.official ? best + (best >= 100 ? 50 : 0) : best ~/ 5;
+
+/// Tops up tasks scored before official problems paid more. Returns coins.
+int settleObiPay(Iterable<ObiTask> tasks) {
+  var sum = 0;
+  for (final t in tasks) {
+    final b = obiBest(t);
+    if (b > 0) sum += Progress.instance.topUpObi(t.id, obiCoins(t, b), b ~/ 5);
+  }
+  return sum;
+}
+
 Widget _scroll(ScrollController c, List<Widget> children) => KeyboardScroll(
       controller: c,
       child: Scrollbar(
@@ -403,6 +418,7 @@ class _ObiSimScreenState extends State<ObiSimScreen>
     final ok = [for (final r in res) r.ok];
     var won = 0;
     final p = Progress.instance;
+    final before = obiBest(t);
     for (var i = 0; i < ok.length; i++) {
       final k = t.scoreKey(i);
       if (ok[i] && (p.scores[k] ?? 0) == 0) {
@@ -410,7 +426,8 @@ class _ObiSimScreenState extends State<ObiSimScreen>
         p.recordScore(k, t.subtasks[i].pts);
       }
     }
-    if (won > 0) p.earnCoins(won ~/ 5);
+    final coins =
+        won > 0 ? p.topUpObi(t.id, obiCoins(t, obiBest(t)), before ~/ 5) : 0;
     final total = [
       for (var i = 0; i < ok.length; i++)
         if (ok[i]) t.subtasks[i].pts
@@ -430,7 +447,7 @@ class _ObiSimScreenState extends State<ObiSimScreen>
     if (!mounted) return;
     if (won > 0) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('¡+$won puntos nuevos! +${won ~/ 5} Miaudólares 🪙')));
+          content: Text('¡+$won puntos nuevos! +$coins Miaudólares 🪙')));
     }
   }
 

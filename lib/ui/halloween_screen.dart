@@ -37,6 +37,16 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
   void initState() {
     super.initState();
     Sfx.spooky();
+    final paid = settleObiPay(kObiTasks);
+    if (paid > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(L.instance.pick(
+                '🏆 Los problemas oficiales ahora pagan más: +$paid Miaudólares por los que ya resolviste',
+                '🏆 Official problems now pay more: +$paid Miaudólares for the ones you already solved'))));
+      });
+    }
   }
 
   @override
