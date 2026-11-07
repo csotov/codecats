@@ -40,4 +40,19 @@ void main() {
     expect(es, isNot(contains('escrito')));
     expect(s.last.$1, contains('simplificar'));
   });
+
+  test('a single weak mode is hardest, not best', () {
+    final modes = practiceModes([
+      for (var i = 0; i < 7; i++)
+        ev('memory_gym', 1, {'ok': i < 4, 'deck': 'types'}),
+    ], now);
+    final s = weeklySummary(
+        cur: const {'secs': 600, 'sessions': 1, 'fights': 2, 'wins': 1},
+        prev: const {},
+        modes: modes);
+    final es = s.map((x) => x.$1).join('\n');
+    expect(es, isNot(contains('mejor le va')));
+    expect(es, contains('Lo que más le cuesta: ⚡ Memoria rápida (57% de 7'));
+    expect(s.last.$1, contains('simplificar'));
+  });
 }
