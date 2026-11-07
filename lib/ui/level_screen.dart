@@ -41,6 +41,7 @@ import 'code_editor.dart';
 import 'coin.dart';
 import 'keyboard_scroll.dart';
 import 'level_intro.dart';
+import 'cat_reveal.dart';
 import 'meme_player.dart';
 import '../data/complexity.dart';
 import '../data/profe_talks.dart';
@@ -1173,8 +1174,8 @@ class _LevelScreenState extends State<LevelScreen>
       await ExpertScreen.show(context, expert);
       if (!mounted) return;
     }
-    // New cats AFTER the victory: one video, the rest are summed up
-    // so a pile of pop-ups never covers the game.
+    // New cats AFTER the victory: the first one's video, then the rest
+    // together on one screen, so a pile of pop-ups never covers the game.
     if (newCats.isNotEmpty && mounted) {
       final more = newCats.length - 1;
       await MemeBurst.show(
@@ -1182,11 +1183,14 @@ class _LevelScreenState extends State<LevelScreen>
         newCats.first,
         captionEs: more == 0
             ? '¡Gato nuevo en tu Gatoteca!'
-            : '¡Gato nuevo! Y $more más te esperan en la Gatoteca',
+            : '¡Gato nuevo! Y hay $more más, ¡ya te los muestro!',
         captionEn: more == 0
             ? 'New cat in your Cat-dex!'
-            : 'New cat! And $more more are waiting in your Cat-dex',
+            : 'New cat! And $more more, here they come!',
       );
+      if (more > 0 && mounted) {
+        await CatReveal.show(context, newCats.skip(1).toList());
+      }
     }
   }
 
