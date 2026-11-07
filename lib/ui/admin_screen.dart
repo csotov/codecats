@@ -10,6 +10,7 @@ import '../l10n.dart';
 import '../models.dart';
 import '../services/activity.dart';
 import '../services/cloud.dart';
+import '../services/practice_report.dart';
 import '../services/tweaks.dart';
 import 'coach_admin.dart';
 import 'keyboard_scroll.dart';
@@ -163,6 +164,8 @@ class _AdminScreenState extends State<AdminScreen> {
                     _earlyToday(l),
                     const SizedBox(height: 12),
                     _decisions(l),
+                    const SizedBox(height: 12),
+                    _practice(l),
                     const SizedBox(height: 12),
                     _sessionsCard(l),
                     const SizedBox(height: 12),
@@ -896,6 +899,131 @@ class _AdminScreenState extends State<AdminScreen> {
           else
             for (final e in talks.entries)
               row(talkNames[e.key] ?? e.key, '${e.value}'),
+        ],
+      ),
+    );
+  }
+
+  /// Each way of practising: use, success and trend, with what to change.
+  Widget _practice(L l) {
+    final modes = practiceModes(_events, DateTime.now());
+    final h = hintLadder(_events);
+    String pct(double? r) => r == null ? '—' : '${(100 * r).round()}%';
+    String trend(ModeStat s) {
+      final a = s.rateCur, b = s.ratePrev;
+      if (a == null || b == null) return '';
+      if (a - b >= 0.1) return ' ▲';
+      if (b - a >= 0.1) return ' ▼';
+      return '';
+    }
+
+    String advice(ModeAdvice a) => switch (a) {
+          ModeAdvice.littleData =>
+            l.pick('⚪ Pocos datos todavía', '⚪ Little data yet'),
+          ModeAdvice.dropped => l.pick(
+              '🟠 Lo dejó de usar esta semana: ¿no le gusta o no lo encuentra?',
+              '🟠 Stopped using it this week: dislikes it or cannot find it?'),
+          ModeAdvice.tooEasy => l.pick(
+              '🚀 Acierta casi todo: se puede subir la dificultad',
+              '🚀 Gets almost all right: raise the difficulty'),
+          ModeAdvice.tooHard => l.pick(
+              '🛠️ Acierta poco: simplificar o explicar antes',
+              '🛠️ Low success: simplify or explain first'),
+          ModeAdvice.ok => l.pick('🟢 Desafío justo', '🟢 Fair challenge'),
+        };
+    String ago(DateTime? t) {
+      if (t == null) return '—';
+      final d = DateTime.now().difference(t).inDays;
+      return d == 0 ? l.pick('hoy', 'today') : l.pick('hace $d d', '$d d ago');
+    }
+
+    const lo = TextStyle(fontSize: 12, color: AppTheme.textLo);
+    final ladder = [for (var n = 1; n <= 5; n++) h.byN[n] ?? 0];
+    final old = h.unnumbered;
+    final topLv = h.byLevel.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return SectionCard(
+      title: l.pick('🎮 Formas de practicar: qué funciona',
+          '🎮 Ways of practising: what works'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+              l.pick(
+                  'Veces = intentos o respuestas. Acierto total y de los '
+                      'últimos 7 días contra los 7 anteriores (▲▼ = cambió 10 '
+                      'puntos o más).',
+                  'Tries = attempts or answers. Total success and last 7 '
+                      'days vs the previous 7 (▲▼ = moved 10+ points).'),
+              style: lo),
+          const SizedBox(height: 6),
+          if (modes.isEmpty)
+            Text(l.pick('Todavía no hay datos.', 'No data yet.'))
+          else
+            for (final s in modes)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l.pick(s.es, s.en),
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                    Text(l.pick(
+                        '${s.total} veces · acierto ${pct(s.rate)} · '
+                            '7 días: ${s.cur} (${pct(s.rateCur)}${trend(s)}) · '
+                            '7 anteriores: ${s.prev} (${pct(s.ratePrev)}) · '
+                            'última: ${ago(s.last)}',
+                        '${s.total} tries · success ${pct(s.rate)} · '
+                            '7 days: ${s.cur} (${pct(s.rateCur)}${trend(s)}) · '
+                            'previous 7: ${s.prev} (${pct(s.ratePrev)}) · '
+                            'last: ${ago(s.last)}')),
+                    Text(advice(s.advice),
+                        style: const TextStyle(fontSize: 13)),
+                    if (s.hardest.isNotEmpty)
+                      Text(
+                          l.pick('Donde más falla: ', 'Hardest: ') +
+                              s.hardest
+                                  .map((x) => '${x.$1} (${x.$2}/${x.$3})')
+                                  .join(' · '),
+                          style: lo),
+                  ],
+                ),
+              ),
+          _chartTitle(l.pick('Pistas compradas por número (1ª a 5ª)',
+              'Hints bought by number (1st to 5th)')),
+          if (ladder.every((n) => n == 0))
+            Text(l.pick('Ninguna todavía.', 'None yet.'))
+          else ...[
+            _hbars([
+              for (var n = 1; n <= 5; n++)
+                (
+                  l.pick('Pista $n', 'Hint $n'),
+                  ladder[n - 1].toDouble(),
+                  '${ladder[n - 1]}'
+                )
+            ], AppTheme.accent),
+            Text(
+                l.pick(
+                    'Gastó ${h.coins} Miaudólares en pistas'
+                        '${h.denied > 0 ? ' · ${h.denied} veces no le alcanzó' : ''}'
+                        '${old > 0 ? ' · $old pistas son de antes de numerarlas' : ''}. '
+                        'Si llega seguido a la 4ª o 5ª, el nivel necesita un '
+                        'paso intermedio.',
+                    'Spent ${h.coins} Miaudólares on hints'
+                        '${h.denied > 0 ? ' · ${h.denied} times not enough' : ''}'
+                        '${old > 0 ? ' · $old hints predate numbering' : ''}. '
+                        'Reaching the 4th or 5th often means the level needs '
+                        'an intermediate step.'),
+                style: lo),
+            if (topLv.isNotEmpty)
+              Text(
+                  l.pick('Niveles con más pistas: ', 'Most hinted levels: ') +
+                      topLv.take(5).map((e) {
+                        final lv = levelById(e.key);
+                        return '${lv == null ? e.key : l.pick(lv.titleEs, lv.titleEn)} (${e.value})';
+                      }).join(' · '),
+                  style: lo),
+          ],
         ],
       ),
     );
