@@ -54,12 +54,14 @@ List<(String, String)> weeklySummary({
   ModeStat? hard;
   if (graded.isNotEmpty) {
     final best = graded.first;
-    out.add((
-      '🌟 Lo que mejor le va: ${best.es} (${pct(best.okCur, best.cur)} de ${best.cur}).',
-      '🌟 Going best: ${best.en} (${pct(best.okCur, best.cur)} of ${best.cur}).'
-    ));
+    if (best.rateCur! >= 0.6) {
+      out.add((
+        '🌟 Lo que mejor le va: ${best.es} (${pct(best.okCur, best.cur)} de ${best.cur}).',
+        '🌟 Going best: ${best.en} (${pct(best.okCur, best.cur)} of ${best.cur}).'
+      ));
+    }
     final worst = graded.last;
-    if (graded.length > 1 && worst.rateCur! < 0.6) {
+    if (worst.rateCur! < 0.6) {
       hard = worst;
       final it =
           worst.hardest.isEmpty ? '' : ', sobre todo ${worst.hardest.first.$1}';
