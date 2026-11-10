@@ -4,6 +4,7 @@ import 'dart:js_interop';
 import 'package:web/web.dart' as web;
 
 import 'cloud.dart';
+import 'say_big_o.dart';
 import 'voice_pick.dart';
 
 final _emoji = RegExp(r'[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]',
@@ -66,10 +67,11 @@ void speak(String text, {String lang = 'es-419'}) {
   }
   try {
     final v = _maleVoice(lang);
-    final u = web.SpeechSynthesisUtterance(key)
-      ..lang = v?.lang ?? lang
-      ..rate = 1.0
-      ..pitch = v == null ? 0.7 : 0.95;
+    final u =
+        web.SpeechSynthesisUtterance(lang.startsWith('es') ? sayBigO(key) : key)
+          ..lang = v?.lang ?? lang
+          ..rate = 1.0
+          ..pitch = v == null ? 0.7 : 0.95;
     if (v != null) u.voice = v;
     web.window.speechSynthesis.speak(u);
   } catch (_) {}
