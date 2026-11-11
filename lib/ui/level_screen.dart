@@ -1031,6 +1031,15 @@ class _LevelScreenState extends State<LevelScreen>
       return;
     }
     if (widget.examMode) Progress.instance.markExamSolved(widget.level.id);
+    final winBlocks =
+        _usesBlocks && !_promotedToCode ? blocksToJson(_roots) : null;
+    if (Progress.instance
+        .saveWinCode(widget.level.id, _currentCode, blocksJson: winBlocks)) {
+      Cloud.instance.log('win_code_saved', levelId: widget.level.id, data: {
+        'n': Progress.instance.of(widget.level.id).wins.length,
+        'blocks': winBlocks != null,
+      });
+    }
     final hadFails = _failStreak >= 2;
     final lpWin = Progress.instance.of(widget.level.id);
     final wasReview = lpWin.reviewStage >= 1 &&
@@ -1635,6 +1644,14 @@ class _LevelScreenState extends State<LevelScreen>
                 ),
               const MusicButton(),
               const CoinBadge(),
+              if (Progress.instance.of(lv.id).wins.isNotEmpty &&
+                  !widget.examMode)
+                IconButton(
+                  tooltip: l.pick('Mis códigos que ganaron este nivel',
+                      'My programs that beat this level'),
+                  icon: const Icon(Icons.history),
+                  onPressed: _busy ? null : _showWins,
+                ),
               IconButton(
                 tooltip: l.t('tip_restart'),
                 icon: const Icon(Icons.restart_alt),
@@ -2365,6 +2382,86 @@ class _LevelScreenState extends State<LevelScreen>
     Cloud.instance.log('worked_example_open',
         levelId: widget.level.id, data: {'auto': auto});
     return ExpertScreen.show(context, ex.sol, example: ex);
+  }
+
+  /// Lists every program that beat the level; one can be loaded back.
+  void _showWins() {
+    final l = L.instance;
+    final wins = Progress.instance.of(widget.level.id).wins.reversed.toList();
+    Cloud.instance.log('win_code_open',
+        levelId: widget.level.id, data: {'n': wins.length});
+    showDialog(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(l.pick('Tus códigos ganadores', 'Your winning programs')),
+        content: SizedBox(
+          width: 560,
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              for (var i = 0; i < wins.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Expanded(
+                          child: Text(
+                            l.pick('Opción ${wins.length - i}',
+                                'Option ${wins.length - i}'),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        FilledButton.tonalIcon(
+                          onPressed: () {
+                            Navigator.pop(c);
+                            _loadWin(wins[i], wins.length - i);
+                          },
+                          icon: const Icon(Icons.download, size: 16),
+                          label: Text(l.pick('Usar este', 'Use this one')),
+                        ),
+                      ]),
+                      const SizedBox(height: 6),
+                      MonoBox(text: wins[i]['c'] as String),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(c),
+            child: Text(l.pick('Cerrar', 'Close')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _loadWin(Map<String, dynamic> w, int option) {
+    final blocks = w['b'] as List<dynamic>?;
+    setState(() {
+      if (blocks != null && _usesBlocks) {
+        _roots
+          ..clear()
+          ..addAll(blocksFromJson(blocks));
+        _promotedToCode = false;
+        if (_hybrid) _tabController.index = 0;
+      } else {
+        _savedCode = w['c'] as String;
+        if (_usesBlocks) _promotedToCode = true;
+        if (_hybrid) _tabController.index = 1;
+      }
+      _editorKey = GlobalKey();
+      _editorGen++;
+      _console = '';
+    });
+    _persist();
+    Cloud.instance.log('win_code_load',
+        levelId: widget.level.id,
+        data: {'option': option, 'blocks': blocks != null && _usesBlocks});
   }
 
   void _promoteToCode() {
