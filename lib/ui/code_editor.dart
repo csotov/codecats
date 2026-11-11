@@ -22,13 +22,45 @@ class CodeEditor extends StatefulWidget {
   State<CodeEditor> createState() => CodeEditorState();
 }
 
+/// Highlighting re-parses the whole program on every rebuild of the
+/// field (selection, focus, any parent setState); reuse the last spans
+/// while the text is unchanged.
+class _CachedCodeController extends CodeController {
+  _CachedCodeController({super.text, super.language});
+
+  String? _lastText;
+  CodeThemeData? _lastTheme;
+  TextStyle? _lastStyle;
+  TextSpan? _lastSpan;
+
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    bool? withComposing,
+  }) {
+    final theme = CodeTheme.of(context);
+    if (_lastSpan != null &&
+        _lastText == text &&
+        identical(_lastTheme, theme) &&
+        _lastStyle == style) {
+      return _lastSpan!;
+    }
+    _lastText = text;
+    _lastTheme = theme;
+    _lastStyle = style;
+    return _lastSpan = super.buildTextSpan(
+        context: context, style: style, withComposing: withComposing);
+  }
+}
+
 class CodeEditorState extends State<CodeEditor> {
   late final CodeController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = CodeController(
+    _controller = _CachedCodeController(
       text: widget.initial,
       language: cpp,
     );
@@ -48,7 +80,8 @@ class CodeEditorState extends State<CodeEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return RepaintBoundary(
+        child: Container(
       constraints: BoxConstraints(minHeight: widget.minHeight),
       decoration: BoxDecoration(
         color: AppTheme.bg,
@@ -67,6 +100,6 @@ class CodeEditorState extends State<CodeEditor> {
           onChanged: widget.onChanged,
         ),
       ),
-    );
+    ));
   }
 }
