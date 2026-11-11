@@ -18,6 +18,19 @@ void main() {
     }
   });
 
+  test('every world level has code hints; the last one leaves two blanks', () {
+    for (final w in kWorlds) {
+      for (final l in w.levels) {
+        expect(kRefSolutions.containsKey(l.id), isTrue, reason: l.id);
+        final s = kRefSolutions[l.id]!;
+        final pieces = '⟦'.allMatches(s).length + '⟪'.allMatches(s).length;
+        final blanks = blank.allMatches(refAlmost(l.id)!).length;
+        // One-line answers (e.g. return "Hola") only have room for one.
+        expect(blanks, pieces > 2 ? 2 : 1, reason: l.id);
+      }
+    }
+  });
+
   test('half hint sits between the skeleton and the almost-solution', () {
     var halves = 0;
     for (final id in kRefSolutions.keys) {

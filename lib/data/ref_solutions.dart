@@ -1,3 +1,4 @@
+import 'ref_solutions_more.dart';
 import 'grader_specs.dart';
 
 /// Reference solutions behind the last two hints ("casi hasta el final").
@@ -324,6 +325,7 @@ const kRefSolutions = <String, String>{
       '        if (⟦a[i] ⟪> m⟫⟧) m = a[i];\n'
       '    }\n'
       '    return m;\n}',
+  ...kRefMore,
 };
 
 const _io = '#include <iostream>\nusing namespace std;\n\nint main() {\n';
@@ -356,26 +358,40 @@ String? refSkeleton(String levelId) {
   return _shape(levelId, s.replaceAll(_hide4, blank).replaceAll(_hide5, blank));
 }
 
-/// Between hints 4 and 5: the skeleton with half of its pieces already
-/// filled in (only when it has at least two).
+/// Between the skeleton and the last hint: half of the pieces already
+/// filled in (only when there are at least two). Pieces that are just a
+/// ⟪…⟫ would stay blank, so they are not counted as filled.
 String? refHalf(String levelId) {
   final s = kRefSolutions[levelId];
   if (s == null) return null;
-  final n = _hide4.allMatches(s).length;
-  if (n < 2) return null;
-  var i = 0;
+  final all = _hide4.allMatches(s).toList();
+  if (all.length < 2) return null;
+  final fill = all
+      .where((m) => m[0]!.replaceAll(_hide5, '').length > 5)
+      .take(all.length ~/ 2)
+      .toSet();
   final code = s.replaceAllMapped(
       _hide4,
-      (m) => i++ < n ~/ 2
-          ? m[0]!.substring(1, m[0]!.length - 1).replaceAll(_hide5, blank)
+      (m) => fill.any((f) => f.start == m.start)
+          ? m[0]!.substring(1, m[0]!.length - 1)
           : blank);
-  return _shape(levelId, code.replaceAll(_hide5, blank));
+  final half = _shape(levelId, code.replaceAll(_hide5, blank));
+  return half == refSkeleton(levelId) || half == refAlmost(levelId)
+      ? null
+      : half;
 }
 
-/// Hint 5: the whole solution minus one small piece.
+/// Last hint: the whole solution with two small pieces as ___ (the ⟪…⟫
+/// ones; when there is only one, the last plain ⟦…⟧ piece too).
 String? refAlmost(String levelId) {
-  final s = kRefSolutions[levelId];
+  var s = kRefSolutions[levelId];
   if (s == null) return null;
+  if (_hide5.allMatches(s).length < 2) {
+    final plain = _hide4.allMatches(s).where((m) => !m[0]!.contains('⟪'));
+    if (plain.isNotEmpty) {
+      s = s.replaceRange(plain.last.start, plain.last.end, blank);
+    }
+  }
   return _shape(
       levelId, s.replaceAll(_hide5, blank).replaceAll(RegExp('[⟦⟧]'), ''));
 }

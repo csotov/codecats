@@ -136,11 +136,11 @@ class Progress extends ChangeNotifier {
   static const kHintCost = 10;
 
   /// Up to 5 hints per level; each one costs more than the previous.
-  static const kMaxHints = 8;
+  static const kMaxHints = 5;
 
   /// Per level the first [kFreeHints] hints are free, then each costs more.
   static const kFreeHints = 2;
-  static const kHintCosts = [0, 0, 10, 15, 20, 30, 45, 60];
+  static const kHintCosts = [0, 0, 15, 30, 50];
   static int hintCost(int bought) =>
       kHintCosts[math.min(bought, kHintCosts.length - 1)];
 
