@@ -26,6 +26,7 @@ import 'account_screen.dart';
 import 'admin_screen.dart';
 import '../services/sfx.dart';
 import 'coin.dart';
+import 'cat_reveal.dart';
 import 'collection.dart';
 import 'contest.dart';
 import 'dashboard.dart';
@@ -64,6 +65,7 @@ class _MapScreenState extends State<MapScreen> {
   final _scroll = ScrollController();
   Timer? _badgeTick;
   bool _badgePopup = false;
+  static bool _pendingCatsDone = false;
 
   @override
   void initState() {
@@ -82,6 +84,28 @@ class _MapScreenState extends State<MapScreen> {
       if (Progress.warm && Progress.instance.blitzMin >= Progress.kBlitzEvery) {
         await maybeRunBlitz(context);
         return;
+      }
+      // Cats he owns but never watched (e.g. the 2nd Halloween cat):
+      // once per launch, the first one's video and the rest on one screen.
+      if (Progress.warm && !_pendingCatsDone) {
+        _pendingCatsDone = true;
+        final pend = Progress.instance.unshownCats;
+        if (pend.isNotEmpty) {
+          _badgePopup = true;
+          await MemeBurst.show(
+            context,
+            pend.first,
+            captionEs: '🎁 ¡Este gato te estaba esperando!',
+            captionEn: '🎁 This cat was waiting for you!',
+          );
+          if (pend.length > 1 && mounted) {
+            await CatReveal.show(context, pend.skip(1).toList(),
+                titleEs: 'Y estos también te esperan',
+                titleEn: 'And these are waiting too');
+          }
+          _badgePopup = false;
+          return;
+        }
       }
       final coinCats = Progress.instance.checkCoinCats();
       if (coinCats.isNotEmpty) {
@@ -109,11 +133,14 @@ class _MapScreenState extends State<MapScreen> {
           goalCats.first,
           captionEs: more == 0
               ? '¡Meta cumplida! Gato nuevo en tu Gatoteca'
-              : '¡Meta cumplida! Gato nuevo y $more más en tu Gatoteca',
+              : '¡Meta cumplida! Gato nuevo y $more más, ¡mirá!',
           captionEn: more == 0
               ? 'Goal reached! New cat in your Cat-dex'
-              : 'Goal reached! New cat and $more more in your Cat-dex',
+              : 'Goal reached! New cat and $more more, look!',
         );
+        if (more > 0 && mounted) {
+          await CatReveal.show(context, goalCats.skip(1).toList());
+        }
         _badgePopup = false;
         return;
       }

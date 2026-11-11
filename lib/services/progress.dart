@@ -149,6 +149,10 @@ class Progress extends ChangeNotifier {
   /// Cat-meme collection: ids of unlocked cats (see data/cats.dart).
   final Set<String> unlockedCats = {};
 
+  /// Cats whose video he already watched (popup or Gatoteca); the rest of
+  /// [unlockedCats] wear "¡NUEVO!".
+  final Set<String> shownCats = {};
+
   /// How each cat was won: `levelId|stars|yyyy-mm-dd` (levelId empty when
   /// it was not tied to a battle). Cats won before this existed have none.
   final Map<String, String> catOrigin = {};
@@ -595,6 +599,7 @@ class Progress extends ChangeNotifier {
     ghostStartDay = 0;
     levels.clear();
     unlockedCats.clear();
+    shownCats.clear();
     catOrigin.clear();
     badges.clear();
     equippedBadge = '';
@@ -694,6 +699,11 @@ class Progress extends ChangeNotifier {
         unlockedCats
           ..clear()
           ..addAll((j['cats'] as List? ?? const []).map((e) => '$e'));
+        shownCats
+          ..clear()
+          ..addAll(j.containsKey('csh')
+              ? (j['csh'] as List).map((e) => '$e')
+              : _assumeShown(unlockedCats));
         catOrigin
           ..clear()
           ..addAll(((j['co'] as Map?) ?? const {})
@@ -714,6 +724,7 @@ class Progress extends ChangeNotifier {
         'rd': lastSolveDay,
         'gh': ghostStartDay,
         'cats': unlockedCats.toList(),
+        'csh': shownCats.toList(),
         'co': catOrigin,
         'bo': taughtBigO.toList(),
         'rot': rot,
@@ -836,6 +847,9 @@ class Progress extends ChangeNotifier {
       lastSolveDay = d['rd'] as String;
     }
     unlockedCats.addAll(List<String>.from(d['cats'] ?? const []));
+    shownCats.addAll(d.containsKey('csh')
+        ? List<String>.from(d['csh'] as List)
+        : _assumeShown(List<String>.from(d['cats'] ?? const [])));
     ((d['co'] as Map?) ?? const {}).forEach((k, v) {
       catOrigin.putIfAbsent('$k', () => '$v');
     });
@@ -925,6 +939,7 @@ class Progress extends ChangeNotifier {
           'rd': lastSolveDay,
           'gh': ghostStartDay,
           'cats': unlockedCats.toList(),
+          'csh': shownCats.toList(),
           'co': catOrigin,
           'bo': taughtBigO.toList(),
           'rot': rot,
@@ -1172,10 +1187,37 @@ class Progress extends ChangeNotifier {
 
   /// The Gatoteca lists exactly the cats the player has seen on screen.
   void markSeen(String id) {
-    if (!unlockedCats.add(id)) return;
+    final firstWatch = shownCats.add(id);
+    if (!unlockedCats.add(id)) {
+      if (firstWatch) {
+        _save();
+        notifyListeners();
+      }
+      return;
+    }
     _noteCatOrigin(id);
     _save();
     notifyListeners();
+  }
+
+  /// Unlocked cats whose video he has not watched yet, in Gatoteca order.
+  List<CatMeme> get unshownCats => [
+        for (final c in kCats)
+          if (unlockedCats.contains(c.id) && !shownCats.contains(c.id)) c
+      ];
+
+  /// Saves from before [shownCats]: every cat counts as watched except the
+  /// 2nd+ cat of a goal shared by several (e.g. both Halloween cats for 5
+  /// levels), which only got a "y N más" line instead of its video.
+  static Set<String> _assumeShown(Iterable<String> cats) {
+    final owned = cats.toSet();
+    final groups = <String>{};
+    final skip = <String>{};
+    for (final c in kCats) {
+      if (c.need == 0 || !owned.contains(c.id)) continue;
+      if (!groups.add('${c.trigger.name}/${c.need}')) skip.add(c.id);
+    }
+    return owned.difference(skip);
   }
 
   static final _rng = math.Random();
@@ -1797,6 +1839,7 @@ class Progress extends ChangeNotifier {
     coins = kStartCoins;
     streak = 0;
     unlockedCats.clear();
+    shownCats.clear();
     catOrigin.clear();
     taughtBigO.clear();
     levels.clear();
