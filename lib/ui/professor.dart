@@ -183,7 +183,7 @@ class Boss {
 }
 
 /// The professor: Chemistry Cat with glasses and bow tie. Idle he
-/// floats gently; while [talking] he hops and wiggles.
+/// stays still; while [talking] he hops and wiggles.
 class ProfessorAvatar extends StatefulWidget {
   const ProfessorAvatar(
       {super.key,
@@ -204,9 +204,32 @@ class ProfessorAvatar extends StatefulWidget {
 
 class _ProfessorAvatarState extends State<ProfessorAvatar>
     with SingleTickerProviderStateMixin {
+  // Only animate while talking: on the web every animation frame redraws
+  // the whole canvas, so a forever-bobbing avatar kept the level screen
+  // (and its code editor) busy at 60 fps.
   late final AnimationController _t = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 2400))
-    ..repeat();
+      vsync: this, duration: const Duration(milliseconds: 2400));
+
+  @override
+  void initState() {
+    super.initState();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(ProfessorAvatar old) {
+    super.didUpdateWidget(old);
+    if (old.talking != widget.talking) _sync();
+  }
+
+  void _sync() {
+    if (widget.talking) {
+      if (!_t.isAnimating) _t.repeat();
+    } else {
+      _t.stop();
+      _t.value = 0;
+    }
+  }
 
   @override
   void dispose() {
@@ -257,7 +280,8 @@ class _ProfessorAvatarState extends State<ProfessorAvatar>
                 ]),
               )
             : photo;
-    return AnimatedBuilder(
+    return RepaintBoundary(
+        child: AnimatedBuilder(
       animation: _t,
       child: img,
       builder: (_, child) {
@@ -276,7 +300,7 @@ class _ProfessorAvatarState extends State<ProfessorAvatar>
           child: Transform.rotate(angle: tilt, child: child),
         );
       },
-    );
+    ));
   }
 }
 
