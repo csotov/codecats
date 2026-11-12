@@ -338,69 +338,91 @@ class _LevelScreenState extends State<LevelScreen>
   late final ProblemText? _problem = problemTextFor(widget.level.id);
   List<String> get _hintsEs => _problem?.hints ?? widget.level.hintsEs;
 
-  /// Code-based tip (see [_hintList]).
-  String? _dynHint;
-
-  /// The level's own hints, topped up to [Progress.kMaxHints] with extra
-  /// ones: a tip about the current code, a hand walk-through of the
-  /// sample, what to read/print, and a read-compute-print plan.
-  List<String> _baseHints(L l) {
-    final lv = widget.level;
+  /// The level's own hints. cin/cout tips belong to the classic format:
+  /// in grader mode the function gets its parameters instead.
+  List<String> _ownHints(L l) {
     final g = _grader;
-    // cin/cout tips belong to the classic format: in grader mode the
-    // function gets its parameters instead.
-    final own = [
-      for (final h in l.pickList(_hintsEs, lv.hintsEn))
+    return [
+      for (final h in l.pickList(_hintsEs, widget.level.hintsEn))
         if (g == null || !RegExp(r'\bcin\b|\bcout\b').hasMatch(h)) h
     ];
-    final out = [...own];
-    // Follows the code until revealed, then stays frozen.
-    if (out.length < Progress.kMaxHints && _hintsShown <= own.length) {
-      final sample = lv.samples.isNotEmpty ? lv.samples.first : null;
-      _dynHint = () {
-        final h = AdaptiveHint.analyze(
-          code: _currentCode,
-          starter: _starter,
-          sigs: _grader?.sigs ?? const [],
-          lastRun: _lastRun,
-          lastRunMatched: _lastRunMatched,
-          sampleInput: sample?.input ?? '',
-          sampleOutput: sample?.output ?? '',
-          lastReport: _lastReport,
-          hintsEs: _hintsEs,
-          hintsEn: lv.hintsEn,
-          hintsShown: _hintsShown,
-        );
-        return l.pick(h.tip.es, h.tip.en);
-      }();
-    }
-    if (_dynHint != null) out.add(_dynHint!);
-    for (final s in lv.samples.take(1)) {
-      final a = g?.args(s.input);
-      if (g != null && a != null) {
-        out.add(l.pick(
-            'Hacelo a mano con el ejemplo: tu función recibe $a y tiene que devolver lo que da «${s.output.trim()}». Anotá qué pasos hiciste y escribilos en código, uno por línea.',
-            'Do the sample by hand: your function gets $a and must return what gives «${s.output.trim()}». Write down your steps and turn each into a line of code.'));
-        continue;
-      }
-      out.add(l.pick(
-          'Hacelo a mano con el ejemplo: entra «${s.input.trim()}» y tiene que salir «${s.output.trim()}». Anotá qué pasos hiciste y escribilos en código, uno por línea.',
-          'Do the sample by hand: input «${s.input.trim()}» must give «${s.output.trim()}». Write down your steps and turn each into a line of code.'));
-    }
-    final inp = l.pick(lv.inputEs, lv.inputEn).trim();
-    final outp = l.pick(lv.outputEs, lv.outputEn).trim();
+  }
+
+  /// Hint 1: what comes in, what must come out, and the sample by hand.
+  String _whatHint(L l) {
+    final lv = widget.level;
+    final g = _grader;
+    final parts = <String>[];
     if (g != null && g.params.isNotEmpty) {
-      out.add(l.pick(
+      parts.add(l.pick(
           'Tu función recibe: ${g.receives}\nDevuelve: ${g.returns}. El grader ya lee los datos e imprime lo que devolvés: no uses cin ni cout.',
           'Your function gets: ${g.receives}\nReturns: ${g.returns}. The grader already reads the data and prints what you return: no cin or cout.'));
-    } else if (inp.isNotEmpty || outp.isNotEmpty) {
-      out.add(l.pick('Lo que leés: $inp\nLo que imprimís: $outp',
-          'What you read: $inp\nWhat you print: $outp'));
+    } else {
+      final inp = l.pick(lv.inputEs, lv.inputEn).trim();
+      final outp = l.pick(lv.outputEs, lv.outputEn).trim();
+      if (inp.isNotEmpty || outp.isNotEmpty) {
+        parts.add(l.pick('Lo que leés: $inp\nLo que imprimís: $outp',
+            'What you read: $inp\nWhat you print: $outp'));
+      }
     }
-    out.add(l.pick(
-        'Plan en 3 pasos: 1) leé los datos (cin o los parámetros de la función), 2) hacé la cuenta o el recorrido, 3) mostrá o devolvé el resultado. Probá con Correr después de cada paso.',
-        'Plan in 3 steps: 1) read the data (cin or the function parameters), 2) do the computation or loop, 3) print or return the result. Use Run after each step.'));
-    return out.take(Progress.kMaxHints).toList();
+    for (final s in lv.samples.take(1)) {
+      final a = g?.args(s.input);
+      parts.add(g != null && a != null
+          ? l.pick(
+              'Ejemplo a mano: tu función recibe $a y tiene que devolver lo que da «${s.output.trim()}». Resolvelo en papel y fijate qué pasos hiciste.',
+              'Sample by hand: your function gets $a and must return what gives «${s.output.trim()}». Solve it on paper and notice your steps.')
+          : l.pick(
+              'Ejemplo a mano: entra «${s.input.trim()}» y tiene que salir «${s.output.trim()}». Resolvelo en papel y fijate qué pasos hiciste.',
+              'Sample by hand: input «${s.input.trim()}» must give «${s.output.trim()}». Solve it on paper and notice your steps.'));
+    }
+    return parts.join('\n\n');
+  }
+
+  /// Code-based tip for hint 2; follows the code until revealed, then
+  /// stays frozen.
+  String? _dynHint;
+
+  static String _squash(String s) => s.replaceAll(RegExp(r'\s+'), '');
+
+  /// Hint 2: with nothing written yet, the whole path in steps (no code);
+  /// otherwise what is missing in the current code, plus the path.
+  String _pathHint(L l, List<String> own) {
+    final steps = own.isEmpty
+        ? l.pick(
+            '1) leé los datos (cin o los parámetros de la función)\n2) hacé la cuenta o el recorrido\n3) mostrá o devolvé el resultado',
+            '1) read the data (cin or the function parameters)\n2) do the computation or loop\n3) print or return the result')
+        : [for (var i = 0; i < own.length && i < 4; i++) '${i + 1}) ${own[i]}']
+            .join('\n');
+    if (_hintsShown <= 1) {
+      final untouched = _squash(_currentCode) == _squash(_starter);
+      final lv = widget.level;
+      final sample = lv.samples.isNotEmpty ? lv.samples.first : null;
+      _dynHint = untouched
+          ? null
+          : () {
+              final h = AdaptiveHint.analyze(
+                code: _currentCode,
+                starter: _starter,
+                sigs: _grader?.sigs ?? const [],
+                lastRun: _lastRun,
+                lastRunMatched: _lastRunMatched,
+                sampleInput: sample?.input ?? '',
+                sampleOutput: sample?.output ?? '',
+                lastReport: _lastReport,
+                hintsEs: _hintsEs,
+                hintsEn: lv.hintsEn,
+                hintsShown: _hintsShown,
+              );
+              return l.pick(h.tip.es, h.tip.en);
+            }();
+    }
+    if (_dynHint == null) {
+      return l.pick(
+          'El camino completo, paso a paso:\n$steps\nEscribí un paso por vez y probá con Correr.',
+          'The whole path, step by step:\n$steps\nWrite one step at a time and try Run.');
+    }
+    return l.pick('Mirando tu código: $_dynHint\n\nEl camino:\n$steps',
+        'Looking at your code: $_dynHint\n\nThe path:\n$steps');
   }
 
   /// Separates a hint's spoken text from its code block.
@@ -411,18 +433,22 @@ class _LevelScreenState extends State<LevelScreen>
     return i < 0 ? null : h.substring(i + 1);
   }
 
-  /// Up to [Progress.kMaxHints] hints. With a reference solution the last
-  /// ones show code little by little: the skeleton with blanks, half of
-  /// the blanks filled (when there are several), then the whole solution
-  /// minus one small piece.
+  /// [Progress.kMaxHints] hints, each more concrete: what the level asks,
+  /// the path (or what is missing), then the code little by little: the
+  /// skeleton with blanks, half of the blanks filled, and the whole
+  /// solution with two small pieces left.
   List<String> _hintList(L l) {
-    final base = _baseHints(l);
+    final own = _ownHints(l);
+    final out = [_whatHint(l), _pathHint(l, own)];
     final skel = refSkeleton(widget.level.id);
     final almost = refAlmost(widget.level.id);
-    if (skel == null || almost == null) return base;
+    if (skel == null || almost == null) {
+      out.addAll(own.skip(4));
+      return out.take(Progress.kMaxHints).toList();
+    }
     final half = refHalf(widget.level.id);
     return [
-      ...base.take(Progress.kMaxHints - (half == null ? 2 : 3)),
+      ...out,
       l.pick('Te muestro el esqueleto del código. Completá cada ___ y probá con Correr.',
               'Here is the skeleton of the code. Fill in each ___ and try Run.') +
           _codeSep +
@@ -432,11 +458,11 @@ class _LevelScreenState extends State<LevelScreen>
                 'I filled in half of the blanks. Think what goes in the ___ left.') +
             _codeSep +
             half,
-      l.pick('Casi todo el código: solo falta lo que dice ___. ¡Pensá qué va ahí antes de copiar!',
-              'Almost all the code: only the ___ is missing. Think what goes there before copying!') +
+      l.pick('Casi todo el código: solo faltan los ___. ¡Pensá qué va ahí antes de copiar!',
+              'Almost all the code: only the ___ are missing. Think what goes there before copying!') +
           _codeSep +
           almost,
-    ];
+    ].take(Progress.kMaxHints).toList();
   }
 
   bool get _hybrid => widget.level.mode == EditorMode.hybrid && _grader == null;
