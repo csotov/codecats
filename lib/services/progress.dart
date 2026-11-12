@@ -27,7 +27,8 @@ class LevelProgress {
     this.reviewStage = 0,
     this.reviewDue = 0,
     this.starMask = 0,
-  });
+    List<Map<String, dynamic>>? wins,
+  }) : wins = wins ?? [];
 
   bool solved;
   int stars;
@@ -50,6 +51,10 @@ class LevelProgress {
   /// level challenge), OR-ed across visits.
   int starMask;
 
+  /// Every distinct program that beat the level, oldest first:
+  /// `{'c': code, 'b': blocksJson?}`.
+  final List<Map<String, dynamic>> wins;
+
   Map<String, dynamic> toJson() => {
         's': solved,
         'st': stars,
@@ -62,6 +67,7 @@ class LevelProgress {
         if (reviewStage > 0) 'rs': reviewStage,
         if (reviewDue > 0) 'rv': reviewDue,
         if (starMask > 0) 'sm': starMask,
+        if (wins.isNotEmpty) 'w': wins,
       };
 
   factory LevelProgress.fromJson(Map<String, dynamic> j) => LevelProgress(
@@ -82,7 +88,23 @@ class LevelProgress {
         hintsBought: (j['hb'] as num?)?.toInt() ?? 0,
         code: j['c'] as String? ?? '',
         blocksJson: j['b'] as List<dynamic>?,
+        wins: [
+          for (final w in (j['w'] as List?) ?? const [])
+            if (w is Map && w['c'] is String) Map<String, dynamic>.from(w)
+        ],
       );
+
+  /// Remembers [code] as a winning program (no duplicates; spacing and
+  /// blank lines do not count as a difference).
+  bool addWin(String code, {List<dynamic>? blocksJson}) {
+    String norm(String c) => c.replaceAll(RegExp(r'\s+'), '');
+    final k = norm(code);
+    if (k.isEmpty || wins.any((w) => norm(w['c'] as String) == k)) {
+      return false;
+    }
+    wins.add({'c': code, if (blocksJson != null) 'b': blocksJson});
+    return true;
+  }
 }
 
 /// A player slot: independent progress so several kids can share a
@@ -902,6 +924,9 @@ class Progress extends ChangeNotifier {
         p.reviewStage = math.max(p.reviewStage, r.reviewStage);
         p.reviewDue = math.max(p.reviewDue, r.reviewDue);
         p.starMask |= r.starMask;
+        for (final w in r.wins) {
+          p.addWin(w['c'] as String, blocksJson: w['b'] as List<dynamic>?);
+        }
       });
     }
   }
@@ -1754,6 +1779,13 @@ class Progress extends ChangeNotifier {
         }
       }
     });
+  }
+
+  /// Keeps a program that beat [levelId]; true if it was new.
+  bool saveWinCode(String levelId, String code, {List<dynamic>? blocksJson}) {
+    final added = of(levelId).addWin(code, blocksJson: blocksJson);
+    if (added) _save();
+    return added;
   }
 
   void saveCode(String levelId, String code, {List<dynamic>? blocksJson}) {
