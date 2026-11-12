@@ -21,6 +21,27 @@ def norm(t):
     return re.sub(r'\s+', ' ', t).strip()
 
 
+BIGO = re.compile(r'O\(([^)]*)\)')
+
+
+def say_big_o(t):
+    """Same as lib/services/say_big_o.dart: O(n) -> 'O de N'."""
+    def one(m):
+        s = m.group(1)
+        for a, b in [('n²', 'N al cuadrado'), ('2ⁿ', '2 a la N'),
+                     ('√n', 'raíz de N')]:
+            s = s.replace(a, b)
+        s = re.sub(r'\b([nm])\b', lambda x: x.group(1).upper(), s)
+        for a, b in [('·', ' por '), ('+', ' más ')]:
+            s = s.replace(a, b)
+        s = re.sub(r'\blog\b', 'logaritmo de', s)
+        s = re.sub(r'\s+', ' ', s).strip()
+        if s.endswith(' de'):
+            s = s[:-3]
+        return 'O de ' + s
+    return BIGO.sub(one, t)
+
+
 def unescape(s):
     return re.sub(r'\\(.)', lambda m: ESC.get(m.group(1), m.group(1)), s)
 
@@ -45,7 +66,11 @@ async def main():
     os.makedirs(OUT, exist_ok=True)
     path = f'{OUT}/index.json'
     index = json.load(open(path)) if os.path.exists(path) else {}
-    todo = [t for t in lines() if t not in index]
+    # --redo-bigo re-records lines spoken before O(n) was read as "O de N".
+    redo = '--redo-bigo' in sys.argv
+    if redo:
+        sys.argv.remove('--redo-bigo')
+    todo = [t for t in lines() if t not in index or (redo and BIGO.search(t))]
     n = max([int(v.split('.')[0]) for v in index.values()] + [0])
     sem = asyncio.Semaphore(6)
 
@@ -53,7 +78,7 @@ async def main():
         async with sem:
             for _ in range(4):
                 try:
-                    await edge_tts.Communicate(t, VOICE).save(f'{OUT}/{f}')
+                    await edge_tts.Communicate(say_big_o(t), VOICE).save(f'{OUT}/{f}')
                     index[t] = f
                     return
                 except Exception as e:
@@ -63,6 +88,9 @@ async def main():
 
     jobs = []
     for t in todo:
+        if t in index:
+            jobs.append(one(t, index[t]))
+            continue
         n += 1
         jobs.append(one(t, f'{n}.mp3'))
     await asyncio.gather(*jobs)
