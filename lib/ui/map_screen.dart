@@ -27,6 +27,7 @@ import 'coin.dart';
 import 'collection.dart';
 import 'contest.dart';
 import 'dashboard.dart';
+import 'departamental_screen.dart';
 import 'halloween_screen.dart';
 import 'keyboard_scroll.dart';
 import 'level_screen.dart';
@@ -442,6 +443,7 @@ class _MapScreenState extends State<MapScreen> {
               children: [
                 if (MediaQuery.sizeOf(context).shortestSide < 600) _phoneCard(),
                 if (Halloween.active) _halloweenBanner(),
+                _departamentalBanner(),
                 RankXpBar(),
                 const SizedBox(height: 6),
                 _missionsCard(),
@@ -868,6 +870,67 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  void _openDepartamental() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const DepartamentalScreen()),
+    );
+  }
+
+  Widget _departamentalBanner() {
+    final l = L.instance;
+    const blue = Color(0xFF4FB3E8);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Tooltip(
+        message: l.pick('Entrenamiento para el examen Departamental de la OBI',
+            'Training for the OBI Departmental exam'),
+        child: Material(
+          borderRadius: BorderRadius.circular(16),
+          color: const Color(0xFF13273A),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: _openDepartamental,
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: blue, width: 1.5),
+              ),
+              child: Row(
+                children: [
+                  const Text('📝', style: TextStyle(fontSize: 34)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                            l.pick('Evento: Examen Departamental',
+                                'Event: Departmental exam'),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                                color: blue)),
+                        Text(
+                            l.pick(
+                                'Tutorial de CMS, grader, problemas oficiales y simulacros',
+                                'CMS tutorial, grader, official problems and mock exams'),
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.white70)),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, color: blue),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _halloweenBanner() {
     final l = L.instance;
     return Padding(
@@ -902,7 +965,7 @@ class _MapScreenState extends State<MapScreen> {
                                 color: Color(0xFFFF8A1F))),
                         Text(
                             l.pick(
-                                'Entrenamiento OBI con grader · quedan '
+                                'Niveles y gatos de Halloween · quedan '
                                     '${Halloween.daysLeft} días',
                                 'Spooky levels and cats · '
                                     '${Halloween.daysLeft} days left'),
