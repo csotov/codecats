@@ -6,7 +6,7 @@ import '../services/sfx.dart';
 import '../services/speech.dart';
 import 'professor.dart';
 
-/// The Profe's pep talk before the first solo exam (OBI Departamental).
+/// The Profe's pep talk before an important exam (OBI Departamental).
 class DepartamentalTalk {
   static const id = 'departamental';
   static final examDay = DateTime(2026, 11, 21);
@@ -16,7 +16,7 @@ class DepartamentalTalk {
       DateTime.now().isBefore(examDay.add(const Duration(days: 1)));
 
   static const _es = [
-    '¡Miau! Hoy no hay código: vamos a hablar de tu primer examen de verdad, la Departamental de la OBI. 🎓',
+    '¡Miau! Hoy no hay código: vamos a hablar de un examen importante: la Departamental de la OBI. 🎓',
     'Vas a estar solo frente a la compu, como un gato en su caja. ¡Y está perfecto: entrenaste para esto! 📦',
     'Vas a ver varios problemas. Son como los niveles del juego: completás una función y el grader la prueba.',
     'Paso 1: leé TODOS los problemas antes de escribir. Como un gato que olfatea todo antes de comer. 👃',
@@ -32,7 +32,7 @@ class DepartamentalTalk {
   ];
 
   static const _en = [
-    'Meow! No code today: let\'s talk about your first real exam, the OBI Departamental. 🎓',
+    'Meow! No code today: let\'s talk about an important exam: the OBI Departamental. 🎓',
     'You will be alone at the computer, like a cat in its box. That is fine: you trained for this! 📦',
     'You will get several problems. They are like the game levels: you fill in a function and the grader tests it.',
     'Step 1: read ALL the problems before writing. Like a cat sniffing everything before eating. 👃',

@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../data/belts.dart';
-import 'phase_exam.dart';
-
 import '../l10n.dart';
 import '../services/progress.dart';
 import 'theme.dart';
@@ -29,8 +26,7 @@ class StarsRow extends StatelessWidget {
   }
 }
 
-/// XP rank (Bronce, Plata, Oro…) with its bar; below, the belt as an extra
-/// prize with its 4 stripes and the belt exam.
+/// XP rank (Bronce, Plata, Oro…) with its bar.
 class RankXpBar extends StatelessWidget {
   const RankXpBar({super.key});
 
@@ -38,9 +34,6 @@ class RankXpBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = L.instance;
     final p = Progress.instance;
-    final belt = kBelts[p.belt];
-    final top = p.belt >= kBelts.length - 1;
-    final resume = p.examActive && p.examPhase == kBeltExamBase + belt.n;
     final rank = rankForXp(p.xp);
     final next = nextRank(p.xp);
     final span = next == null ? 1 : (next.minXp - rank.minXp);
@@ -75,60 +68,7 @@ class RankXpBar extends StatelessWidget {
               style: const TextStyle(color: AppTheme.textLo, fontSize: 11),
             ),
           ),
-        if (!top && (p.beltExamOpen || resume))
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Tooltip(
-              message: l.pick(
-                  'Ganá una cinta: problemas sin pistas y con reloj',
-                  'Win a belt: problems with no hints and a clock'),
-              child: FilledButton.tonalIcon(
-                icon: const Icon(Icons.sports_martial_arts, size: 16),
-                label: Text(resume
-                    ? l.pick('Seguir el desafío de la cinta',
-                        'Resume the belt challenge')
-                    : l.pick(
-                        '🥋 Desafío: ganá una cinta', '🥋 Belt challenge')),
-                onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => PhaseExamScreen(belt: belt))),
-              ),
-            ),
-          ),
       ],
-    );
-  }
-}
-
-/// Belt name with its stripes (▮ earned, ▯ missing).
-class BeltChip extends StatelessWidget {
-  const BeltChip({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final p = Progress.instance;
-    final belt = kBelts[p.belt];
-    final s = beltStripes(belt, p);
-    final top = p.belt >= kBelts.length - 1;
-    final c = Color(belt.color);
-    return Tooltip(
-      message: L.instance.pick(
-          'Tu cinturón. Cada franja sale al resolver niveles de sus mundos; el cinturón siguiente, aprobando el examen.',
-          'Your belt. Stripes come from solving its levels; the next belt from passing the exam.'),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: c.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: c),
-        ),
-        child: Text(
-          '🥋 ${L.instance.pick(belt.es, belt.en)}'
-          '${top ? '' : '  ${'▮' * s}${'▯' * (4 - s)}'}',
-          style: TextStyle(color: c, fontWeight: FontWeight.bold, fontSize: 13),
-        ),
-      ),
     );
   }
 }

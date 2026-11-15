@@ -222,7 +222,7 @@ final List<Level> kUsacoPractice = [
   ),
 ];
 
-/// The "Bronce USACO" belt exam: two sets of 3, 4 hours, 75% to pass
+/// The "Bronce USACO" mock exam: two sets of 3, 4 hours, 75% to pass
 /// (USACO promotes from Bronze with roughly 750 / 1000).
 final List<Level> kUsacoBronzeExam = [
   lvl(

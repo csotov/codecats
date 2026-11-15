@@ -3,11 +3,12 @@ import '../services/progress.dart';
 import 'worlds.dart';
 
 /// Macro stages, Duolingo-style: each one groups worlds and can be
-/// skipped with an exam.
+/// skipped with an exam. Named after the Codeforces rating colours.
 class Phase {
   const Phase(this.n, this.titleEs, this.titleEn, this.descEs, this.descEn,
-      this.worldIds);
+      this.worldIds, this.color);
   final int n;
+  final int color;
   final String titleEs, titleEn, descEs, descEn;
   final List<String> worldIds;
 
@@ -20,27 +21,32 @@ class Phase {
 const kPhases = [
   Phase(
       1,
-      'Fundamentos',
-      'Foundations',
+      'Gris · Novato',
+      'Grey · Newbie',
       'Imprimir, decidir, repetir y guardar muchos datos.',
       'Print, decide, repeat and store many values.',
-      ['w1', 'w2', 'w3', 'w4']),
+      ['w1', 'w2', 'w3', 'w4'],
+      0xFF9E9E9E),
   Phase(
       2,
-      'Plata',
-      'Silver',
+      'Verde · Aprendiz',
+      'Green · Pupil',
       'Funciones, ordenar y buscar, estructuras y técnicas de olimpiada.',
       'Functions, sorting and searching, structures and olympiad techniques.',
-      ['w5', 'w15', 'w6', 'w7', 'w8']),
+      ['w5', 'w15', 'w6', 'w7', 'w8'],
+      0xFF4CAF50),
   Phase(
       3,
-      'Plata',
-      'Silver',
+      'Cian · Especialista',
+      'Cyan · Specialist',
       'Grafos, números, programación dinámica y búsqueda binaria.',
       'Graphs, number theory, dynamic programming and binary search.',
-      ['w9', 'w10', 'w11', 'w12', 'w13', 'w14']),
-  Phase(4, 'Oro', 'Gold', 'Próximamente.', 'Coming soon.', []),
-  Phase(5, 'Olimpiada', 'Olympiad', 'Próximamente.', 'Coming soon.', []),
+      ['w9', 'w10', 'w11', 'w12', 'w13', 'w14'],
+      0xFF03A8A0),
+  Phase(4, 'Azul · Experto', 'Blue · Expert', 'Próximamente.', 'Coming soon.',
+      [], 0xFF4285F4),
+  Phase(5, 'Violeta · Candidato a Maestro', 'Violet · Candidate Master',
+      'Próximamente.', 'Coming soon.', [], 0xFFAA00AA),
 ];
 
 Phase? phaseOfWorld(String worldId) {
