@@ -94,6 +94,13 @@ class _ObiVideoScreenState extends State<ObiVideoScreen> {
                           ),
                         ),
                       ),
+                      if (MediaQuery.orientationOf(context) ==
+                          Orientation.portrait)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Text('📱 Girá el celular para verlo grande',
+                              style: TextStyle(color: Colors.white70)),
+                        ),
                       VideoProgressIndicator(_vc,
                           allowScrubbing: true,
                           padding: const EdgeInsets.symmetric(vertical: 8),
