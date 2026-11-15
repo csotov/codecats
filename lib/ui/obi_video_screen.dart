@@ -25,10 +25,11 @@ class _ObiVideoScreenState extends State<ObiVideoScreen> {
   void initState() {
     super.initState();
     Cloud.instance.log('obi_video_open');
+    Sfx.holdMusic();
     _vc.addListener(_tick);
     _vc.initialize().then((_) async {
       if (!mounted) return;
-      await _vc.setVolume(Sfx.muted ? 0 : 1);
+      await _vc.setVolume(1);
       setState(() => _ready = true);
       await _vc.play();
     }, onError: (_) {
@@ -59,6 +60,7 @@ class _ObiVideoScreenState extends State<ObiVideoScreen> {
     }
     _vc.removeListener(_tick);
     _vc.dispose();
+    Sfx.releaseMusic();
     super.dispose();
   }
 
