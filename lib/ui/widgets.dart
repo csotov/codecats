@@ -31,7 +31,10 @@ class RankXpBar extends StatelessWidget {
   const RankXpBar({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+      listenable: Progress.instance, builder: (context, _) => _bar());
+
+  Widget _bar() {
     final l = L.instance;
     final p = Progress.instance;
     final rank = rankForXp(p.xp);

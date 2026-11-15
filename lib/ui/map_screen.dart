@@ -442,7 +442,7 @@ class _MapScreenState extends State<MapScreen> {
               children: [
                 if (MediaQuery.sizeOf(context).shortestSide < 600) _phoneCard(),
                 if (Halloween.active) _halloweenBanner(),
-                const RankXpBar(),
+                RankXpBar(),
                 const SizedBox(height: 6),
                 _missionsCard(),
                 Padding(

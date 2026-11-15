@@ -75,10 +75,11 @@ class _PhaseExamScreenState extends State<PhaseExamScreen> {
   Future<void> _finish() async {
     if (_ended) return;
     _ended = true;
-    final passed = _solved >= _need;
+    final solved = _solved;
+    final passed = solved >= _need;
     Cloud.instance.log('phase_exam_end', data: {
       'phase': widget.code,
-      'solved': _solved,
+      'solved': solved,
       'total': _problems.length,
       'passed': passed
     });
@@ -88,11 +89,11 @@ class _PhaseExamScreenState extends State<PhaseExamScreen> {
     await ProfessorDialog.show(context, [
       passed
           ? l.pick(
-              '¡Aprobaste! $_solved de ${_problems.length}. Se abrió la Fase ${ph.n}: ${l.pick(ph.titleEs, ph.titleEn)}.',
-              'You passed! $_solved of ${_problems.length}. Phase ${ph.n} is open: ${l.pick(ph.titleEs, ph.titleEn)}.')
+              '¡Aprobaste! $solved de ${_problems.length}. Se abrió la Fase ${ph.n}: ${l.pick(ph.titleEs, ph.titleEn)}.',
+              'You passed! $solved of ${_problems.length}. Phase ${ph.n} is open: ${l.pick(ph.titleEs, ph.titleEn)}.')
           : l.pick(
-              'Resolviste $_solved de ${_problems.length} y hacían falta $_need. No pasa nada: repasá los mundos de la fase anterior y volvé a intentarlo.',
-              'You solved $_solved of ${_problems.length} and $_need were needed. No problem: review the previous phase worlds and try again.'),
+              'Resolviste $solved de ${_problems.length} y hacían falta $_need. No pasa nada: repasá los mundos de la fase anterior y volvé a intentarlo.',
+              'You solved $solved of ${_problems.length} and $_need were needed. No problem: review the previous phase worlds and try again.'),
     ]);
     if (mounted) Navigator.pop(context);
   }
