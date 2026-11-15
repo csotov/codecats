@@ -111,7 +111,11 @@ Widget _h3(String t) => Padding(
 /// (in-game computer), and file-upload submissions scored by subtask.
 class ObiSimScreen extends StatefulWidget {
   const ObiSimScreen(
-      {super.key, required this.task, this.tutorial = false, this.pc = false});
+      {super.key,
+      required this.task,
+      this.tutorial = false,
+      this.pc = false,
+      this.demo = false});
   final ObiTask task;
 
   /// Guided first run: highlights one control at a time and dims the rest.
@@ -120,6 +124,9 @@ class ObiSimScreen extends StatefulWidget {
   /// Second run: the real computer. Downloads the real zip and uploads the
   /// real file; no in-game editor or terminal.
   final bool pc;
+
+  /// Plays the narrated walkthrough by itself (used to record the video).
+  final bool demo;
 
   @override
   State<ObiSimScreen> createState() => _ObiSimScreenState();
@@ -332,13 +339,18 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
   void initState() {
     super.initState();
     Cloud.instance.log('obi_open', levelId: t.id, data: {'mode': _mode});
-    if (!widget.tutorial && !widget.pc) {
+    if (!widget.tutorial && !widget.pc && !widget.demo) {
       // Free play: the zip is already unzipped and the terminal is in cpp/.
       _sh
         ..download()
         ..run('cd Descargas')
         ..run('unzip ${t.file}.zip -d ${t.file}')
         ..run('cd ${t.file}/cpp');
+    }
+    if (widget.demo) {
+      _tick =
+          Timer.periodic(const Duration(milliseconds: 200), (_) => _measure());
+      WidgetsBinding.instance.addPostFrameCallback((_) => _runDemo());
     }
     if (widget.tutorial) {
       _tick =
@@ -349,10 +361,10 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
 
   void _measure() {
     final i = _step;
-    if (i == null || !mounted) return;
+    final target = i == null ? _demoKey : _steps[i].target(this);
+    if (target == null || !mounted) return;
     final box = _kStack.currentContext?.findRenderObject() as RenderBox?;
-    final tb =
-        _steps[i].target(this).currentContext?.findRenderObject() as RenderBox?;
+    final tb = target.currentContext?.findRenderObject() as RenderBox?;
     Rect? r;
     if (box != null && tb != null && tb.attached && tb.hasSize) {
       final o = tb.localToGlobal(Offset.zero, ancestor: box);
@@ -650,6 +662,24 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
     return Stack(key: _kStack, children: [
       scaffold,
       if (_step != null) _coach(),
+      if (widget.demo && _hole != null)
+        Positioned.fromRect(
+          rect: _hole!.inflate(6),
+          child: IgnorePointer(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _orange, width: 4),
+                boxShadow: const [
+                  BoxShadow(
+                      color: Color(0x99FF8A1F),
+                      blurRadius: 18,
+                      blurStyle: BlurStyle.outer)
+                ],
+              ),
+            ),
+          ),
+        ),
     ]);
   }
 
@@ -672,7 +702,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
               onPressed: () => Navigator.maybePop(context)),
           Expanded(
             child: Text(
-                widget.pc || widget.tutorial
+                widget.pc || widget.tutorial || widget.demo
                     ? 'OBI - Departamental (práctica)'
                     : 'OBI - ${t.official ? 'Clasificatorio 2026' : 'Práctica'}',
                 overflow: TextOverflow.ellipsis,
@@ -885,7 +915,11 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
                 onTap: () {},
                 child: const ColoredBox(color: dim)),
           );
-      final below = h == null || h.center.dy < size.height / 2;
+      final above = h == null ? 0.0 : h.top;
+      final under = h == null ? size.height : size.height - h.bottom;
+      // A tall target (terminal, editor) leaves no room: float over its bottom.
+      final inside = h != null && above < 200 && under < 200;
+      final below = h == null || under >= above;
       final bubble = Material(
         color: const Color(0xFFFFF4E8),
         elevation: 8,
@@ -994,7 +1028,9 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
       final maxW = size.width - 24 > 520 ? 520.0 : size.width - 24;
       final left = h == null
           ? (size.width - maxW) / 2
-          : (h.center.dx - maxW / 2).clamp(12.0, size.width - maxW - 12);
+          : inside
+              ? size.width - maxW - 12
+              : (h.center.dx - maxW / 2).clamp(12.0, size.width - maxW - 12);
       return Stack(children: [
         if (h == null)
           block(0, 0, size.width, size.height)
@@ -1024,10 +1060,22 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
         Positioned(
           left: left,
           width: maxW,
-          top: below ? (h == null ? size.height * 0.3 : h.bottom + 14) : null,
-          bottom: below ? null : size.height - h.top + 14,
+          top: inside
+              ? null
+              : below
+                  ? (h == null ? size.height * 0.3 : h.bottom + 14)
+                  : null,
+          bottom: inside
+              ? 12
+              : below
+                  ? null
+                  : size.height - h.top + 14,
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: size.height * 0.5),
+            constraints: BoxConstraints(
+                maxHeight: inside
+                    ? size.height * 0.45
+                    : ((below ? under : above) - 26)
+                        .clamp(120.0, size.height * 0.5)),
             child: SingleChildScrollView(child: bubble),
           ),
         ),
@@ -1506,12 +1554,20 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
   Widget _chip(String cmd, {Key? key, String? label}) => Tooltip(
         key: key,
         message: 'Ejecutar: $cmd',
-        child: ActionChip(
-          backgroundColor: const Color(0xFF4A1A3C),
-          side: const BorderSide(color: Color(0xFF7A3A6C)),
-          label: Text(label ?? cmd,
-              style: _mono.copyWith(color: Colors.white, fontSize: 12)),
-          onPressed: _busy ? null : () => _shell(cmd),
+        child: Material(
+          color: const Color(0xFF4A1A3C),
+          shape: RoundedRectangleBorder(
+              side: const BorderSide(color: Color(0xFF7A3A6C)),
+              borderRadius: BorderRadius.circular(6)),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(6),
+            onTap: _busy ? null : () => _shell(cmd),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Text(label ?? cmd,
+                  style: _mono.copyWith(color: Colors.white, fontSize: 12)),
+            ),
+          ),
         ),
       );
 
@@ -1701,12 +1757,12 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
         '${two(d.hour)}:${two(d.minute)}:${two(d.second)}';
   }
 
-  Future<void> _pickFile() async {
+  Future<void> _pickFile({List<String> auto = const []}) async {
     ({String name, String text})? f;
     if (widget.pc) {
       f = await pickTextFile('.cpp,.py,.h,.txt,.cc');
     } else {
-      final path = await _fileDialog();
+      final path = await _fileDialog(auto: auto);
       if (path != null) {
         final text = _sh.read(path);
         if (text != null && text != '(zip)' && text != '(exe)') {
@@ -1736,14 +1792,29 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
     }
   }
 
-  Future<String?> _fileDialog() {
+  Future<String?> _fileDialog({List<String> auto = const []}) {
     var dir = _sh.home;
+    var started = false;
     return showDialog<String>(
       context: context,
       builder: (c) => Theme(
         data: _theme,
         child: StatefulBuilder(
           builder: (c, set) {
+            if (auto.isNotEmpty && !started) {
+              started = true;
+              () async {
+                for (var k = 0; k < auto.length; k++) {
+                  await Future.delayed(const Duration(milliseconds: 1100));
+                  if (!c.mounted) return;
+                  if (k == auto.length - 1) {
+                    Navigator.pop(c, '$dir/${auto[k]}');
+                  } else {
+                    set(() => dir = '$dir/${auto[k]}');
+                  }
+                }
+              }();
+            }
             final items = _sh.list(dir);
             return AlertDialog(
               title: const Text('Elegir archivo para subir'),
@@ -2079,6 +2150,130 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
         ),
       ),
     );
+  }
+  // ---------- narrated demo (recorded as the in-game video) ----------
+
+  GlobalKey? _demoKey;
+
+  /// Length of each narration clip (ms), from assets/video narration.
+  static const _demoMs = [
+    16248,
+    9336,
+    7032,
+    6624,
+    6216,
+    6264,
+    12264,
+    10080,
+    12288,
+    5904,
+    9504,
+    14520,
+    8400,
+    9120,
+    10464
+  ];
+
+  Future<void> _type(String cmd, {int ms = 55}) async {
+    for (var k = 1; k <= cmd.length; k++) {
+      if (!mounted) return;
+      setState(() => _cmd.text = cmd.substring(0, k));
+      await Future.delayed(Duration(milliseconds: ms));
+    }
+    await Future.delayed(const Duration(milliseconds: 250));
+    _cmd.clear();
+    await _shell(cmd);
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  void _show(GlobalKey k) {
+    final c = k.currentContext;
+    if (c != null && c.mounted) {
+      Scrollable.ensureVisible(c,
+          alignment: 0.3, duration: const Duration(milliseconds: 400));
+    }
+  }
+
+  Future<void> _runDemo() async {
+    await Future.delayed(const Duration(milliseconds: 1500));
+    Future<void> seg(
+        int i, GlobalKey? target, Future<void> Function() act) async {
+      if (!mounted) return;
+      // ignore: avoid_print
+      print('DEMO_SEG $i');
+      final t0 = DateTime.now();
+      setState(() => _demoKey = target);
+      await act();
+      final left =
+          _demoMs[i] + 700 - DateTime.now().difference(t0).inMilliseconds;
+      if (left > 0) await Future.delayed(Duration(milliseconds: left));
+    }
+
+    Future<void> wait(int ms) => Future.delayed(Duration(milliseconds: ms));
+    await seg(0, _kOverview, () async => _open(4));
+    await seg(1, _kTabs[0], () async {
+      await wait(1500);
+      _open(0);
+    });
+    await seg(2, _kZip, () async {
+      await wait(300);
+      _show(_kZip);
+      await wait(2500);
+      _downloadZip();
+    });
+    await seg(3, _kCmd, () async {
+      _open(2);
+      await wait(2500);
+      await _type('pwd');
+    });
+    await seg(4, _kTermOut, () => _type('ls'));
+    await seg(5, _kCmd, () async {
+      await _type('cd Descargas');
+      await _type('unzip ${t.file}.zip -d ${t.file}', ms: 40);
+    });
+    await seg(6, _kTermOut, () async {
+      await _type('cd ${t.file}/cpp');
+      await _type('ls');
+    });
+    await seg(7, _kCmd, () async {
+      await wait(2500);
+      await _type('geany ${t.file}.cpp');
+    });
+    await seg(8, _kEditor, () async {
+      final lines = kTutorialSolution.split('\n');
+      for (var k = 3; k <= lines.length; k++) {
+        if (!mounted) return;
+        setState(() {
+          _code = lines.take(k).join('\n');
+          _editorGen++;
+        });
+        await wait(650);
+      }
+      _compiled = false;
+    });
+    await seg(9, _kTermOut, () async {
+      _open(2);
+      await wait(1200);
+      await _type('g++ -std=gnu++17 -O2 -o ${t.file} grader.cpp ${t.file}.cpp',
+          ms: 30);
+    });
+    await seg(10, _kTermOut, () async {
+      await wait(800);
+      await _type('./${t.file} < ../examples/0-01.in', ms: 45);
+    });
+    await seg(11, _kPick, () async {
+      _open(3);
+      await wait(5000);
+      await _pickFile(auto: ['Descargas', t.file, 'cpp', '${t.file}.cpp']);
+    });
+    await seg(12, _kSubmit, () async {
+      await wait(3000);
+      await _send();
+    });
+    await seg(13, _kScore, () async => _show(_kScore));
+    await seg(14, _kScore, () async {});
+    // ignore: avoid_print
+    print('DEMO_END');
   }
 }
 

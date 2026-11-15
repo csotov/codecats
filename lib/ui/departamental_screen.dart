@@ -13,6 +13,7 @@ import 'keyboard_scroll.dart';
 import 'level_intro.dart';
 import 'obi_lesson.dart';
 import 'obi_sim_screen.dart';
+import 'obi_video_screen.dart';
 import 'professor.dart';
 import 'sound_panel.dart';
 
@@ -83,6 +84,14 @@ class _DepartamentalScreenState extends State<DepartamentalScreen> {
               ),
               ..._inProgress(context, l),
               _head('🟢 Fácil · Escuela del grader'),
+              _tile(
+                  context,
+                  '🎬',
+                  'Video: así es el examen (2 min y medio)',
+                  'El Profe muestra CMS, la terminal de Ubuntu, Geany y cómo subir el archivo',
+                  'Mirar el video antes de practicar',
+                  const ObiVideoScreen(),
+                  trailing: _done('vid:obi_exam') ? '✅' : '¡Miralo!'),
               _tile(
                   context,
                   '🧭',
