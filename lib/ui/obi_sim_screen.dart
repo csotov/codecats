@@ -778,8 +778,10 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
         ],
       );
 
-  Widget _menuItem(int page, String label) {
+  Widget _menuItem(int page, String label, {bool inRow = false}) {
     final on = page == _page;
+    final text = Text(label,
+        style: TextStyle(color: on ? Colors.white : _cmsLink, fontSize: 13));
     return Material(
       key: page >= 0 && page < 4 ? _kTabs[page] : null,
       color: on ? _cmsLink : Colors.transparent,
@@ -787,25 +789,23 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
         onTap: () => _menuTap(page),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-          child: Row(children: [
-            Expanded(
-              child: Text(label,
-                  style: TextStyle(
-                      color: on ? Colors.white : _cmsLink, fontSize: 13)),
-            ),
-            if (page == -1)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                    color: const Color(0xFFF89406),
-                    borderRadius: BorderRadius.circular(3)),
-                child: const Text('1 sin leer',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold)),
-              ),
-          ]),
+          child: Row(
+              mainAxisSize: inRow ? MainAxisSize.min : MainAxisSize.max,
+              children: [
+                if (inRow) text else Expanded(child: text),
+                if (page == -1)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                        color: const Color(0xFFF89406),
+                        borderRadius: BorderRadius.circular(3)),
+                    child: const Text('1 sin leer',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold)),
+                  ),
+              ]),
         ),
       ),
     );
@@ -825,7 +825,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
               if (page != -1)
                 Padding(
                   padding: const EdgeInsets.all(2),
-                  child: _menuItem(page, label),
+                  child: _menuItem(page, label, inRow: true),
                 ),
           ]),
         ),
