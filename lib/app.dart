@@ -1,3 +1,5 @@
+import 'data/obi_tasks.dart';
+import 'ui/obi_sim_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -61,7 +63,11 @@ class CodeCatsApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: AppTheme.theme,
           scrollBehavior: const CodeCatsScrollBehavior(),
-          home: const SplashScreen(),
+          home: Uri.base.queryParameters['demo'] == 'obi'
+              ? ObiSimScreen(
+                  task: kObiTasks.firstWhere((t) => t.id == 'multiplos'),
+                  demo: true)
+              : const SplashScreen(),
         ),
       ),
     );

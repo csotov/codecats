@@ -1,21 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'sound_panel.dart';
-import '../data/olympiad_tracks.dart';
 
 import '../data/cats.dart';
 import '../data/halloween.dart';
-import '../data/juki_obi.dart';
-import '../data/obi_models.dart';
-import '../data/obi_tasks.dart';
-import '../services/open_url.dart';
 import '../l10n.dart';
 import '../models.dart';
 import '../services/progress.dart';
 import '../services/sfx.dart';
 import 'keyboard_scroll.dart';
-import 'obi_lesson.dart';
-import 'obi_sim_screen.dart';
 import 'level_intro.dart';
 import 'professor.dart';
 
@@ -37,16 +30,6 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
   void initState() {
     super.initState();
     Sfx.spooky();
-    final paid = settleObiPay(kObiTasks);
-    if (paid > 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(L.instance.pick(
-                '🏆 Los problemas oficiales ahora pagan más: +$paid Miaudólares por los que ya resolviste',
-                '🏆 Official problems now pay more: +$paid Miaudólares for the ones you already solved'))));
-      });
-    }
   }
 
   @override
@@ -120,14 +103,14 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
                   const SizedBox(height: 14),
                   ProfessorSays(
                     text: l.pick(
-                        '¡Muajaja! Esta Noche de Brujas es de entrenamiento para la OBI: problemas con grader y subtareas, igualitos al examen. Primero la Escuela del grader, después el calentamiento y al final los 4 problemas oficiales de la Clasificatoria.',
+                        '¡Muajaja! Hoy me pongo el sombrero de bruja. Resolvé estos hechizos de C++ para ganar gatos de Halloween que después desaparecen. ¡No te los pierdas! El entrenamiento de la OBI ahora está en el evento Examen Departamental.',
                         'Mwahaha! Today I wear my witch hat. Solve these 5 C++ '
                             'spells to win Halloween cats that disappear later. '
                             'Do not miss them!'),
                   ),
                   ..._inProgress(context, l),
                   const SizedBox(height: 22),
-                  const Text('🟢 Fácil · 🎃 Hechizos clásicos (con cin/cout)',
+                  const Text('🎃 Hechizos clásicos (con cin/cout)',
                       style: TextStyle(
                           color: _orange,
                           fontWeight: FontWeight.w900,
@@ -142,25 +125,6 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
                   const SizedBox(height: 10),
                   for (var i = 0; i < kHalloweenLevels.length; i++)
                     _levelCard(context, l, i),
-                  ..._obiSection(context, hard: false),
-                  const SizedBox(height: 18),
-                  Text(
-                      l.pick('🟡 Medio · 🧪 Laboratorio del Profe (prueba)',
-                          '🟡 Medium · 🧪 Profe\'s lab (trial)'),
-                      style: const TextStyle(
-                          color: _orange,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 16)),
-                  const SizedBox(height: 4),
-                  Text(
-                      l.pick(
-                          'Problemas con puntaje de olimpiada: cada subtarea da puntos aunque no lo resuelvas entero. Si te trabás, el botón "No sé" te lleva por problemas más chicos.',
-                          'Problems with olympiad scoring: each subtask gives points even if you do not solve it all. If stuck, the "I don\'t know" button leads you through smaller problems.'),
-                      style:
-                          const TextStyle(color: Colors.white70, fontSize: 12)),
-                  const SizedBox(height: 8),
-                  for (final lv in kLabLevels) _labCard(context, l, lv),
-                  ..._obiSection(context, hard: true),
                 ],
               ),
             ),
@@ -230,75 +194,6 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
     );
   }
 
-  Widget _labCard(BuildContext context, L l, Level lv) {
-    final best = Progress.instance.scores[lv.id];
-    return Card(
-      color: const Color(0xFF1E2A12),
-      child: ListTile(
-        leading: const Text('🧪', style: TextStyle(fontSize: 26)),
-        title: Text(l.pick(lv.titleEs, lv.titleEn),
-            style: const TextStyle(fontWeight: FontWeight.w800)),
-        subtitle: Text(
-            best == null
-                ? l.pick('Sin intentar', 'Not tried')
-                : l.pick(
-                    'Mejor puntaje: $best / 100', 'Best score: $best / 100'),
-            style: const TextStyle(fontSize: 12)),
-        trailing: Tooltip(
-          message: l.pick(
-              'Jugar este problema de prueba', 'Play this trial problem'),
-          child: const Icon(Icons.chevron_right),
-        ),
-        onTap: () => _play(context, lv),
-      ),
-    );
-  }
-
-  Widget _card(BuildContext context, String emoji, String title, String sub,
-          String tip, Widget screen,
-          {String? trailing}) =>
-      Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Tooltip(
-          message: tip,
-          child: Card(
-            color: const Color(0xFF2B1238),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: const BorderSide(color: _orange, width: 1.4)),
-            child: ListTile(
-              leading: Text(emoji, style: const TextStyle(fontSize: 28)),
-              title: Text(title,
-                  style: const TextStyle(fontWeight: FontWeight.w900)),
-              subtitle: Text(sub, style: const TextStyle(fontSize: 12)),
-              trailing: Text(trailing ?? '›',
-                  style: const TextStyle(
-                      color: _orange, fontWeight: FontWeight.w900)),
-              onTap: () => Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => screen)),
-            ),
-          ),
-        ),
-      );
-
-  Widget _head(String t) => Padding(
-        padding: const EdgeInsets.only(top: 14, bottom: 6),
-        child: Text(t,
-            style: const TextStyle(
-                color: _orange, fontWeight: FontWeight.w900, fontSize: 16)),
-      );
-
-  Widget _obiTaskCard(BuildContext context, ObiTask t) => _card(
-      context,
-      t.emoji,
-      t.title,
-      t.meme,
-      t.official
-          ? 'Resolver el problema oficial'
-          : 'Practicar el formato con grader',
-      ObiSimScreen(task: t),
-      trailing: '${obiBest(t)}/100');
-
   /// Started but not finished: shown first so he picks up where he left.
   List<Widget> _inProgress(BuildContext context, L l) {
     final p = Progress.instance;
@@ -308,11 +203,6 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
             !p.of(kHalloweenLevels[i].id).solved &&
             _unlocked(i))
           _levelCard(context, l, i),
-      for (final t in kObiTasks)
-        if (obiBest(t) > 0 && obiBest(t) < 100) _obiTaskCard(context, t),
-      for (final lv in kLabLevels)
-        if ((p.scores[lv.id] ?? 0) > 0 && (p.scores[lv.id] ?? 0) < 100)
-          _labCard(context, l, lv),
     ];
     if (items.isEmpty) return const [];
     return [
@@ -321,72 +211,12 @@ class _HalloweenScreenState extends State<HalloweenScreen> {
     ];
   }
 
-  /// Easy part (grader school + warm-up) or hard part (official problems
-  /// + past exams on Juki); the page goes from easy (top) to hard.
-  List<Widget> _obiSection(BuildContext context, {required bool hard}) {
-    if (!hard) {
-      return [
-        _head('🟢 Fácil · Escuela del grader'),
-        _card(
-            context,
-            '🧭',
-            'Tutorial guiado: tu primer problema con grader',
-            'Paso a paso: se ilumina dónde tocar y lo demás se apaga',
-            'Aprender el formato tocando, con el Profe al lado',
-            ObiSimScreen(
-                task: kObiTasks.firstWhere((t) => t.id == 'multiplos'),
-                tutorial: true),
-            trailing: (Progress.instance.scores['tut:grader'] ?? 0) > 0
-                ? '✅'
-                : '¡Empezá acá!'),
-        _card(
-            context,
-            '🎓',
-            'Cómo funciona el examen',
-            'Grader, archivos, compilar, subtareas y puntos',
-            'Aprender el formato del examen',
-            const ObiLessonScreen()),
-        _head('🟡 Medio · Calentamiento con grader'),
-        for (final t in kObiTasks.where((t) => !t.official))
-          _obiTaskCard(context, t),
-      ];
-    }
-    return [
-      _head('🔴 Difícil · Clasificatoria 2026 (problemas oficiales)'),
-      for (final t in kObiTasks.where((t) => t.official))
-        _obiTaskCard(context, t),
-      _head('🔴 Difícil · Exámenes pasados en el juez real (Juki)'),
-      for (final phase in {for (final p in kJukiObi) p.phase})
-        Card(
-          color: const Color(0xFF2B1238),
-          child: ExpansionTile(
-            initiallyExpanded: phase == 'Fase Departamental',
-            title: Text(
-                '$phase (${kJukiObi.where((p) => p.phase == phase).length})',
-                style: const TextStyle(fontWeight: FontWeight.w900)),
-            children: [
-              for (final p in kJukiObi.where((p) => p.phase == phase))
-                Tooltip(
-                  message: 'Abrir en Juki',
-                  child: ListTile(
-                    dense: true,
-                    leading: Text(p.year,
-                        style: const TextStyle(
-                            color: _orange, fontWeight: FontWeight.w900)),
-                    title: Text(p.name),
-                    subtitle: p.levels.isEmpty
-                        ? null
-                        : Text('Nivel ${p.levels}',
-                            style: const TextStyle(fontSize: 11)),
-                    trailing: const Icon(Icons.open_in_new, size: 18),
-                    onTap: () => openUrl(p.url),
-                  ),
-                ),
-            ],
-          ),
-        ),
-    ];
-  }
+  Widget _head(String t) => Padding(
+        padding: const EdgeInsets.only(top: 14, bottom: 6),
+        child: Text(t,
+            style: const TextStyle(
+                color: _orange, fontWeight: FontWeight.w900, fontSize: 16)),
+      );
 
   void _play(BuildContext context, Level lv) {
     Navigator.push(context, levelRoute(lv));
