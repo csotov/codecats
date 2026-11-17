@@ -9,6 +9,7 @@ import '../models.dart';
 import '../services/cloud.dart';
 import '../services/open_url.dart';
 import '../services/progress.dart';
+import '../services/sfx.dart';
 import 'keyboard_scroll.dart';
 import 'level_intro.dart';
 import 'obi_lesson.dart';
@@ -31,12 +32,15 @@ class DepartamentalScreen extends StatefulWidget {
 }
 
 class _DepartamentalScreenState extends State<DepartamentalScreen> {
+  /// Opened sections stay open while the game runs, even after leaving.
+  static final _expanded = <String>{'Fase Departamental'};
   final _scroll = ScrollController();
 
   @override
   void initState() {
     super.initState();
     Cloud.instance.log('departamental_open');
+    Sfx.exam();
     final paid = settleObiPay(kObiTasks);
     if (paid > 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -52,6 +56,7 @@ class _DepartamentalScreenState extends State<DepartamentalScreen> {
   @override
   void dispose() {
     _scroll.dispose();
+    Sfx.menu();
     super.dispose();
   }
 
@@ -239,7 +244,11 @@ class _DepartamentalScreenState extends State<DepartamentalScreen> {
   Widget _jukiPhase(String phase) => Card(
         color: _card,
         child: ExpansionTile(
-          initiallyExpanded: phase == 'Fase Departamental',
+          key: PageStorageKey('juki:$phase'),
+          maintainState: true,
+          initiallyExpanded: _expanded.contains(phase),
+          onExpansionChanged: (v) =>
+              v ? _expanded.add(phase) : _expanded.remove(phase),
           title: Text(
               '$phase (${kJukiObi.where((p) => p.phase == phase).length})',
               style: const TextStyle(fontWeight: FontWeight.w900)),

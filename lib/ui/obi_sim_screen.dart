@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'sound_panel.dart';
 
@@ -335,9 +336,39 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
   late final FakeShell _sh =
       FakeShell(task: t.file, zip: _zipFiles, code: () => _code);
 
+  String get _subsKey => 'obi_subs:${t.id}:$_mode';
+
+  Future<void> _loadSubs() async {
+    if (widget.demo) return;
+    final raw = (await SharedPreferences.getInstance()).getString(_subsKey);
+    if (raw == null || !mounted) return;
+    try {
+      final list = [
+        for (final j in jsonDecode(raw) as List)
+          _Sub.fromJson(j as Map<String, dynamic>)
+      ];
+      setState(() {
+        _subs
+          ..clear()
+          ..addAll(list);
+        if (list.isNotEmpty && !widget.tutorial && !widget.pc) {
+          _code = list.first.code;
+          _editorGen++;
+        }
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _saveSubs() async {
+    if (widget.demo) return;
+    (await SharedPreferences.getInstance())
+        .setString(_subsKey, jsonEncode([for (final s in _subs) s.toJson()]));
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadSubs();
     Cloud.instance.log('obi_open', levelId: t.id, data: {'mode': _mode});
     if (!widget.tutorial && !widget.pc && !widget.demo) {
       // Free play: the zip is already unzipped and the terminal is in cpp/.
@@ -619,6 +650,8 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
     setState(() {
       _busy = false;
       _subs.insert(0, sub);
+      if (_subs.length > 50) _subs.removeLast();
+      _saveSubs();
     });
     _advance(_Act.submit);
     if (!mounted) return;
@@ -2279,6 +2312,21 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
 
 class _Sub {
   _Sub(this.at, this.ok, this.errors, this.name, this.code);
+
+  factory _Sub.fromJson(Map<String, dynamic> j) => _Sub(
+      DateTime.parse(j['at'] as String),
+      [for (final x in j['ok'] as List) x as bool],
+      [for (final x in j['err'] as List) x as String],
+      j['name'] as String,
+      j['code'] as String);
+
+  Map<String, dynamic> toJson() => {
+        'at': at.toIso8601String(),
+        'ok': ok,
+        'err': errors,
+        'name': name,
+        'code': code,
+      };
   final DateTime at;
   final List<bool> ok;
   final List<String> errors;

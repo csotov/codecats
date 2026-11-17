@@ -35,10 +35,12 @@ def say_big_o(t):
         for a, b in [('·', ' por '), ('+', ' más ')]:
             s = s.replace(a, b)
         s = re.sub(r'\blog\b', 'logaritmo de', s)
+        s = re.sub(r'\b1\b', 'uno', s)
         s = re.sub(r'\s+', ' ', s).strip()
         if s.endswith(' de'):
             s = s[:-3]
         return 'O de ' + s
+    t = re.sub(r'\bOBI\b', 'Obi', t)
     return BIGO.sub(one, t)
 
 
@@ -66,11 +68,12 @@ async def main():
     os.makedirs(OUT, exist_ok=True)
     path = f'{OUT}/index.json'
     index = json.load(open(path)) if os.path.exists(path) else {}
-    # --redo-bigo re-records lines spoken before O(n) was read as "O de N".
+    # --redo-bigo re-records lines with O(...) or OBI after a reading change.
     redo = '--redo-bigo' in sys.argv
     if redo:
         sys.argv.remove('--redo-bigo')
-    todo = [t for t in lines() if t not in index or (redo and BIGO.search(t))]
+    todo = [t for t in lines()
+            if t not in index or (redo and (BIGO.search(t) or 'OBI' in t))]
     n = max([int(v.split('.')[0]) for v in index.values()] + [0])
     sem = asyncio.Semaphore(6)
 
