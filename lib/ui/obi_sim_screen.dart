@@ -889,6 +889,23 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
               'En el examen compilá en la pestaña Terminal: g++ ... grader.cpp ${t.file}.cpp',
               color: _orange));
       } else {
+        _build.add(const _Line('Revisando…', color: _gtkText));
+      }
+      _msgTab = 1;
+    });
+    if (!link) _geanyCompile();
+    Cloud.instance.log('obi_geany_build',
+        levelId: t.id, data: {'mode': _mode, 'link': link});
+  }
+
+  Future<void> _geanyCompile() async {
+    final r = await _judge.compile(_code);
+    if (!mounted) return;
+    setState(() {
+      if (_build.isNotEmpty && _build.last.text == 'Revisando…') {
+        _build.removeLast();
+      }
+      if (r.ok) {
         _build
           ..add(const _Line('Compilación terminada con éxito.',
               color: Color(0xFF4E9A06)))
@@ -896,11 +913,12 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
               '🐱 Profe: eso solo revisa que tu archivo no tenga errores. '
               'Para probarlo hay que compilarlo con el grader en la Terminal.',
               color: _orange));
+      } else {
+        _build
+          ..add(_Line(_explain(r), color: const Color(0xFFCC0000)))
+          ..add(const _Line('Compilación fallida.', color: Color(0xFFCC0000)));
       }
-      _msgTab = 1;
     });
-    Cloud.instance.log('obi_geany_build',
-        levelId: t.id, data: {'mode': _mode, 'link': link});
   }
 
   Widget _geanyWindow() {
@@ -1234,13 +1252,15 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
       3 => Container(
           color: Colors.white,
           padding: const EdgeInsets.all(6),
-          child: const TextField(
+          child: TextField(
               maxLines: null,
               expands: true,
-              style: _mono,
-              decoration: InputDecoration(
+              style: _mono.copyWith(color: Colors.black),
+              cursorColor: Colors.black,
+              decoration: const InputDecoration(
                   border: InputBorder.none,
                   isDense: true,
+                  hintStyle: TextStyle(color: Color(0xFF888A85)),
                   hintText: 'Borrador: tus notas (no se guardan)'))),
       _ => _plainLog(const []),
     };
