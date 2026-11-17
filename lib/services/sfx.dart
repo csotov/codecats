@@ -10,7 +10,7 @@ import 'music_out_io.dart' if (dart.library.js_interop) 'music_out_web.dart';
 /// Tiny synthesized sound effects & music — no audio assets needed.
 /// Everything is rendered to WAV in memory: a victory arpeggio plus
 /// two loopable chiptune tracks (menu: calm; battle: driving).
-enum _Track { menu, battle, boss, level, spooky, cozy, focus }
+enum _Track { menu, battle, boss, level, spooky, cozy, focus, exam }
 
 class Sfx {
   Sfx._();
@@ -22,6 +22,7 @@ class Sfx {
   static Uint8List? _spookyWav;
   static Uint8List? _cozyWav;
   static Uint8List? _focusWav;
+  static Uint8List? _examWav;
 
   static bool muted = false;
   static String _track = '';
@@ -156,6 +157,9 @@ class Sfx {
   /// Contest/exam loop: Em–C–G–D at 108 bpm, steady focus.
   static Future<void> focus() => _play(_Track.focus);
 
+  /// Exam training (Departamental event): calm, jazzy study loop.
+  static Future<void> exam() => _play(_Track.exam);
+
   static Future<void> _play(_Track t) async {
     final key = switch (t) {
       _Track.boss => 'boss:$_bossFile',
@@ -187,6 +191,7 @@ class Sfx {
                 _Track.spooky => _spookyWav ??= _synthSpooky(),
                 _Track.cozy => _cozyWav ??= _synthCozy(),
                 _Track.focus => _focusWav ??= _synthFocus(),
+                _Track.exam => _examWav ??= _synthExam(),
                 _ => _battleWav ??= _synthBattle(),
               });
       if (_holds > 0) _music.pause();
@@ -271,6 +276,23 @@ class Sfx {
         arpGain: 0.13,
         bassGain: 0.16,
         hats: false,
+      );
+
+  static Uint8List _synthExam() => _synthLoop(
+        bpm: 84,
+        chords: const [
+          [57, 60, 64, 67], // Am7
+          [50, 54, 57, 62], // Dmaj
+          [55, 59, 62, 66], // Gmaj7
+          [48, 52, 55, 59], // Cmaj7
+          [53, 57, 60, 64], // Fmaj7
+          [52, 56, 59, 62], // E7
+          [57, 60, 64, 67], // Am7
+          [52, 56, 59, 62], // E7
+        ],
+        arpGain: 0.09,
+        bassGain: 0.18,
+        hats: true,
       );
 
   static Uint8List _synthFocus() => _synthLoop(

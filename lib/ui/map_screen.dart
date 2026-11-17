@@ -583,15 +583,6 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ],
-            if (DepartamentalTalk.relevant) ...[
-              const SizedBox(height: 6),
-              _missionRow(
-                '🎤 ${l.pick('Charla del Profe', 'Profe talk')}',
-                l.pick('tu primer examen: la Departamental',
-                    'your first exam: the Departamental'),
-                () => DepartamentalTalk.show(context),
-              ),
-            ],
             if (rec != null) ...[
               const SizedBox(height: 6),
               _missionRow(

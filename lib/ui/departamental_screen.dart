@@ -9,6 +9,8 @@ import '../models.dart';
 import '../services/cloud.dart';
 import '../services/open_url.dart';
 import '../services/progress.dart';
+import '../services/sfx.dart';
+import 'departamental_talk.dart';
 import 'keyboard_scroll.dart';
 import 'level_intro.dart';
 import 'obi_lesson.dart';
@@ -31,12 +33,15 @@ class DepartamentalScreen extends StatefulWidget {
 }
 
 class _DepartamentalScreenState extends State<DepartamentalScreen> {
+  /// Opened sections stay open while the game runs, even after leaving.
+  static final _expanded = <String>{'Fase Departamental'};
   final _scroll = ScrollController();
 
   @override
   void initState() {
     super.initState();
     Cloud.instance.log('departamental_open');
+    Sfx.exam();
     final paid = settleObiPay(kObiTasks);
     if (paid > 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -52,6 +57,7 @@ class _DepartamentalScreenState extends State<DepartamentalScreen> {
   @override
   void dispose() {
     _scroll.dispose();
+    Sfx.menu();
     super.dispose();
   }
 
@@ -87,11 +93,19 @@ class _DepartamentalScreenState extends State<DepartamentalScreen> {
               _tile(
                   context,
                   '🎬',
-                  'Video: así es el examen (2 min y medio)',
+                  'Video: así es el examen (3 minutos)',
                   'El Profe muestra CMS, la terminal de Ubuntu, Geany y cómo subir el archivo',
                   'Mirar el video antes de practicar',
                   const ObiVideoScreen(),
                   trailing: _done('vid:obi_exam') ? '✅' : '¡Miralo!'),
+              _tile(
+                  context,
+                  '🎤',
+                  'Charla del Profe: consejos para el examen',
+                  'Cómo leer, repartir el tiempo y mantener la calma',
+                  'Volver a escuchar los consejos del Profe',
+                  null,
+                  onTap: () => DepartamentalTalk.show(context)),
               _tile(
                   context,
                   '🧭',
@@ -172,7 +186,7 @@ class _DepartamentalScreenState extends State<DepartamentalScreen> {
 
   Widget _tile(BuildContext context, String emoji, String title, String sub,
           String tip, Widget? screen,
-          {String? trailing}) =>
+          {String? trailing, VoidCallback? onTap}) =>
       Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: Tooltip(
@@ -182,18 +196,21 @@ class _DepartamentalScreenState extends State<DepartamentalScreen> {
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
                 side: BorderSide(
-                    color: screen == null ? Colors.white24 : _blue,
+                    color: screen == null && onTap == null
+                        ? Colors.white24
+                        : _blue,
                     width: 1.4)),
             child: ListTile(
               leading: Text(emoji, style: const TextStyle(fontSize: 28)),
               title: Text(title,
                   style: const TextStyle(fontWeight: FontWeight.w900)),
               subtitle: Text(sub, style: const TextStyle(fontSize: 12)),
-              trailing: Text(trailing ?? (screen == null ? '' : '›'),
+              trailing: Text(
+                  trailing ?? (screen == null && onTap == null ? '' : '›'),
                   style: const TextStyle(
                       color: _blue, fontWeight: FontWeight.w900)),
               onTap: screen == null
-                  ? null
+                  ? onTap
                   : () => Navigator.push(
                       context, MaterialPageRoute(builder: (_) => screen)),
             ),
@@ -239,7 +256,11 @@ class _DepartamentalScreenState extends State<DepartamentalScreen> {
   Widget _jukiPhase(String phase) => Card(
         color: _card,
         child: ExpansionTile(
-          initiallyExpanded: phase == 'Fase Departamental',
+          key: PageStorageKey('juki:$phase'),
+          maintainState: true,
+          initiallyExpanded: _expanded.contains(phase),
+          onExpansionChanged: (v) =>
+              v ? _expanded.add(phase) : _expanded.remove(phase),
           title: Text(
               '$phase (${kJukiObi.where((p) => p.phase == phase).length})',
               style: const TextStyle(fontWeight: FontWeight.w900)),

@@ -631,6 +631,28 @@ class Progress extends ChangeNotifier {
     earlyClaimed = 0;
     earlyDone = 0;
     earlyLastPrize = '';
+    rot.clear();
+    quiz.clear();
+    days.clear();
+    goldenCards.clear();
+    bonusDay = 0;
+    cfHandle = '';
+    atcoderUser = '';
+    scores.clear();
+    blitzMin = 0;
+    blitzOk = 0;
+    blitzSeq = 0;
+    openPhases.clear();
+    examPhase = 0;
+    examIds = const [];
+    examEndMs = 0;
+    examSolved.clear();
+    examScores.clear();
+    blitzCards.clear();
+    mathGym.clear();
+    contestIds = const [];
+    contestEndMs = 0;
+    taughtBigO.clear();
     final raw = prefs.getString(_keyFor(active!.id));
     if (raw != null) {
       try {
