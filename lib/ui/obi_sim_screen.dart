@@ -901,8 +901,8 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
   Future<void> _geanyCompile() async {
     final r = await _judge.compile(_code);
     if (!mounted) return;
-    final linkOnly = RegExp(r'undefined reference|ld returned|sin definir')
-        .hasMatch(r.error);
+    final linkOnly = r.error.contains('ld returned') &&
+        !RegExp(r':\d+:\d+: error').hasMatch(r.error);
     final ok = r.ok || linkOnly;
     setState(() {
       if (_build.isNotEmpty && _build.last.text == 'Revisando…') {
