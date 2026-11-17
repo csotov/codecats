@@ -1778,15 +1778,6 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
   Widget _editor() {
     return Column(children: [
       Container(
-        width: double.infinity,
-        color: const Color(0xFFF6F5F4),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        child: const Text(
-            'Archivo   Editar   Buscar   Ver   Documento   Proyecto   Construir   Herramientas   Ayuda',
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(fontSize: 12, color: _cmsText)),
-      ),
-      Container(
         key: _kFileBar,
         width: double.infinity,
         color: const Color(0xFFE8E8E7),
