@@ -120,7 +120,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-              const RankXpBar(),
+              RankXpBar(),
               const SizedBox(height: 12),
 
               // ---- stat tiles -------------------------------------------------

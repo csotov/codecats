@@ -6,7 +6,7 @@ import '../services/sfx.dart';
 import '../services/speech.dart';
 import 'professor.dart';
 
-/// The Profe's pep talk before the first solo exam (OBI Departamental).
+/// The Profe's pep talk before an important exam (OBI Departamental).
 class DepartamentalTalk {
   static const id = 'departamental';
   static final examDay = DateTime(2026, 11, 21);
