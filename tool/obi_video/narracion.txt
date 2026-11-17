@@ -1,15 +1,15 @@
-¡Hola! Soy el Profe Miaurício. Te muestro cómo es el examen de la OBI, paso a paso. Esta es la página del examen: se llama CMS. En la Carátula está la tabla con los problemas.
+¡Hola! Soy el Profe Miaurício. Te muestro cómo es el examen de la OBI, paso a paso. Esta es la página del examen en el navegador: se llama CMS. En la Carátula está la tabla con los problemas.
 Tocamos Enunciado. Arriba está el botón verde para bajar el enunciado, y más abajo, la tabla con los detalles del problema.
 Al final, en Adjuntos, está el zip con los archivos del problema. Lo bajamos.
-Ahora abrimos la terminal de Ubuntu. Con pwd vemos en qué carpeta estamos.
+Ahora abrimos Geany, el programa para escribir código, desde la barra de Ubuntu. Abajo tiene su propia Terminal. Con pwd vemos en qué carpeta estamos.
 Con ls vemos qué hay en esta carpeta. El zip se bajó a Descargas.
 Entramos con cd Descargas, y lo descomprimimos con unzip, en su propia carpeta.
 Ahora entramos a la carpeta cpp. Con ls vemos los tres archivos. grader.cpp y multiplos.h ya vienen hechos, y no se tocan.
-Nuestro código va en multiplos.cpp. Lo abrimos con Geany. En el examen también podés usar VS Code o Code Blocks.
+Nuestro código va en multiplos.cpp. Lo abrimos con geany multiplos.cpp, y aparece arriba, en el editor. En el examen también podés usar VS Code o Code::Blocks.
 Escribimos solo la función. Sin main, sin cin y sin cout: n llega por los paréntesis, y la respuesta sale con return. Guardamos con Control S.
-Volvemos a la terminal, y compilamos los dos archivos juntos con g más más.
+En la Terminal de Geany compilamos los dos archivos juntos con g más más. El botón Construir no sirve, porque no incluye el grader.
 Probamos con el primer ejemplo: punto barra multiplos, menor que, y el archivo de ejemplo. ¡Salió igual que el punto out!
-Ahora vamos a Envíos. En el examen el código no se pega: se sube el archivo. Tocamos Elegir archivo, y buscamos Descargas, multiplos, cpp, y multiplos.cpp.
+Minimizamos Geany y volvemos al navegador. En Envíos, el código no se pega: se sube el archivo. Tocamos Elegir archivo, y buscamos Descargas, multiplos, cpp, y multiplos.cpp.
 Dejamos el lenguaje C++17, y tocamos Enviar. Siempre solo tu archivo, nunca el grader.
 Acá está el resultado de cada subtarea. Ganamos las dos primeras. La última pide una idea más rápida.
 Podés enviar hasta cincuenta veces por problema, con un minuto entre envíos, y vale lo mejor de cada subtarea. ¡Ahora practicá vos en el tutorial!

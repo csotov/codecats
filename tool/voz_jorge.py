@@ -22,6 +22,41 @@ def norm(t):
 
 
 BIGO = re.compile(r'O\(([^)]*)\)')
+ENGLISH = {
+    'grader': 'gréider',
+    'Grader': 'Gréider',
+    'break': 'bréik',
+    'string': 'estríng',
+    'stack': 'stak',
+    'queue': 'kiú',
+    'push_back': 'push bak',
+    'true': 'trú',
+    'false': 'fóls',
+    'cout': 'si áut',
+    'cin': 'si ín',
+    'main': 'méin',
+    'return': 'ritérn',
+    'include': 'inclúd',
+    'Code::Blocks': 'Cóud Blocs',
+    'VS Code': 'Vi Es Cóud',
+    'Geany': 'Yíni',
+    'Codeforces': 'Cóudforses',
+    'USACO': 'Iusáco',
+    'while': 'uáil',
+    'else': 'els',
+    'pair': 'per',
+    'endl': 'end láin',
+    'continue': 'contíniu',
+    'bool': 'bul',
+    'double': 'dóbol',
+    'struct': 'estráct',
+    'greedy': 'grídi',
+    'DP': 'di pi',
+    'BFS': 'bi ef es',
+    'DFS': 'di ef es',
+    'Big O': 'Big Óu',
+}
+ENG = re.compile(r'(?<![\w:])(' + '|'.join(map(re.escape, ENGLISH)) + r')(?![\w:])')
 
 
 def say_big_o(t):
@@ -35,11 +70,14 @@ def say_big_o(t):
         for a, b in [('·', ' por '), ('+', ' más ')]:
             s = s.replace(a, b)
         s = re.sub(r'\blog\b', 'logaritmo de', s)
+        s = re.sub(r'\b1\b', 'uno', s)
         s = re.sub(r'\s+', ' ', s).strip()
         if s.endswith(' de'):
             s = s[:-3]
         return 'O de ' + s
-    return BIGO.sub(one, t)
+    t = re.sub(r'\bOBI\b', 'Obi', t)
+    t = BIGO.sub(one, t)
+    return ENG.sub(lambda m: ENGLISH[m.group(1)], t)
 
 
 def unescape(s):
@@ -66,11 +104,13 @@ async def main():
     os.makedirs(OUT, exist_ok=True)
     path = f'{OUT}/index.json'
     index = json.load(open(path)) if os.path.exists(path) else {}
-    # --redo-bigo re-records lines spoken before O(n) was read as "O de N".
+    # --redo-bigo re-records lines with O(...) or OBI after a reading change.
     redo = '--redo-bigo' in sys.argv
     if redo:
         sys.argv.remove('--redo-bigo')
-    todo = [t for t in lines() if t not in index or (redo and BIGO.search(t))]
+    todo = [t for t in lines()
+            if t not in index or (redo and (BIGO.search(t) or 'OBI' in t
+                                            or ENG.search(t)))]
     n = max([int(v.split('.')[0]) for v in index.values()] + [0])
     sem = asyncio.Semaphore(6)
 

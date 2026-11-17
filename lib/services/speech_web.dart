@@ -39,7 +39,7 @@ Future<bool> _speakLive(String key, int turn) async {
                 'apikey': Cloud.anonKey,
                 'Content-Type': 'application/json',
               }.jsify()! as web.HeadersInit,
-              body: jsonEncode({'text': key}).toJS,
+              body: jsonEncode({'text': sayBigO(key)}).toJS,
             ))
         .toDart;
     if (!r.ok) return false;
