@@ -8,7 +8,9 @@ void main() {
     expect(sayBigO('O(n log n)'), 'O de N logaritmo de N');
     expect(sayBigO('O(n²) y O(V+E)'), 'O de N al cuadrado y O de V más E');
     expect(sayBigO('O(R·C·log)'), 'O de R por C por logaritmo');
-    expect(sayBigO('sin Big O'), 'sin Big O');
+    expect(sayBigO('sin Big O'), 'sin Big Óu');
     expect(sayBigO('O(N) en la OBI'), 'O de N en la Obi');
+    expect(sayBigO('El grader usa cout'), 'El gréider usa si áut');
+    expect(sayBigO('sin grader.cpp ni graderX'), 'sin gréider.cpp ni graderX');
   });
 }
