@@ -901,11 +901,14 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
   Future<void> _geanyCompile() async {
     final r = await _judge.compile(_code);
     if (!mounted) return;
+    final linkOnly = RegExp(r'undefined reference|ld returned|sin definir')
+        .hasMatch(r.error);
+    final ok = r.ok || linkOnly;
     setState(() {
       if (_build.isNotEmpty && _build.last.text == 'Revisando…') {
         _build.removeLast();
       }
-      if (r.ok) {
+      if (ok) {
         _build
           ..add(const _Line('Compilación terminada con éxito.',
               color: Color(0xFF4E9A06)))
