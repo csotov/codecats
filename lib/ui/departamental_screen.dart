@@ -93,7 +93,7 @@ class _DepartamentalScreenState extends State<DepartamentalScreen> {
               _tile(
                   context,
                   '🎬',
-                  'Video: así es el examen (2 min y medio)',
+                  'Video: así es el examen (3 minutos)',
                   'El Profe muestra CMS, la terminal de Ubuntu, Geany y cómo subir el archivo',
                   'Mirar el video antes de practicar',
                   const ObiVideoScreen(),
