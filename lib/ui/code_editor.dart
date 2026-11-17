@@ -12,11 +12,15 @@ class CodeEditor extends StatefulWidget {
     required this.initial,
     required this.onChanged,
     this.minHeight = 220,
+    this.geany = false,
   });
 
   final String initial;
   final ValueChanged<String> onChanged;
   final double minHeight;
+
+  /// Light Geany look: white page, gray line numbers, default Geany colors.
+  final bool geany;
 
   @override
   State<CodeEditor> createState() => CodeEditorState();
@@ -80,6 +84,33 @@ class CodeEditorState extends State<CodeEditor> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.geany) {
+      return RepaintBoundary(
+        child: Container(
+          constraints: BoxConstraints(minHeight: widget.minHeight),
+          color: Colors.white,
+          child: CodeTheme(
+            data: const CodeThemeData(styles: _geanyTheme),
+            child: CodeField(
+              controller: _controller,
+              background: Colors.white,
+              cursorColor: Colors.black,
+              textStyle: const TextStyle(
+                  fontFamily: 'monospace', fontSize: 13, height: 1.35),
+              lineNumberStyle: const LineNumberStyle(
+                  width: 38,
+                  margin: 6,
+                  background: Color(0xFFE6E6E6),
+                  textStyle: TextStyle(
+                      color: Colors.black, fontSize: 12, height: 1.35)),
+              expands: false,
+              wrap: false,
+              onChanged: widget.onChanged,
+            ),
+          ),
+        ),
+      );
+    }
     return RepaintBoundary(
         child: Container(
       constraints: BoxConstraints(minHeight: widget.minHeight),
@@ -103,3 +134,19 @@ class CodeEditorState extends State<CodeEditor> {
     ));
   }
 }
+
+/// Geany 1.38 default colors for C/C++ (filetypes.common / filetypes.c).
+const _geanyTheme = {
+  'root': TextStyle(color: Colors.black, backgroundColor: Colors.white),
+  'keyword': TextStyle(color: Color(0xFF00007F), fontWeight: FontWeight.bold),
+  'built_in': TextStyle(color: Color(0xFF00007F), fontWeight: FontWeight.bold),
+  'type': TextStyle(color: Color(0xFF00007F), fontWeight: FontWeight.bold),
+  'literal': TextStyle(color: Color(0xFF007F00)),
+  'number': TextStyle(color: Color(0xFF007F00)),
+  'string': TextStyle(color: Color(0xFFFF901E)),
+  'comment': TextStyle(color: Color(0xFFD00000)),
+  'meta': TextStyle(color: Color(0xFF007F7F)),
+  'meta-string': TextStyle(color: Color(0xFFFF901E)),
+  'meta-keyword': TextStyle(color: Color(0xFF007F7F)),
+  'title': TextStyle(color: Colors.black),
+};

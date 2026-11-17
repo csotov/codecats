@@ -426,6 +426,8 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
 
   /// Geany runs in its own window over the browser (CMS page).
   late bool _geany = false;
+  int _msgTab = 4;
+  final _build = <_Line>[];
   late bool _fileOpen = !widget.tutorial && !widget.demo;
 
   void _setGeany(bool v, {bool user = true}) {
@@ -441,6 +443,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
     setState(() {
       _step = i;
       _tutNote = note;
+      _msgTab = 4;
       _hole = null;
     });
     if (i == null) {
@@ -832,23 +835,8 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
           const Icon(Icons.public, color: Color(0xFFFF9500), size: 30),
           !_geany,
           () => _setGeany(false)),
-      _dockIcon(
-          'Geany: el editor del examen',
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-                color: const Color(0xFF7CB342),
-                borderRadius: BorderRadius.circular(7)),
-            alignment: Alignment.center,
-            child: const Text('G',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 20)),
-          ),
-          _geany,
-          () => _setGeany(true),
+      _dockIcon('Geany: el editor del examen', const _GeanyLogo(size: 34),
+          _geany, () => _setGeany(true),
           key: _kDock),
       _dockIcon(
           'Archivos',
@@ -866,128 +854,426 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
     );
   }
 
-  Widget _geanyTab(String label, {bool on = false}) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-            color: on ? Colors.white : Colors.transparent,
-            border: on
-                ? const Border(
-                    top: BorderSide(color: Color(0xFFE95420), width: 2))
-                : null),
-        child: Text(label,
-            style: TextStyle(
-                fontSize: 12,
-                color: _cmsText,
-                fontWeight: on ? FontWeight.bold : FontWeight.normal)),
-      );
+  static const _gtkBg = Color(0xFFF6F5F4);
+  static const _gtkEdge = Color(0xFFCDC7C2);
+  static const _gtkText = Color(0xFF2E3436);
 
-  void _geanyBuild() {
+  String _clock() {
+    final n = DateTime.now();
+    String two(int x) => x.toString().padLeft(2, '0');
+    return '${two(n.hour)}:${two(n.minute)}:${two(n.second)}';
+  }
+
+  void _geanyBuild({bool link = true}) {
+    final dir = _sh.cppDir ?? _sh.cwd;
     setState(() {
-      _say(
-          'g++ -Wall -o "${t.file}" "${t.file}.cpp"  (en el directorio: ${_sh.cppDir ?? _sh.cwd})',
-          cmd: true);
-      _say("/usr/bin/ld: ... undefined reference to `main'",
-          color: const Color(0xFFEF2929));
-      _say('Compilación fallida.', color: const Color(0xFFEF2929));
-      _say(
-          '🐱 Profe: el botón Construir compila solo tu archivo, sin el grader (que tiene el main). En el examen compilá en esta Terminal: g++ ... grader.cpp ${t.file}.cpp',
-          color: _orange);
+      _build
+        ..clear()
+        ..add(_Line(
+            link
+                ? 'g++ -Wall -o "${t.file}" "${t.file}.cpp" (en el directorio: $dir)'
+                : 'g++ -Wall -c "${t.file}.cpp" (en el directorio: $dir)',
+            color: _gtkText));
+      if (link) {
+        _build
+          ..add(const _Line(
+              "/usr/bin/ld: /usr/lib/gcc/x86_64-linux-gnu/11/../../../x86_64-linux-gnu/Scrt1.o: en la función `_start':",
+              color: _gtkText))
+          ..add(const _Line("(.text+0x1b): referencia a `main' sin definir",
+              color: Color(0xFFCC0000)))
+          ..add(const _Line('collect2: error: ld returned 1 exit status',
+              color: Color(0xFFCC0000)))
+          ..add(const _Line('Compilación fallida.', color: Color(0xFFCC0000)))
+          ..add(_Line(
+              '🐱 Profe: Construir compila solo tu archivo, sin el grader (que tiene el main). '
+              'En el examen compilá en la pestaña Terminal: g++ ... grader.cpp ${t.file}.cpp',
+              color: _orange));
+      } else {
+        _build
+          ..add(const _Line('Compilación terminada con éxito.',
+              color: Color(0xFF4E9A06)))
+          ..add(const _Line(
+              '🐱 Profe: eso solo revisa que tu archivo no tenga errores. '
+              'Para probarlo hay que compilarlo con el grader en la Terminal.',
+              color: _orange));
+      }
+      _msgTab = 1;
     });
-    _scrollTerm();
-    Cloud.instance.log('obi_geany_build', levelId: t.id, data: {'mode': _mode});
+    Cloud.instance.log('obi_geany_build',
+        levelId: t.id, data: {'mode': _mode, 'link': link});
   }
 
   Widget _geanyWindow() {
-    const title =
-        TextStyle(color: Colors.white, fontSize: 12, fontFamily: _font);
-    Widget tool(IconData i, String tip, VoidCallback on, {Key? key}) => Tooltip(
+    final wide = _wide;
+    Widget tool(IconData i, String tip, VoidCallback? on,
+            {Key? key,
+            Color color = const Color(0xFF555753),
+            bool drop = false}) =>
+        Tooltip(
           key: key,
           message: tip,
-          child: IconButton(
-              iconSize: 20,
-              visualDensity: VisualDensity.compact,
-              color: const Color(0xFF444444),
-              onPressed: on,
-              icon: Icon(i)),
+          child: InkWell(
+            onTap: on,
+            borderRadius: BorderRadius.circular(4),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(i,
+                    size: 20,
+                    color: on == null ? const Color(0xFFBBBBBB) : color),
+                if (drop)
+                  const Icon(Icons.arrow_drop_down,
+                      size: 16, color: Color(0xFF555753)),
+              ]),
+            ),
+          ),
         );
+    Widget sep() => Container(
+        width: 1,
+        height: 22,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        color: const Color(0xFFD8D4D0));
+    Widget field(double w) => Container(
+        width: w,
+        height: 24,
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: _gtkEdge),
+            borderRadius: BorderRadius.circular(4)));
     void soon(String what) =>
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('$what: en el examen usá la Terminal de abajo.')));
-    return Material(
-      key: _kGeanyWin,
-      elevation: 16,
-      borderRadius: BorderRadius.circular(8),
-      clipBehavior: Clip.antiAlias,
-      color: const Color(0xFFF6F5F4),
-      child: Column(children: [
-        Container(
-          height: 32,
-          color: const Color(0xFF2C2C2C),
-          padding: const EdgeInsets.only(left: 12),
-          child: Row(children: [
-            Expanded(
-              child: Text(
-                  '${_fileOpen ? '${t.file}.cpp - ${_cppPath.replaceFirst(_sh.home, '~')} - ' : ''}Geany',
-                  overflow: TextOverflow.ellipsis,
-                  style: title.copyWith(fontWeight: FontWeight.bold)),
+            content: Text('$what: en el examen usá la pestaña Terminal.')));
+    void saved() => ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Guardado 💾 (en el examen: Ctrl + S)')));
+    final lines = _fileOpen ? '\n'.allMatches(_code).length + 1 : 1;
+    return Theme(
+      data: Theme.of(context).copyWith(
+          scrollbarTheme: const ScrollbarThemeData(
+              thumbColor: WidgetStatePropertyAll(Color(0xFFB8B4B0)))),
+      child: Material(
+        key: _kGeanyWin,
+        elevation: 16,
+        borderRadius: BorderRadius.circular(wide ? 10 : 0),
+        clipBehavior: Clip.antiAlias,
+        color: _gtkBg,
+        textStyle: const TextStyle(
+            fontFamily: 'Ubuntu', fontSize: 13, color: _gtkText),
+        child: Column(children: [
+          // GNOME (Yaru) title bar.
+          Container(
+            height: 36,
+            decoration: const BoxDecoration(
+                color: Color(0xFFEBEBEB),
+                border: Border(bottom: BorderSide(color: Color(0xFFD6D1CD)))),
+            padding: const EdgeInsets.only(left: 8),
+            child: Row(children: [
+              const _GeanyLogo(size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                    _fileOpen
+                        ? '${t.file}.cpp - $_cppPath - Geany'
+                        : 'sin título - Geany',
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, color: _gtkText)),
+              ),
+              Tooltip(
+                key: _kMin,
+                message: 'Minimizar Geany (volver al navegador)',
+                child: _winBtn(Icons.minimize, () => _setGeany(false)),
+              ),
+              _winBtn(Icons.crop_square, null),
+              Tooltip(
+                  message: 'Cerrar Geany',
+                  child: _winBtn(Icons.close, () => _setGeany(false))),
+              const SizedBox(width: 4),
+            ]),
+          ),
+          // Menu bar.
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: [
+                for (final m in const [
+                  'Archivo',
+                  'Editar',
+                  'Buscar',
+                  'Ver',
+                  'Documento',
+                  'Proyecto',
+                  'Construir',
+                  'Herramientas',
+                  'Ayuda'
+                ])
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Text(m),
+                  ),
+              ]),
             ),
-            Tooltip(
-              key: _kMin,
-              message: 'Minimizar Geany (volver al navegador)',
-              child: IconButton(
-                  iconSize: 18,
-                  color: Colors.white,
-                  onPressed: () => _setGeany(false),
-                  icon: const Icon(Icons.minimize)),
+          ),
+          // Toolbar, same order as Geany 1.38.
+          Container(
+            height: 34,
+            decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0xFFD8D4D0)))),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              children: [
+                Row(children: [
+                  tool(Icons.note_add_outlined, 'Crear un archivo nuevo',
+                      () => soon('Nuevo'),
+                      drop: true),
+                  tool(Icons.folder_outlined, 'Abrir un archivo existente',
+                      () => soon('Abrir'),
+                      color: const Color(0xFF8F5902), drop: true),
+                  tool(Icons.save_outlined, 'Guardar el archivo actual', saved,
+                      color: const Color(0xFF3465A4)),
+                  tool(Icons.library_books_outlined,
+                      'Guardar todos los archivos abiertos', saved,
+                      color: const Color(0xFFCC0000)),
+                  sep(),
+                  tool(Icons.refresh,
+                      'Recargar el archivo actual desde el disco', null,
+                      color: const Color(0xFF3465A4)),
+                  tool(Icons.close, 'Cerrar el archivo actual', null),
+                  sep(),
+                  tool(Icons.arrow_back, 'Navegar atrás una ubicación', null),
+                  tool(Icons.arrow_forward, 'Navegar adelante una ubicación',
+                      null),
+                  sep(),
+                  tool(
+                      Icons.offline_bolt_outlined,
+                      'Compilar el archivo actual (F8)',
+                      _fileOpen ? () => _geanyBuild(link: false) : null,
+                      color: const Color(0xFFCC0000)),
+                  tool(Icons.view_module, 'Construir el archivo actual (F9)',
+                      _fileOpen ? _geanyBuild : null,
+                      key: _kBuild, color: const Color(0xFF8F3B0F), drop: true),
+                  tool(
+                      Icons.settings_outlined,
+                      'Ejecutar o ver el archivo actual (F5)',
+                      () => soon('Ejecutar')),
+                  sep(),
+                  tool(Icons.palette_outlined,
+                      'Abrir un diálogo de selección de color', null,
+                      color: const Color(0xFFC4A000)),
+                  if (wide) ...[
+                    field(110),
+                    tool(Icons.search, 'Buscar el texto ingresado',
+                        () => soon('Buscar'),
+                        color: const Color(0xFF204A87)),
+                    field(50),
+                    tool(Icons.pan_tool_alt_outlined,
+                        'Saltar a la línea ingresada', null),
+                    sep(),
+                    tool(Icons.logout, 'Salir de Geany', () => _setGeany(false),
+                        color: const Color(0xFFCC0000)),
+                  ],
+                ]),
+              ],
             ),
-            Tooltip(
-              message: 'Cerrar Geany',
-              child: IconButton(
-                  iconSize: 18,
-                  color: Colors.white,
-                  onPressed: () => _setGeany(false),
-                  icon: const Icon(Icons.close)),
-            ),
-          ]),
-        ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-          child: const Text(
-              'Archivo   Editar   Buscar   Ver   Documento   Proyecto   Construir   Herramientas   Ayuda',
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, color: _cmsText)),
-        ),
-        Container(
-          color: const Color(0xFFEDEDED),
-          child: Row(children: [
-            tool(Icons.note_add_outlined, 'Nuevo', () => soon('Nuevo')),
-            tool(Icons.folder_open, 'Abrir', () => soon('Abrir')),
-            tool(Icons.save_outlined, 'Guardar (Ctrl + S)', () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Guardado 💾 (en el examen: Ctrl + S)')));
-            }),
-            const VerticalDivider(width: 10),
-            tool(Icons.build_outlined, 'Construir (F9)', _geanyBuild,
-                key: _kBuild),
-            tool(Icons.play_arrow, 'Ejecutar (F5)', () => soon('Ejecutar')),
-          ]),
-        ),
-        Expanded(flex: 11, child: _editor()),
-        Container(
-          color: const Color(0xFFE0E0E0),
-          child: Row(children: [
-            _geanyTab('Estado'),
-            _geanyTab('Compilador'),
-            _geanyTab('Mensajes'),
-            _geanyTab('Borrador'),
-            _geanyTab('Terminal', on: true),
-          ]),
-        ),
-        Expanded(flex: 10, child: _terminal()),
-      ]),
+          ),
+          Expanded(
+            flex: 11,
+            child:
+                Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              if (wide) SizedBox(width: 170, child: _geanySidebar()),
+              if (wide) const VerticalDivider(width: 1, color: _gtkEdge),
+              Expanded(child: _editor()),
+            ]),
+          ),
+          const Divider(height: 1, color: _gtkEdge),
+          Expanded(flex: 10, child: _msgWindow(vertical: wide)),
+          // Status bar.
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: Color(0xFFD8D4D0)))),
+            child: Text(
+                _fileOpen
+                    ? 'lín: 1 / $lines\tcol: 0\tsel: 0\tINS\tTAB\tmodo: LF\tcodificación: UTF-8\ttipo de archivo: C++\támbito: desconocido'
+                    : 'Esto es Geany 1.38.',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 11)),
+          ),
+        ]),
+      ),
     );
   }
+
+  Widget _winBtn(IconData i, VoidCallback? on) => InkWell(
+        onTap: on,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 24,
+          height: 24,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: const BoxDecoration(
+              color: Color(0xFFDAD6D2), shape: BoxShape.circle),
+          child: Icon(i, size: 14, color: _gtkText),
+        ),
+      );
+
+  Widget _geanySidebar() => Container(
+        color: Colors.white,
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Container(
+            color: _gtkBg,
+            child: Row(children: [
+              const Icon(Icons.arrow_left, size: 16, color: Color(0xFF888A85)),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  decoration: const BoxDecoration(
+                      border: Border(
+                          bottom:
+                              BorderSide(color: Color(0xFF3584E4), width: 3))),
+                  alignment: Alignment.center,
+                  child: const Text('Símbolos', style: TextStyle(fontSize: 12)),
+                ),
+              ),
+              const Icon(Icons.arrow_right, size: 16, color: Color(0xFF888A85)),
+            ]),
+          ),
+          if (_fileOpen)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+              child: DefaultTextStyle.merge(
+                style: const TextStyle(fontSize: 12),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(children: [
+                        Icon(Icons.arrow_drop_down, size: 16),
+                        Icon(Icons.link, size: 14, color: Color(0xFFC4A000)),
+                        SizedBox(width: 2),
+                        Text('Funciones'),
+                      ]),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 22, top: 2),
+                        child: Row(children: [
+                          const Icon(Icons.link,
+                              size: 14, color: Color(0xFFC4A000)),
+                          const SizedBox(width: 2),
+                          Flexible(
+                              child: Text('${t.file} [${_fnLine()}]',
+                                  overflow: TextOverflow.ellipsis)),
+                        ]),
+                      ),
+                    ]),
+              ),
+            ),
+        ]),
+      );
+
+  int _fnLine() {
+    final ls = _code.split('\n');
+    final i = ls.indexWhere((l) => l.contains('${t.file}('));
+    return i < 0 ? 1 : i + 1;
+  }
+
+  static const _msgTabs = [
+    'Estado',
+    'Compilador',
+    'Mensajes',
+    'Borrador',
+    'Terminal'
+  ];
+
+  Widget _msgWindow({required bool vertical}) {
+    Widget tab(int i) {
+      final on = _msgTab == i;
+      return InkWell(
+        onTap: () => setState(() => _msgTab = i),
+        child: Container(
+          padding: vertical
+              ? const EdgeInsets.symmetric(horizontal: 10, vertical: 9)
+              : const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+          decoration: BoxDecoration(
+              border: vertical
+                  ? Border(
+                      right: BorderSide(
+                          color:
+                              on ? const Color(0xFF3584E4) : Colors.transparent,
+                          width: 3))
+                  : Border(
+                      bottom: BorderSide(
+                          color:
+                              on ? const Color(0xFF3584E4) : Colors.transparent,
+                          width: 3))),
+          alignment: Alignment.center,
+          child: Text(_msgTabs[i],
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: on ? FontWeight.bold : FontWeight.normal)),
+        ),
+      );
+    }
+
+    final tabs = [for (var i = 0; i < _msgTabs.length; i++) tab(i)];
+    final now = _clock();
+    final body = switch (_msgTab) {
+      4 => _terminal(),
+      1 => _plainLog(_build),
+      0 => _plainLog([
+          _Line('$now: Esto es Geany 1.38.', color: _gtkText),
+          if (_fileOpen)
+            _Line('$now: Archivo $_cppPath/${t.file}.cpp abierto (1).',
+                color: _gtkText),
+        ]),
+      3 => Container(
+          color: Colors.white,
+          padding: const EdgeInsets.all(6),
+          child: const TextField(
+              maxLines: null,
+              expands: true,
+              style: _mono,
+              decoration: InputDecoration(
+                  border: InputBorder.none,
+                  isDense: true,
+                  hintText: 'Borrador: tus notas (no se guardan)'))),
+      _ => _plainLog(const []),
+    };
+    return vertical
+        ? Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Container(
+                width: 92,
+                color: const Color(0xFFEDEBE9),
+                child: Column(children: tabs)),
+            Expanded(child: body),
+          ])
+        : Column(children: [
+            Container(
+              width: double.infinity,
+              color: const Color(0xFFEDEBE9),
+              child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal, child: Row(children: tabs)),
+            ),
+            Expanded(child: body),
+          ]);
+  }
+
+  Widget _plainLog(List<_Line> ls) => Container(
+        color: Colors.white,
+        child: ListView(
+          padding: const EdgeInsets.all(6),
+          children: [
+            for (final l in ls)
+              SelectableText(l.text,
+                  style: _mono.copyWith(fontSize: 12, color: l.color)),
+          ],
+        ),
+      );
 
   Widget _navbar() {
     final name = Progress.instance.active?.name ?? '';
@@ -1780,80 +2066,74 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
   String get _cppPath => _sh.cppDir ?? '~/Descargas/${t.file}/cpp';
 
   Widget _editor() {
-    return Column(children: [
-      Container(
-        key: _kFileBar,
-        width: double.infinity,
-        color: const Color(0xFFE8E8E7),
-        padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-        child: Row(children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(4))),
-            child: Text('${t.file}.cpp ✏️',
-                style: const TextStyle(fontSize: 12, color: _cmsText)),
-          ),
-          const SizedBox(width: 10),
+    return Container(
+      color: Colors.white,
+      child: Column(children: [
+        Container(
+          key: _kFileBar,
+          width: double.infinity,
+          color: _gtkBg,
+          padding: const EdgeInsets.only(left: 4),
+          child: Row(children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(12, 6, 8, 4),
+              decoration: const BoxDecoration(
+                  border: Border(
+                      bottom: BorderSide(color: Color(0xFF3584E4), width: 3))),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text(_fileOpen ? '${t.file}.cpp' : 'sin título',
+                    style: const TextStyle(fontSize: 12, color: _gtkText)),
+                const SizedBox(width: 8),
+                const Icon(Icons.close, size: 12, color: Color(0xFF888A85)),
+              ]),
+            ),
+          ]),
+        ),
+        if (!_fileOpen)
           Expanded(
-            child: Text(
-                'grader.cpp y ${t.file}.h no se tocan · se guarda con Ctrl + S',
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF666666))),
-          ),
-        ]),
-      ),
-      if (!_fileOpen)
-        Expanded(
-          child: Container(
-            key: _kEditor,
-            color: const Color(0xFFF0F0F0),
-            alignment: Alignment.center,
-            padding: const EdgeInsets.all(20),
-            child: Text(
-                'No hay ningún archivo abierto.\nEn la Terminal de abajo escribí: geany ${t.file}.cpp',
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Color(0xFF777777), fontSize: 14)),
-          ),
-        )
-      else
-        Expanded(
-          child: SingleChildScrollView(
-            key: _kEditor,
-            padding: const EdgeInsets.all(8),
-            child: CodeEditor(
-              key: ValueKey('ed$_editorGen'),
-              initial: _code,
-              minHeight: 360,
-              onChanged: (s) {
-                _code = s;
-                _compiled = false;
-              },
+            child: Container(
+              key: _kEditor,
+              color: Colors.white,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.all(20),
+              child: Text(
+                  'No hay ningún archivo abierto.\nEn la Terminal de abajo escribí: geany ${t.file}.cpp',
+                  textAlign: TextAlign.center,
+                  style:
+                      const TextStyle(color: Color(0xFF888A85), fontSize: 14)),
+            ),
+          )
+        else
+          Expanded(
+            child: SingleChildScrollView(
+              key: _kEditor,
+              child: CodeEditor(
+                key: ValueKey('ed$_editorGen'),
+                initial: _code,
+                minHeight: 360,
+                geany: true,
+                onChanged: (s) {
+                  _code = s;
+                  _compiled = false;
+                },
+              ),
             ),
           ),
-        ),
-      Container(
-        width: double.infinity,
-        color: const Color(0xFFF6F5F4),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-        child: const Text('C++ · UTF-8 · guardado',
-            style: TextStyle(fontSize: 11, color: Color(0xFF666666))),
-      ),
-    ]);
+      ]),
+    );
   }
 
   // ---------- Ubuntu terminal ----------
 
-  static const _termBg = Color(0xFF300A24);
+  static const _termBg = Colors.black;
 
   Widget _chip(String cmd, {Key? key, String? label}) => Tooltip(
         key: key,
         message: 'Ejecutar: $cmd',
         child: Material(
-          color: const Color(0xFF4A1A3C),
+          color: const Color(0xFF2E3436),
           shape: RoundedRectangleBorder(
-              side: const BorderSide(color: Color(0xFF7A3A6C)),
+              side: const BorderSide(color: Color(0xFF555753)),
               borderRadius: BorderRadius.circular(6)),
           child: InkWell(
             borderRadius: BorderRadius.circular(6),
@@ -1866,6 +2146,45 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
           ),
         ),
       );
+
+  /// Ubuntu's default bash prompt: green user@host, blue path.
+  static TextSpan _promptSpan(String p) {
+    final m = RegExp(r'^([^:]+):(.*)\$$').firstMatch(p);
+    if (m == null) return TextSpan(text: p, style: _mono);
+    const b = TextStyle(fontWeight: FontWeight.bold);
+    return TextSpan(style: _mono.copyWith(color: Colors.white), children: [
+      TextSpan(text: m[1], style: b.copyWith(color: const Color(0xFF8AE234))),
+      const TextSpan(text: ':'),
+      TextSpan(text: m[2], style: b.copyWith(color: const Color(0xFF729FCF))),
+      const TextSpan(text: '\$'),
+    ]);
+  }
+
+  TextSpan _termSpan(_Line l) {
+    final style = _mono.copyWith(color: l.color);
+    if (l.cmd) {
+      final i = l.text.indexOf('\$ ');
+      if (i > 0) {
+        return TextSpan(style: style.copyWith(color: Colors.white), children: [
+          _promptSpan(l.text.substring(0, i + 1)),
+          TextSpan(text: l.text.substring(i + 1)),
+        ]);
+      }
+      return TextSpan(text: l.text, style: style);
+    }
+    if (!l.text.contains('/') || l.color != Colors.white) {
+      return TextSpan(text: l.text, style: style);
+    }
+    return TextSpan(style: style, children: [
+      for (final w in l.text.split(RegExp(r'(?<= )|(?= )')))
+        TextSpan(
+            text: w,
+            style: w.endsWith('/')
+                ? const TextStyle(
+                    color: Color(0xFF729FCF), fontWeight: FontWeight.bold)
+                : null),
+    ]);
+  }
 
   Widget _terminal() {
     final compile =
@@ -1887,7 +2206,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
             _chip('clear'),
           ]),
         ),
-        if (_busy) const LinearProgressIndicator(color: Color(0xFFE95420)),
+        if (_busy) const LinearProgressIndicator(color: Color(0xFF3584E4)),
         Expanded(
           child: Container(
             key: _kTermOut,
@@ -1900,11 +2219,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
                         'Escribí una orden abajo y apretá Enter. Por ejemplo: '
                         'pwd, ls, cd Descargas.',
                         style: _mono.copyWith(color: Colors.white54)),
-                  for (final l in _term)
-                    SelectableText(l.text,
-                        style: _mono.copyWith(
-                            color: l.cmd ? const Color(0xFF8AE234) : l.color,
-                            fontWeight: l.cmd ? FontWeight.bold : null)),
+                  for (final l in _term) SelectableText.rich(_termSpan(l)),
                 ],
                 pad: const EdgeInsets.fromLTRB(4, 4, 16, 10)),
           ),
@@ -1913,10 +2228,8 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
           key: _kCmd,
           padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
           child: Row(children: [
-            Text('${_sh.prompt} ',
-                style: _mono.copyWith(
-                    color: const Color(0xFF8AE234),
-                    fontWeight: FontWeight.bold)),
+            Text.rich(_promptSpan(_sh.prompt)),
+            const Text(' ', style: _mono),
             Expanded(
               child: TextField(
                 controller: _cmd,
@@ -1948,7 +2261,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
             decoration: InputDecoration(
                 isDense: true,
                 filled: true,
-                fillColor: const Color(0xFF4A1A3C),
+                fillColor: const Color(0xFF1C1C1C),
                 border: const OutlineInputBorder(),
                 hintStyle: const TextStyle(color: Colors.white38),
                 hintText:
@@ -2601,6 +2914,16 @@ class _Sub {
         for (var i = 0; i < ok.length; i++)
           if (ok[i]) t.subtasks[i].pts
       ].fold(0, (a, b) => a + b);
+}
+
+/// Geany's teapot icon (GPL, from the geany package).
+class _GeanyLogo extends StatelessWidget {
+  const _GeanyLogo({required this.size});
+  final double size;
+
+  @override
+  Widget build(BuildContext context) =>
+      Image.asset('assets/geany.png', width: size, height: size);
 }
 
 class _Clock extends StatefulWidget {
