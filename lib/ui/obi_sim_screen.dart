@@ -2446,18 +2446,18 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
 
   /// Length of each narration clip (ms), from assets/video narration.
   static const _demoMs = [
-    16248,
+    16896,
     9336,
     7032,
-    6624,
+    12480,
     6216,
     6264,
     12264,
+    14136,
+    12552,
     10080,
-    12288,
-    5904,
     9504,
-    14520,
+    15984,
     8400,
     9120,
     10464
@@ -2510,9 +2510,12 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
       await wait(2500);
       _downloadZip();
     });
-    await seg(3, _kCmd, () async {
-      _open(2);
+    await seg(3, _kDock, () async {
       await wait(2500);
+      _setGeany(true, user: false);
+      setState(() => _demoKey = _kGeanyWin);
+      await wait(4000);
+      setState(() => _demoKey = _kCmd);
       await _type('pwd');
     });
     await seg(4, _kTermOut, () => _type('ls'));
@@ -2529,6 +2532,7 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
       await _type('geany ${t.file}.cpp');
     });
     await seg(8, _kEditor, () async {
+      if (!_geany) _setGeany(true, user: false);
       final lines = kTutorialSolution.split('\n');
       for (var k = 3; k <= lines.length; k++) {
         if (!mounted) return;
@@ -2541,18 +2545,21 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
       _compiled = false;
     });
     await seg(9, _kTermOut, () async {
-      _open(2);
-      await wait(1200);
+      await wait(800);
       await _type('g++ -std=gnu++17 -O2 -o ${t.file} grader.cpp ${t.file}.cpp',
           ms: 30);
+      setState(() => _demoKey = _kBuild);
     });
     await seg(10, _kTermOut, () async {
       await wait(800);
       await _type('./${t.file} < ../examples/0-01.in', ms: 45);
     });
-    await seg(11, _kPick, () async {
+    await seg(11, _kMin, () async {
+      await wait(1500);
+      _setGeany(false, user: false);
       _open(3);
-      await wait(5000);
+      setState(() => _demoKey = _kPick);
+      await wait(4500);
       await _pickFile(auto: ['Descargas', t.file, 'cpp', '${t.file}.cpp']);
     });
     await seg(12, _kSubmit, () async {
