@@ -10,6 +10,7 @@ import '../services/cloud.dart';
 import '../services/open_url.dart';
 import '../services/progress.dart';
 import '../services/sfx.dart';
+import 'departamental_talk.dart';
 import 'keyboard_scroll.dart';
 import 'level_intro.dart';
 import 'obi_lesson.dart';
@@ -99,6 +100,14 @@ class _DepartamentalScreenState extends State<DepartamentalScreen> {
                   trailing: _done('vid:obi_exam') ? '✅' : '¡Miralo!'),
               _tile(
                   context,
+                  '🎤',
+                  'Charla del Profe: consejos para el examen',
+                  'Cómo leer, repartir el tiempo y mantener la calma',
+                  'Volver a escuchar los consejos del Profe',
+                  null,
+                  onTap: () => DepartamentalTalk.show(context)),
+              _tile(
+                  context,
                   '🧭',
                   'Tutorial 1: el examen dentro del juego',
                   'Paso a paso en una página igual a CMS: se ilumina dónde tocar',
@@ -177,7 +186,7 @@ class _DepartamentalScreenState extends State<DepartamentalScreen> {
 
   Widget _tile(BuildContext context, String emoji, String title, String sub,
           String tip, Widget? screen,
-          {String? trailing}) =>
+          {String? trailing, VoidCallback? onTap}) =>
       Padding(
         padding: const EdgeInsets.only(bottom: 8),
         child: Tooltip(
@@ -187,18 +196,21 @@ class _DepartamentalScreenState extends State<DepartamentalScreen> {
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
                 side: BorderSide(
-                    color: screen == null ? Colors.white24 : _blue,
+                    color: screen == null && onTap == null
+                        ? Colors.white24
+                        : _blue,
                     width: 1.4)),
             child: ListTile(
               leading: Text(emoji, style: const TextStyle(fontSize: 28)),
               title: Text(title,
                   style: const TextStyle(fontWeight: FontWeight.w900)),
               subtitle: Text(sub, style: const TextStyle(fontSize: 12)),
-              trailing: Text(trailing ?? (screen == null ? '' : '›'),
+              trailing: Text(
+                  trailing ?? (screen == null && onTap == null ? '' : '›'),
                   style: const TextStyle(
                       color: _blue, fontWeight: FontWeight.w900)),
               onTap: screen == null
-                  ? null
+                  ? onTap
                   : () => Navigator.push(
                       context, MaterialPageRoute(builder: (_) => screen)),
             ),
