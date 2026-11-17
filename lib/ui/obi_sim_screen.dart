@@ -805,18 +805,21 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
       Tooltip(
         key: key,
         message: tip,
-        child: InkWell(
-          onTap: on,
-          borderRadius: BorderRadius.circular(10),
-          child: Container(
-            width: 46,
-            height: 46,
-            margin: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-                color: active ? Colors.white24 : Colors.transparent,
-                borderRadius: BorderRadius.circular(10)),
-            alignment: Alignment.center,
-            child: icon,
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: on,
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 46,
+              height: 46,
+              margin: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                  color: active ? Colors.white24 : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10)),
+              alignment: Alignment.center,
+              child: icon,
+            ),
           ),
         ),
       );
