@@ -43,10 +43,8 @@ final _english = RegExp(
 
 /// Spanish reading for the Profe's voice: O(n) → "O de N", O(1) → "O de
 /// uno", and OBI as a word ("Obi"), not letter by letter.
-String sayBigO(String text) => text
-        .replaceAll(_obi, 'Obi')
-        .replaceAllMapped(_english, (m) => kEnglishSay[m[1]]!)
-        .replaceAllMapped(_bigO, (m) {
+String sayBigO(String text) =>
+    text.replaceAll(_obi, 'Obi').replaceAllMapped(_bigO, (m) {
       var s = m
           .group(1)!
           .replaceAll('n²', 'N al cuadrado')
@@ -61,4 +59,4 @@ String sayBigO(String text) => text
           .trim();
       if (s.endsWith(' de')) s = s.substring(0, s.length - 3);
       return 'O de $s';
-    });
+    }).replaceAllMapped(_english, (m) => kEnglishSay[m[1]]!);

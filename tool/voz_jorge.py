@@ -76,8 +76,8 @@ def say_big_o(t):
             s = s[:-3]
         return 'O de ' + s
     t = re.sub(r'\bOBI\b', 'Obi', t)
-    t = ENG.sub(lambda m: ENGLISH[m.group(1)], t)
-    return BIGO.sub(one, t)
+    t = BIGO.sub(one, t)
+    return ENG.sub(lambda m: ENGLISH[m.group(1)], t)
 
 
 def unescape(s):
