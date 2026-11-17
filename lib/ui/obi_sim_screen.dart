@@ -345,7 +345,8 @@ class _ObiSimScreenState extends State<ObiSimScreen> {
   late final FakeShell _sh =
       FakeShell(task: t.file, zip: _zipFiles, code: () => _code);
 
-  String get _subsKey => 'obi_subs:${t.id}:$_mode';
+  String get _subsKey =>
+      'obi_subs:${Progress.instance.active?.id ?? ''}:${t.id}:$_mode';
 
   Future<void> _loadSubs() async {
     if (widget.demo) return;
