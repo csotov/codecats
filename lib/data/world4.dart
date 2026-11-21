@@ -41,7 +41,6 @@ final world4 = World(
         'Store with: for (int i = 0; i < n; i++) cin >> a[i];',
         'Print backwards: for (int i = n - 1; i >= 0; i--) cout << a[i] << " ";',
       ],
-      mode: EditorMode.hybrid,
       blocks: const [
         'decl_int',
         'decl_array',
@@ -85,7 +84,6 @@ final world4 = World(
       hEn: [
         'int suma = 0; for (int i = 0; i < n; i++) suma += a[i];',
       ],
-      mode: EditorMode.hybrid,
       blocks: const [
         'decl_int',
         'decl_array',
