@@ -34,7 +34,6 @@ final world3 = World(
       hEn: [
         'for (int i = 1; i <= n; i++) { cout << i << "\\n"; }',
       ],
-      mode: EditorMode.hybrid,
       blocks: const [
         'decl_int',
         'read_var',
@@ -71,7 +70,6 @@ final world3 = World(
         'for (int i = n; i >= 1; i--) starts at n and goes down by one.',
         'The "Repeat backwards" block does exactly this.',
       ],
-      mode: EditorMode.hybrid,
       blocks: const [
         'decl_int',
         'read_var',
@@ -110,7 +108,6 @@ final world3 = World(
         'int suma = 0; before the loop.',
         'Inside: suma += i; (the "Add to variable" block).',
       ],
-      mode: EditorMode.hybrid,
       blocks: const [
         'decl_int',
         'read_var',

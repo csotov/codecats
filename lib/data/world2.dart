@@ -42,7 +42,6 @@ final world2 = World(
         'if (n % 2 == 0) means "if the remainder of n divided by 2 is zero".',
         'Careful: compare with == (double equals), not =.',
       ],
-      mode: EditorMode.hybrid,
       blocks: const [
         'decl_int',
         'read_var',
@@ -83,7 +82,6 @@ final world2 = World(
         'You can put an if/else block inside the else of another.',
         'In code: if (n > 0) {...} else if (n < 0) {...} else {...}',
       ],
-      mode: EditorMode.hybrid,
       blocks: const [
         'decl_int',
         'read_var',
@@ -122,7 +120,6 @@ final world2 = World(
       hEn: [
         'if (a > b) print a, else print b.',
       ],
-      mode: EditorMode.hybrid,
       blocks: const [
         'decl_int',
         'read_var',

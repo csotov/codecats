@@ -36,7 +36,6 @@ final world1 = World(
         'In C++ you print with: cout << "text" << endl;',
         'The "Print text" block does it for you. Just change the text.',
       ],
-      mode: EditorMode.blocks,
       blocks: const ['print_text', 'print_expr'],
       concepts: const ['cout', 'salida'],
     ),
@@ -63,7 +62,6 @@ final world1 = World(
         'You need two cout, one per line.',
         'With blocks: use two "Print text" blocks.',
       ],
-      mode: EditorMode.blocks,
       blocks: const ['print_text', 'print_expr', 'print_inline'],
       concepts: const ['cout', 'endl'],
     ),
@@ -96,7 +94,6 @@ final world1 = World(
         'First declare the variable: int x = 0;',
         'Then read with cin >> x; and print with cout << x << endl;',
       ],
-      mode: EditorMode.blocks,
       blocks: const [
         'decl_int',
         'read_var',
@@ -134,7 +131,6 @@ final world1 = World(
         'Declare two variables: int a = 0, b = 0; (or two "Integer variable" blocks).',
         'Read both: cin >> a >> b; then print a + b.',
       ],
-      mode: EditorMode.hybrid,
       blocks: const [
         'decl_int',
         'read_var',
@@ -169,7 +165,6 @@ final world1 = World(
       hEn: [
         'Multiplication in C++ uses the asterisk: a * b',
       ],
-      mode: EditorMode.hybrid,
       blocks: const [
         'decl_int',
         'decl_ll',
@@ -204,7 +199,6 @@ final world1 = World(
         'You can print the expression directly: cout << n + 1 << endl;',
         'Or add to the variable: n = n + 1; (the "Assign" block).',
       ],
-      mode: EditorMode.hybrid,
       blocks: const [
         'decl_int',
         'read_var',
@@ -250,7 +244,6 @@ final world1 = World(
         '17 % 5 gives 2 because 2 are left over.',
         'Two different cout, each with endl.',
       ],
-      mode: EditorMode.hybrid,
       blocks: const [
         'decl_int',
         'read_var',
@@ -320,7 +313,6 @@ final world1 = World(
         'Easy: print cout << b << " " << a << endl; — no actual swap needed.',
         'If you want to practice a real swap: int t = a; a = b; b = t;',
       ],
-      mode: EditorMode.hybrid,
       blocks: const [
         'decl_int',
         'read_var',
