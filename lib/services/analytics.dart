@@ -123,8 +123,14 @@ class AnalyticsObserver extends NavigatorObserver {
       _pushed(route, previousRoute);
   @override
   void didPop(Route route, Route? previousRoute) {
-    _names.remove(route);
-    _shown(previousRoute);
+    final wasPrivate = _private(_names.remove(route));
+    if (!wasPrivate) return _shown(previousRoute);
+    // Wait for the exit animation so private frames never reach the replay.
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (previousRoute != null && previousRoute.isCurrent) {
+        _shown(previousRoute);
+      }
+    });
   }
 
   @override
