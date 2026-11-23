@@ -6,7 +6,7 @@ import 'worlds.dart';
 /// The third star: a visible challenge per level that gets a little
 /// harder world by world (Gomel-style graded difficulty).
 enum ChallengeKind {
-  /// Win in at most 2 battles: test with "Probar" before fighting.
+  /// Win in at most 2 battles: test with "Ejecutar" before fighting.
   fewFights,
 
   /// The code's estimated Big O is no worse than the level's.
@@ -92,7 +92,7 @@ List<String> challengeHelp(Level level) {
         'You won, nice! But the third star escaped twice. Let me help:'),
     if (k != ChallengeKind.bigO)
       l.pick(
-          'Antes de combatir, tocá "Probar" con los ejemplos y con un caso tuyo raro (el más chico, el más grande). Los campeones prueban más de lo que envían.',
+          'Antes de combatir, tocá "Ejecutar" con los ejemplos y con un caso tuyo raro (el más chico, el más grande). Los campeones prueban más de lo que envían.',
           'Before fighting, press "Run" with the samples and with a weird case of your own (the smallest, the largest). Champions test more than they submit.'),
     if (k != ChallengeKind.fewFights)
       l.pick(

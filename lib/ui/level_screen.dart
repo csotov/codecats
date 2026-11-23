@@ -418,7 +418,7 @@ class _LevelScreenState extends State<LevelScreen>
     }
     if (_dynHint == null) {
       return l.pick(
-          'El camino completo, paso a paso:\n$steps\nEscribí un paso por vez y probá con Correr.',
+          'El camino completo, paso a paso:\n$steps\nEscribí un paso por vez y probá con Ejecutar.',
           'The whole path, step by step:\n$steps\nWrite one step at a time and try Run.');
     }
     return l.pick('Mirando tu código: $_dynHint\n\nEl camino:\n$steps',
@@ -449,7 +449,7 @@ class _LevelScreenState extends State<LevelScreen>
     final half = refHalf(widget.level.id);
     return [
       ...out,
-      l.pick('Te muestro el esqueleto del código. Completá cada ___ y probá con Correr.',
+      l.pick('Te muestro el esqueleto del código. Completá cada ___ y probá con Ejecutar.',
               'Here is the skeleton of the code. Fill in each ___ and try Run.') +
           _codeSep +
           skel,
