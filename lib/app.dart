@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'l10n.dart';
+import 'services/analytics.dart';
 import 'services/cloud.dart';
 import 'services/sfx.dart';
 import 'ui/keyboard_scroll.dart';
@@ -59,6 +60,7 @@ class CodeCatsApp extends StatelessWidget {
         onPointerPanZoomUpdate: (_) => Cloud.instance.touch(),
         child: MaterialApp(
           navigatorKey: appNavigator,
+          navigatorObservers: [AnalyticsObserver()],
           title: 'CodeCats',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.theme,
