@@ -616,7 +616,7 @@ Future<void> maybeRunBlitz(BuildContext context) async {
         intro: l.pick('⚡ ¡Pregunta relámpago! (${i + 1}/$n)',
             '⚡ Lightning question! (${i + 1}/$n)'));
     if (ok == true) right++;
-    p.answerBlitzCard(key, ok == true);
+    if (ok != null) p.answerBlitzCard(key, ok);
     p.blitzSeq++;
     Cloud.instance
         .log('blitz_q', data: {'card': key, 'q': q.qEs, 'ok': ok == true});
