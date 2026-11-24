@@ -187,8 +187,8 @@ final kMathTerms = <MathTerm>[
       _r(r'criba|\bsieve\b'),
       'Criba de Eratóstenes',
       'Sieve of Eratosthenes',
-      'Escribís los números y tachás los múltiplos de 2, de 3, de 5… Los que quedan sin tachar son primos.',
-      'Write the numbers and cross out multiples of 2, 3, 5… What stays is prime.'),
+      'Escribís los números desde el 2. El 2 queda y tachás sus otros múltiplos (4, 6, 8…); después el 3 queda y tachás 6, 9, 12…, y así. Los que quedan sin tachar son primos.',
+      'Write the numbers from 2. Keep 2 and cross out its other multiples (4, 6, 8…); then keep 3 and cross out 6, 9, 12…, and so on. What stays is prime.'),
   MathTerm(
       _r(r'intervalo|\binterval'),
       'Intervalo',
