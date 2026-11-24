@@ -6,7 +6,7 @@ Con ls vemos qué hay en esta carpeta. El zip se bajó a Descargas.
 Entramos con cd Descargas, y lo descomprimimos con unzip, en su propia carpeta.
 Ahora entramos a la carpeta cpp. Con ls vemos los tres archivos. grader.cpp y multiplos.h ya vienen hechos, y no se tocan.
 Nuestro código va en multiplos.cpp. Lo abrimos con geany multiplos.cpp, y aparece arriba, en el editor. En el examen también podés usar VS Code o Code::Blocks.
-Escribimos solo la función. Sin main, sin cin y sin cout: n llega por los paréntesis, y la respuesta sale con return. Guardamos con Control S.
+Escribimos solo la función. Sin main, ni cin, ni cout: n llega por los paréntesis, y la respuesta sale con return. Guardamos con Control S.
 En la Terminal de Geany compilamos los dos archivos juntos con g más más. El botón Construir no sirve, porque no incluye el grader.
 Probamos con el primer ejemplo: punto barra multiplos, menor que, y el archivo de ejemplo. ¡Salió igual que el punto out!
 Minimizamos Geany y volvemos al navegador. En Envíos, el código no se pega: se sube el archivo. Tocamos Elegir archivo, y buscamos Descargas, multiplos, cpp, y multiplos.cpp.
