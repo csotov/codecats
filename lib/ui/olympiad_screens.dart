@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -561,6 +562,19 @@ bool _blitzOpen = false;
 /// Shows 2 C++ concept questions and pays per right answer.
 String? _lastBlitz;
 
+ProfeQuiz _shuffled(ProfeQuiz q) {
+  final order = [for (var i = 0; i < q.optsEs.length; i++) i]
+    ..shuffle(math.Random());
+  return ProfeQuiz(
+      qEs: q.qEs,
+      qEn: q.qEn,
+      optsEs: [for (final i in order) q.optsEs[i]],
+      optsEn: [for (final i in order) q.optsEn[i]],
+      answer: order.indexOf(q.answer),
+      whyEs: q.whyEs,
+      whyEn: q.whyEn);
+}
+
 String _nextBlitzKey(Progress p) {
   final unlocked = [
     for (final c in kConceptCards)
@@ -594,7 +608,7 @@ Future<void> maybeRunBlitz(BuildContext context) async {
       final box = p.blitzCards[key]?[0] ?? 0;
       q = fact.variants[(box + p.blitzSeq) % fact.variants.length];
     } else {
-      q = kConceptCards.firstWhere((c) => c.id == key).quiz;
+      q = _shuffled(kConceptCards.firstWhere((c) => c.id == key).quiz);
     }
     _lastBlitz = key;
     if (!context.mounted) break;
