@@ -10,7 +10,7 @@ void main() {
     expect(sayBigO('O(R·C·log)'), 'O de R por C por logaritmo');
     expect(sayBigO('sin Big O'), 'sin Big Óu');
     expect(sayBigO('O(N) en la OBI'), 'O de N en la Obi');
-    expect(sayBigO('El grader usa cout'), 'El gréider usa si áut');
+    expect(sayBigO('El grader usa cout'), 'El gréider usa ce áut');
     expect(sayBigO('Big O(n)'), 'Big Óu de N');
     expect(sayBigO('sin grader.cpp ni graderX'), 'sin gréider.cpp ni graderX');
   });
