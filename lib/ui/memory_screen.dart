@@ -501,7 +501,7 @@ class _MemLessonScreenState extends State<MemLessonScreen> {
             Tooltip(
               message: l.pick('Escuchar la consigna', 'Listen to the task'),
               child: IconButton(
-                onPressed: () => _say(q),
+                onPressed: () => isSpeaking() ? stopSpeaking() : _say(q),
                 icon: const Icon(Icons.volume_up),
               ),
             ),

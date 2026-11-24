@@ -19,6 +19,7 @@ final _missed = <String>{};
 /// Lines spoken live with Jorge by the `tts` function: key -> blob URL.
 final _live = <String, String>{};
 var _turn = 0;
+var _fetching = -1;
 
 void _playUrl(String url) {
   _audio = web.HTMLAudioElement()..src = url;
@@ -102,7 +103,9 @@ void speak(String text, {String lang = 'es-419'}) {
       Cloud.instance.log('tts_miss', data: {'text': key});
     }
     final turn = _turn;
+    _fetching = turn;
     _speakLive(key, turn).then((ok) {
+      if (_fetching == turn) _fetching = -1;
       if (!ok && turn == _turn) _browserSpeak(key, lang);
     });
     return;
@@ -121,6 +124,18 @@ void _browserSpeak(String key, String lang) {
     if (v != null) u.voice = v;
     web.window.speechSynthesis.speak(u);
   } catch (_) {}
+}
+
+/// True while a line is playing or about to start.
+bool isSpeaking() {
+  if (_fetching == _turn) return true;
+  try {
+    final a = _audio;
+    if (a != null && !a.paused && !a.ended) return true;
+    return web.window.speechSynthesis.speaking;
+  } catch (_) {
+    return false;
+  }
 }
 
 void stopSpeaking() {

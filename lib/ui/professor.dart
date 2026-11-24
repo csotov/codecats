@@ -585,11 +585,16 @@ class _ProfessorSaysState extends State<ProfessorSays> {
               ),
               if (_voice)
                 Tooltip(
-                  message: L.instance.pick('Escuchar de nuevo', 'Listen again'),
+                  message:
+                      L.instance.pick('Escuchar o callar', 'Listen or stop'),
                   child: IconButton(
                     visualDensity: VisualDensity.compact,
                     iconSize: 18,
                     onPressed: () {
+                      if (isSpeaking()) {
+                        stopSpeaking();
+                        return;
+                      }
                       _spoke = true;
                       speak(widget.text.replaceAll('`', ''),
                           lang: L.instance.pick('es-419', 'en-US'));
