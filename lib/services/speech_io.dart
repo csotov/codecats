@@ -3,4 +3,6 @@ void speak(String text, {String lang = 'es-419'}) {}
 
 void stopSpeaking() {}
 
+bool isSpeaking() => false;
+
 void warmUpVoices() {}
