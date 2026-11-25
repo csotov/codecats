@@ -3,29 +3,47 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../l10n.dart';
+import '../services/sfx.dart';
 import 'theme.dart';
 
 /// Duolingo-style reward: the Profe blasts off like a rocket, comes back
 /// down with the Gorrito Gatuno and it lands huge in the middle.
+/// Trades ([tier] 1..5) reuse the show with the new hat's art and an
+/// extra effect per tier.
 class HatCelebration {
   static Future<void> show(BuildContext context,
-      {required int coins, required int total}) {
+      {int coins = 0,
+      int total = 0,
+      int tier = 0,
+      String? title,
+      String? subtitle}) {
+    Sfx.victory();
     return showGeneralDialog(
       context: context,
       barrierDismissible: false,
       barrierLabel: 'hat',
       barrierColor: Colors.black.withValues(alpha: 0.82),
       transitionDuration: const Duration(milliseconds: 200),
-      pageBuilder: (_, __, ___) =>
-          HatCelebrationView(coins: coins, total: total),
+      pageBuilder: (_, __, ___) => HatCelebrationView(
+          coins: coins,
+          total: total,
+          tier: tier,
+          title: title,
+          subtitle: subtitle),
     );
   }
 }
 
 class HatCelebrationView extends StatefulWidget {
   const HatCelebrationView(
-      {super.key, required this.coins, required this.total});
-  final int coins, total;
+      {super.key,
+      required this.coins,
+      required this.total,
+      this.tier = 0,
+      this.title,
+      this.subtitle});
+  final int coins, total, tier;
+  final String? title, subtitle;
 
   @override
   State<HatCelebrationView> createState() => _HatCelebrationViewState();
@@ -78,7 +96,14 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
             final up = Curves.easeInCubic.transform(_seg(0.05, 0.30));
             final down = Curves.easeOutBack.transform(_seg(0.30, 0.55));
             final land = Curves.elasticOut.transform(_seg(0.52, 0.80));
-            final shake = _t.value < 0.08 ? math.sin(_t.value * 600) * 4 : 0.0;
+            final tier = widget.tier;
+            final shake =
+                _t.value < 0.08 || (tier == 5 && land > 0 && _t.value < 0.9)
+                    ? math.sin(_t.value * 600) * (tier == 5 ? 9 : 4)
+                    : 0.0;
+            final wobble = tier == 1 || tier == 5
+                ? math.sin(_spin.value * 60) * 0.18
+                : 0.0;
             final returning = _t.value >= 0.30;
             final profeY = returning
                 ? -size.height * (1 - down) * 0.9 + size.height * 0.30
@@ -102,14 +127,21 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
                   ),
                 if (land > 0)
                   for (var i = 0; i < 14; i++) _sparkle(i, land, hatSize),
+                if (land > 0 && tier > 0)
+                  for (var i = 0; i < 10; i++) _extra(i, land, hatSize, size),
+                if (tier == 2 && _seg(0.52, 0.62) > 0 && _seg(0.62, 0.75) < 1)
+                  IgnorePointer(
+                    child: Container(
+                        color: Colors.white
+                            .withValues(alpha: 0.9 * (1 - _seg(0.58, 0.75)))),
+                  ),
                 if (showProfe)
                   Transform.translate(
                     offset: Offset(shake, profeY),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (returning)
-                          Text('🧢', style: TextStyle(fontSize: profe * 0.55)),
+                        if (returning) _hatArt(profe * 0.55),
                         Image.asset('assets/profe.png',
                             width: profe, height: profe),
                         if (!returning)
@@ -125,11 +157,8 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
                   Transform.scale(
                     scale: land,
                     child: Transform.rotate(
-                      angle: (1 - land) * 0.6,
-                      child: Text('🧢',
-                          style: TextStyle(fontSize: hatSize, shadows: const [
-                            Shadow(color: AppTheme.accent2, blurRadius: 40),
-                          ])),
+                      angle: (1 - land) * 0.6 + wobble,
+                      child: _hatArt(hatSize),
                     ),
                   ),
                 Positioned(
@@ -142,7 +171,8 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          l.pick('¡GORRITO GATUNO!', 'CAT CAP!'),
+                          widget.title ??
+                              l.pick('¡GORRITO GATUNO!', 'CAT CAP!'),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                               fontSize: 30,
@@ -151,9 +181,10 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          l.pick(
-                              '3 estrellas al primer combate. ¡El Profe fue hasta la luna a buscártelo! +${widget.coins} Miaudólares · llevás ${widget.total} 🧢',
-                              '3 stars on the first battle. The Profe flew to the moon to get it! +${widget.coins} Meowdollars · ${widget.total} 🧢 so far'),
+                          widget.subtitle ??
+                              l.pick(
+                                  '3 estrellas al primer combate. ¡El Profe fue hasta la luna a buscártelo! +${widget.coins} Miaudólares · llevás ${widget.total} 🧢',
+                                  '3 stars on the first battle. The Profe flew to the moon to get it! +${widget.coins} Meowdollars · ${widget.total} 🧢 so far'),
                           textAlign: TextAlign.center,
                           style: const TextStyle(fontSize: 15),
                         ),
@@ -175,6 +206,73 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
           },
         ),
       ),
+    );
+  }
+
+  static const _glow = [
+    AppTheme.accent2,
+    Color(0xFF8BC34A),
+    Color(0xFF40C4FF),
+    Color(0xFFE0E0E0),
+    Color(0xFF29B6F6),
+    Color(0xFFFF4081),
+  ];
+
+  Widget _hatArt(double s) => widget.tier == 0
+      ? Text('🧢',
+          style: TextStyle(fontSize: s, shadows: const [
+            Shadow(color: AppTheme.accent2, blurRadius: 40),
+          ]))
+      : Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(s * 0.16),
+            boxShadow: [
+              BoxShadow(
+                  color: _glow[widget.tier % _glow.length],
+                  blurRadius: s * 0.3,
+                  spreadRadius: s * 0.04),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(s * 0.16),
+            child: Image.asset('assets/badges/hat_${widget.tier}.jpg',
+                width: s, height: s, fit: BoxFit.cover),
+          ),
+        );
+
+  /// Per-tier effect: flies for the ugly caps, 4K tags for HD, silver
+  /// stars, water drops.
+  Widget _extra(int i, double land, double hatSize, Size size) {
+    const marks = ['', '🪰', '4K', '💎', '💧', '🪰'];
+    final t = widget.tier;
+    final mark = marks[t % marks.length];
+    if (t == 4 || t == 3) {
+      // Falling from the top.
+      final fall = ((_spin.value * 3 + i / 10) % 1.0);
+      return Positioned(
+        left: size.width * ((i * 0.37 + 0.05) % 1.0),
+        top: -40 + fall * (size.height + 80),
+        child: Text(mark, style: TextStyle(fontSize: 22 + (i % 3) * 8.0)),
+      );
+    }
+    final a = -i / 10 * 2 * math.pi - _spin.value * (t == 2 ? 3 : 9);
+    final r = hatSize * (0.75 + 0.2 * math.sin(_spin.value * 40 + i));
+    return Transform.translate(
+      offset: Offset(math.cos(a) * r, math.sin(a) * r * 0.8),
+      child: t == 2
+          ? Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                  color: Colors.black,
+                  border: Border.all(color: const Color(0xFF40C4FF)),
+                  borderRadius: BorderRadius.circular(4)),
+              child: Text(i.isEven ? '4K' : '60 FPS',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF40C4FF))),
+            )
+          : Text(mark, style: TextStyle(fontSize: t == 5 ? 30 : 22)),
     );
   }
 

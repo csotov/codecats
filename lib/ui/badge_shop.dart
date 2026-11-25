@@ -10,6 +10,7 @@ import '../services/progress.dart';
 import 'keyboard_scroll.dart';
 import 'theme.dart';
 import 'coin.dart';
+import 'hat_celebration.dart';
 
 /// Round badge art: a gradient medal with big text, or a cat photo with
 /// its phrase on a banner on top.
@@ -416,9 +417,11 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
                   onPressed: have >= Progress.kHatTrade[t]
                       ? () {
                           p.tradeHats(t);
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text(l.pick(
-                                  '¡Nuevo: $next! 🎉', 'New: $next! 🎉'))));
+                          HatCelebration.show(context,
+                              tier: t + 1,
+                              title: '¡${next.toUpperCase()}!',
+                              subtitle: l.pick(
+                                  _hatJokes[t + 1][0], _hatJokes[t + 1][1]));
                         }
                       : null,
                   child: Text('${Progress.kHatTrade[t]} → 1'),
