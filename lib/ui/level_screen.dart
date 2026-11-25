@@ -1,4 +1,5 @@
 import '../data/expert_solutions.dart';
+import '../data/math_terms.dart';
 import '../data/topic_tutorials.dart';
 import '../data/worked_examples.dart';
 import 'expert_screen.dart';
@@ -1748,6 +1749,55 @@ class _LevelScreenState extends State<LevelScreen>
     );
   }
 
+  Widget _mathTerms() {
+    final l = L.instance;
+    final lv = widget.level;
+    final text = [
+      l.pick(_problem?.es ?? (_grader?.storyEs ?? lv.storyEs),
+          _grader?.storyEn ?? lv.storyEn),
+      _grader != null
+          ? l.pick(_grader.es, _grader.en)
+          : l.pick(lv.statementEs, lv.statementEn),
+      l.pick(lv.titleEs, lv.titleEn),
+    ].join(' ');
+    final terms = mathTermsIn(text);
+    if (terms.isEmpty) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.black26,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.accent.withValues(alpha: 0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l.pick('📐 Palabras de matemática', '📐 Math words'),
+              style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.accent)),
+          for (final t in terms)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text.rich(
+                TextSpan(children: [
+                  TextSpan(
+                      text: '${l.pick(t.es, t.en)}: ',
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  TextSpan(text: l.pick(t.whatEs, t.whatEn)),
+                ]),
+                style: const TextStyle(
+                    fontSize: 13, height: 1.35, color: AppTheme.textHi),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _missionCard() {
     final l = L.instance;
     final lv = widget.level;
@@ -1777,6 +1827,7 @@ class _LevelScreenState extends State<LevelScreen>
             style: const TextStyle(
                 fontSize: 13, height: 1.35, color: AppTheme.textLo),
           ),
+          _mathTerms(),
           if (_grader != null) ...[
             const SizedBox(height: 8),
             Container(
