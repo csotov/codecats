@@ -136,8 +136,10 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
             final wearProfe = profe * 1.5;
             final wearY =
                 size.height * (1 - rise) * 0.7 + -hatSize * 0.05 + hop;
-            final headY = wearY - wearProfe * 0.70;
-            final small = wearProfe * 0.5 / hatSize;
+            final headY = wearY - wearProfe * 0.56;
+            final small = wearProfe * 0.55 / hatSize;
+            // The frame fades away and only the cut-out cap lands on him.
+            final bare = (put / 0.35).clamp(0.0, 1.0);
             return Stack(
               alignment: Alignment.center,
               children: [
@@ -189,10 +191,27 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
                   ),
                 if (land > 0 && tier >= 6)
                   Transform.translate(
-                    offset: Offset(0, put * headY),
+                    offset: Offset(-wearProfe * 0.04 * put, put * headY),
                     child: Transform.scale(
                       scale: land * (1 + (small - 1) * put),
-                      child: _hat3d(hatSize, land, settle: put),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          if (bare < 1)
+                            Opacity(
+                              opacity: 1 - bare,
+                              child: _hat3d(hatSize, land, settle: put),
+                            ),
+                          if (bare > 0)
+                            Opacity(
+                              opacity: bare,
+                              child: Image.asset(
+                                  'assets/badges/hat_${tier}_cut.png',
+                                  width: hatSize,
+                                  fit: BoxFit.contain),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 if (land > 0 && tier < 6)
