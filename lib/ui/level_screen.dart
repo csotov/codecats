@@ -1127,6 +1127,7 @@ class _LevelScreenState extends State<LevelScreen>
     final hat = stars == 3 &&
         _attemptsThisSession == 1 &&
         Progress.instance.awardHat(widget.level.id);
+    final gift = !replay && Progress.instance.claimNewLevelGift();
     if (wasReview) {
       Cloud.instance.log(
         'review_done',
@@ -1168,6 +1169,16 @@ class _LevelScreenState extends State<LevelScreen>
     if (hat && mounted) {
       await HatCelebration.show(context,
           coins: Progress.kHatCoins, total: Progress.instance.hats);
+      if (!mounted) return;
+    }
+    if (gift && mounted) {
+      const n = Progress.kGiftHats;
+      final total = Progress.instance.hats;
+      await HatCelebration.show(context,
+          title: L.instance.pick('¡$n GORRITOS DE REGALO!', '$n GIFT CAPS!'),
+          subtitle: L.instance.pick(
+              '¡Por terminar un problema nuevo! Llevás $total 🧢',
+              'For finishing a new problem! $total 🧢 so far'));
       if (!mounted) return;
     }
     if (Progress.instance.lastChallengeBonus > 0 && mounted) {

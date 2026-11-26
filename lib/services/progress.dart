@@ -578,6 +578,7 @@ class Progress extends ChangeNotifier {
     earlyDeadline = 0;
     earlyOfferDay = 0;
     earlyHats = 0;
+    giftHatsGiven = 0;
     earlyTodayDay = 0;
     earlyWon = false;
     earlyFrom = 0;
@@ -646,6 +647,7 @@ class Progress extends ChangeNotifier {
         earlyDeadline = (j['eo'] as num?)?.toInt() ?? 0;
         earlyOfferDay = (j['eod'] as num?)?.toInt() ?? 0;
         earlyHats = (j['eh'] as num?)?.toInt() ?? 0;
+        giftHatsGiven = (j['ghg'] as num?)?.toInt() ?? 0;
         earlyTodayDay = (j['etd'] as num?)?.toInt() ?? 0;
         earlyWon = j['ew'] == true;
         earlyFrom = (j['ef'] as num?)?.toInt() ?? 0;
@@ -723,6 +725,7 @@ class Progress extends ChangeNotifier {
         'eo': earlyDeadline,
         'eod': earlyOfferDay,
         'eh': earlyHats,
+        'ghg': giftHatsGiven,
         'etd': earlyTodayDay,
         'ew': earlyWon,
         'ef': earlyFrom,
@@ -847,6 +850,7 @@ class Progress extends ChangeNotifier {
       for (var i = 0; i < kHatTrade.length; i++) math.max(hatMade[i], hm[i])
     ];
     earlyHats = math.max(earlyHats, (d['eh'] as num?)?.toInt() ?? 0);
+    giftHatsGiven = math.max(giftHatsGiven, (d['ghg'] as num?)?.toInt() ?? 0);
     earlyOfferDay = math.max(earlyOfferDay, (d['eod'] as num?)?.toInt() ?? 0);
     final ecl = (d['ecl'] as num?)?.toInt() ?? 0;
     if (ecl > earlyClaimed || earlyLastPrize.isEmpty) {
@@ -928,6 +932,7 @@ class Progress extends ChangeNotifier {
           'eo': earlyDeadline,
           'eod': earlyOfferDay,
           'eh': earlyHats,
+          'ghg': giftHatsGiven,
           'etd': earlyTodayDay,
           'ew': earlyWon,
           'ef': earlyFrom,
@@ -1211,7 +1216,24 @@ class Progress extends ChangeNotifier {
 
   /// Gorritos Gatunos earned (one per level at most).
   int get hats =>
-      levels.values.where((p) => p.starMask & 8 != 0).length + earlyHats;
+      levels.values.where((p) => p.starMask & 8 != 0).length +
+      earlyHats +
+      giftHatsGiven * kGiftHats;
+
+  /// One-time gift: each of the next [kGiftHatRounds] new levels won pays
+  /// [kGiftHats] Gorritos Gatunos.
+  static const kGiftHats = 10;
+  static const kGiftHatRounds = 2;
+  int giftHatsGiven = 0;
+
+  /// Call on a level's first win; true when it paid the gift.
+  bool claimNewLevelGift() {
+    if (giftHatsGiven >= kGiftHatRounds) return false;
+    giftHatsGiven++;
+    _save();
+    notifyListeners();
+    return true;
+  }
 
   /// Early-bird prize: on some days the map promises a prize for coming
   /// back tomorrow before 15:30. [earlyDeadline] is that
