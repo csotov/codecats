@@ -32,12 +32,12 @@ void main() {
     expect(pr.coins, before + Progress.kHatCoins);
   });
 
-  test('10 caps trade for one of the next tier', () async {
+  test('5 caps trade for one of the next tier', () async {
     SharedPreferences.setMockInitialValues({});
     final pr = Progress.instance;
     await pr.ensureLoaded();
     await pr.reset();
-    for (var i = 1; i <= 11; i++) {
+    for (var i = 1; i <= 6; i++) {
       pr.awardHat('w1l$i');
     }
     expect(pr.tradeHats(1), isFalse);
@@ -52,7 +52,7 @@ void main() {
     final pr = Progress.instance;
     await pr.ensureLoaded();
     await pr.reset();
-    for (var i = 1; i <= 160; i++) {
+    for (var i = 1; i <= 80; i++) {
       pr.awardHat('x$i');
     }
     for (var i = 0; i < 16; i++) {

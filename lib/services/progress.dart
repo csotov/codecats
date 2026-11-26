@@ -1180,7 +1180,7 @@ class Progress extends ChangeNotifier {
 
   /// Hats of each tier needed to make one of the next (feo, ultra HD,
   /// plateado, de agua, el más feo): 10, 20, 40, 80 and 160 Gorritos Gatunos in total.
-  static const kHatTrade = [10, 2, 2, 2, 2];
+  static const kHatTrade = [5, 2, 2, 2, 2];
 
   /// Hats made by trading [kHatTrade] hats of the tier below: feo, ultra HD,
   /// plateado, de agua.
