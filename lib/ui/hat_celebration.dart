@@ -153,7 +153,9 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
                       ],
                     ),
                   ),
-                if (land > 0)
+                if (land > 0 && tier >= 6)
+                  Transform.scale(scale: land, child: _hat3d(hatSize, land)),
+                if (land > 0 && tier < 6)
                   Transform.scale(
                     scale: land,
                     child: Transform.rotate(
@@ -241,6 +243,71 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
                 width: s, height: s, fit: BoxFit.cover),
           ),
         );
+
+  /// Top caps (Cuántico, Cósmico) spin in 3D: a thick card with depth
+  /// layers, perspective, a tilt and a floor shadow.
+  Widget _hat3d(double s, double land) {
+    final turn = (1 - land) * 4 * math.pi + _spin.value * 4 * 2 * math.pi;
+    final tilt = 0.22 * math.sin(_spin.value * 2 * math.pi * 3);
+    const layers = 10;
+    final depth = s * 0.012;
+    final edge = _glow[widget.tier % _glow.length];
+    Matrix4 at(double z) => Matrix4.identity()
+      ..setEntry(3, 2, 0.0012)
+      ..rotateX(tilt)
+      ..rotateY(turn)
+      ..translateByDouble(0.0, 0.0, z, 1.0);
+    Widget layer(int k) {
+      final z = (k - layers / 2) * depth;
+      final face = k == 0 || k == layers;
+      return Transform(
+        alignment: Alignment.center,
+        transform: at(z),
+        child: face
+            ? _hatArt(s)
+            : Container(
+                width: s,
+                height: s,
+                decoration: BoxDecoration(
+                  color: Color.lerp(edge, Colors.black, 0.45),
+                  borderRadius: BorderRadius.circular(s * 0.16),
+                ),
+              ),
+      );
+    }
+
+    // Paint far layers first so the visible face ends on top.
+    final front = math.cos(turn) * math.cos(tilt) >= 0;
+    final order = [for (var k = 0; k <= layers; k++) front ? layers - k : k];
+    final bob = math.sin(_spin.value * 2 * math.pi * 2) * s * 0.04;
+    return SizedBox(
+      width: s * 1.3,
+      height: s * 1.45,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            bottom: 0,
+            child: Container(
+              width: s * (0.5 + 0.4 * math.cos(turn).abs()),
+              height: s * 0.09,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(s),
+                boxShadow: [
+                  BoxShadow(color: edge.withValues(alpha: 0.5), blurRadius: 24)
+                ],
+              ),
+            ),
+          ),
+          Transform.translate(
+            offset: Offset(0, bob - s * 0.08),
+            child: Stack(children: [for (final k in order) layer(k)]),
+          ),
+        ],
+      ),
+    );
+  }
 
   /// Per-tier effect: flies for the ugly caps, 4K tags for HD, silver
   /// stars, water drops, orbiting atoms (quantum), falling planets (cosmic).
