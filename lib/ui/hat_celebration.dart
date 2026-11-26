@@ -225,31 +225,25 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
           style: TextStyle(fontSize: s, shadows: const [
             Shadow(color: AppTheme.accent2, blurRadius: 40),
           ]))
-      : Opacity(
-          opacity: widget.tier == 6
-              ? 0.55 + 0.45 * math.sin(_spin.value * 90).abs()
-              : 1,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(s * 0.16),
-              boxShadow: [
-                BoxShadow(
-                    color: _glow[widget.tier % _glow.length],
-                    blurRadius: s * 0.3,
-                    spreadRadius: s * 0.04),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(s * 0.16),
-              child: Image.asset('assets/badges/hat_${widget.tier}.jpg',
-                  width: s, height: s, fit: BoxFit.cover),
-            ),
+      : Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(s * 0.16),
+            boxShadow: [
+              BoxShadow(
+                  color: _glow[widget.tier % _glow.length],
+                  blurRadius: s * 0.3,
+                  spreadRadius: s * 0.04),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(s * 0.16),
+            child: Image.asset('assets/badges/hat_${widget.tier}.jpg',
+                width: s, height: s, fit: BoxFit.cover),
           ),
         );
 
   /// Per-tier effect: flies for the ugly caps, 4K tags for HD, silver
   /// stars, water drops, orbiting atoms (quantum), falling planets (cosmic).
-  /// The quantum cap also flickers in and out.
   Widget _extra(int i, double land, double hatSize, Size size) {
     const marks = ['', '🪰', '4K', '💎', '💧', '🪰', '⚛️', '🪐'];
     final t = widget.tier;
