@@ -1828,6 +1828,7 @@ class Progress extends ChangeNotifier {
     earlyLastPrize = '';
     earlyWon = false;
     earlyFrom = earlyAdminDl = earlyClaimed = earlyDone = 0;
+    giftHatsGiven = 0;
     final prefs = await SharedPreferences.getInstance();
     if (active != null) {
       await prefs.remove(_keyFor(active!.id));
