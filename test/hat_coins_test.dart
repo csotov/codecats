@@ -52,21 +52,28 @@ void main() {
     final pr = Progress.instance;
     await pr.ensureLoaded();
     await pr.reset();
-    for (var i = 1; i <= 80; i++) {
+    for (var i = 1; i <= 320; i++) {
       pr.awardHat('x$i');
     }
-    for (var i = 0; i < 16; i++) {
+    for (var i = 0; i < 64; i++) {
       expect(pr.tradeHats(0), isTrue);
     }
     expect(pr.tradeHats(0), isFalse);
-    for (final (tier, n) in [(1, 8), (2, 4), (3, 2), (4, 1)]) {
+    for (final (tier, n) in [
+      (1, 32),
+      (2, 16),
+      (3, 8),
+      (4, 4),
+      (5, 2),
+      (6, 1)
+    ]) {
       for (var i = 0; i < n; i++) {
         expect(pr.tradeHats(tier), isTrue);
       }
       expect(pr.tradeHats(tier), isFalse);
     }
-    expect(pr.hatsInHand(5), 1);
-    expect(pr.tradeHats(5), isFalse);
+    expect(pr.hatsInHand(7), 1);
+    expect(pr.tradeHats(7), isFalse);
     expect(pr.hatsInHand(0), 0);
   });
 
@@ -81,5 +88,17 @@ void main() {
     expect(pr.hats, 20);
     expect(pr.claimNewLevelGift(), isFalse);
     expect(pr.hats, 20);
+  });
+
+  test('top hat gives the giant prize', () async {
+    SharedPreferences.setMockInitialValues({});
+    final pr = Progress.instance;
+    await pr.ensureLoaded();
+    await pr.reset();
+    final before = pr.coins;
+    final cats = pr.claimHatPrize();
+    expect(pr.coins, before + Progress.kHatPrizeCoins);
+    expect(cats.length, Progress.kHatPrizeCats);
+    expect(cats.every((c) => pr.unlockedCats.contains(c.id)), isTrue);
   });
 }

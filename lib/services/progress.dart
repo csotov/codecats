@@ -1184,8 +1184,13 @@ class Progress extends ChangeNotifier {
   static const kHatCoins = 5;
 
   /// Hats of each tier needed to make one of the next (feo, ultra HD,
-  /// plateado, de agua, el más feo): 10, 20, 40, 80 and 160 Gorritos Gatunos in total.
-  static const kHatTrade = [5, 2, 2, 2, 2];
+  /// plateado, de agua, el más feo, cuántico, cósmico): 5, 10, 20, 40, 80,
+  /// 160 and 320 Gorritos Gatunos in total.
+  static const kHatTrade = [5, 2, 2, 2, 2, 2, 2];
+
+  /// Prize for each top-tier hat (Gorrito Cósmico).
+  static const kHatPrizeCoins = 1000;
+  static const kHatPrizeCats = 5;
 
   /// Hats made by trading [kHatTrade] hats of the tier below: feo, ultra HD,
   /// plateado, de agua.
@@ -1201,6 +1206,24 @@ class Progress extends ChangeNotifier {
     final made = tier == 0 ? hats : hatMade[tier - 1];
     return made -
         (tier < kHatTrade.length ? kHatTrade[tier] * hatMade[tier] : 0);
+  }
+
+  /// Giant prize for making a top-tier hat: [kHatPrizeCoins] and up to
+  /// [kHatPrizeCats] locked Gatoteca cats. Returns the new cats.
+  List<CatMeme> claimHatPrize() {
+    coins += kHatPrizeCoins;
+    final locked = [
+      for (final c in kCats)
+        if (!unlockedCats.contains(c.id) && c.trigger != CatTrigger.always) c
+    ]..shuffle(_rng);
+    final fresh = locked.take(kHatPrizeCats).toList();
+    unlockedCats.addAll(fresh.map((c) => c.id));
+    for (final c in fresh) {
+      _noteCatOrigin(c.id);
+    }
+    _save();
+    notifyListeners();
+    return fresh;
   }
 
   /// Trade [kHatTrade] hats of [tier] for one of the next tier.
