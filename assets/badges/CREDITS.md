@@ -16,4 +16,5 @@
 ## Arte generado para el juego (sin licencias de terceros)
 
 - 18 fotos de gatos estilo meme (`grump`, `shockface`, `chonkster`, `tongue`, `cheeks`, `sideeye`, `paper`, `achoo`, `smug`, `sitting`, `loaf`, `peeking`, `lloron`, `tallcat`, `glass`, `kbloaf`, `sweater`, `grin`): imágenes generadas con IA para CodeCats.
+- 29 fotos de gatos estilo meme más (`astro`, `bellycat`, `blackcat`, `books`, `calc`, `chef`, `clock`, `coolcat`, `detective`, `divercat`, `dozycat`, `judgecat`, `jumping`, `kingcat`, `kitten`, `mazecat`, `mirror`, `ninja`, `pirate`, `queuecats`, `raincat`, `rushcat`, `stackcats`, `stretch`, `tiger`, `treecat`, `twins`, `wizard`, `yarn`): imágenes generadas con IA para CodeCats.
 - `assets/shopcats/`: 45 retratos de gatos estilo sticker generados con IA para CodeCats.
