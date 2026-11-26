@@ -97,10 +97,10 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
             final down = Curves.easeOutBack.transform(_seg(0.30, 0.55));
             final land = Curves.elasticOut.transform(_seg(0.52, 0.80));
             final tier = widget.tier;
-            final shake =
-                _t.value < 0.08 || (tier == 5 && land > 0 && _t.value < 0.9)
-                    ? math.sin(_t.value * 600) * (tier == 5 ? 9 : 4)
-                    : 0.0;
+            final shake = _t.value < 0.08 ||
+                    (tier >= 5 && tier != 6 && land > 0 && _t.value < 0.9)
+                ? math.sin(_t.value * 600) * (tier >= 5 ? 9 : 4)
+                : 0.0;
             final wobble = tier == 1 || tier == 5
                 ? math.sin(_spin.value * 60) * 0.18
                 : 0.0;
@@ -216,6 +216,8 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
     Color(0xFFE0E0E0),
     Color(0xFF29B6F6),
     Color(0xFFFF4081),
+    Color(0xFFB388FF),
+    Color(0xFFFFD54F),
   ];
 
   Widget _hatArt(double s) => widget.tier == 0
@@ -223,30 +225,36 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
           style: TextStyle(fontSize: s, shadows: const [
             Shadow(color: AppTheme.accent2, blurRadius: 40),
           ]))
-      : Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(s * 0.16),
-            boxShadow: [
-              BoxShadow(
-                  color: _glow[widget.tier % _glow.length],
-                  blurRadius: s * 0.3,
-                  spreadRadius: s * 0.04),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(s * 0.16),
-            child: Image.asset('assets/badges/hat_${widget.tier}.jpg',
-                width: s, height: s, fit: BoxFit.cover),
+      : Opacity(
+          opacity: widget.tier == 6
+              ? 0.55 + 0.45 * math.sin(_spin.value * 90).abs()
+              : 1,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(s * 0.16),
+              boxShadow: [
+                BoxShadow(
+                    color: _glow[widget.tier % _glow.length],
+                    blurRadius: s * 0.3,
+                    spreadRadius: s * 0.04),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(s * 0.16),
+              child: Image.asset('assets/badges/hat_${widget.tier}.jpg',
+                  width: s, height: s, fit: BoxFit.cover),
+            ),
           ),
         );
 
   /// Per-tier effect: flies for the ugly caps, 4K tags for HD, silver
-  /// stars, water drops.
+  /// stars, water drops, orbiting atoms (quantum), falling planets (cosmic).
+  /// The quantum cap also flickers in and out.
   Widget _extra(int i, double land, double hatSize, Size size) {
-    const marks = ['', '🪰', '4K', '💎', '💧', '🪰'];
+    const marks = ['', '🪰', '4K', '💎', '💧', '🪰', '⚛️', '🪐'];
     final t = widget.tier;
     final mark = marks[t % marks.length];
-    if (t == 4 || t == 3) {
+    if (t == 4 || t == 3 || t == 7) {
       // Falling from the top.
       final fall = ((_spin.value * 3 + i / 10) % 1.0);
       return Positioned(

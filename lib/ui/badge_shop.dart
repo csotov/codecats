@@ -11,6 +11,7 @@ import 'keyboard_scroll.dart';
 import 'theme.dart';
 import 'coin.dart';
 import 'hat_celebration.dart';
+import 'meme_player.dart';
 
 /// Round badge art: a gradient medal with big text, or a cat photo with
 /// its phrase on a banner on top.
@@ -275,6 +276,8 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
     ['Gorrito plateado', 'Silver cap'],
     ['Gorrito de agua', 'Water cap'],
     ['El Gorrito Más Feo del Universo', 'The Ugliest Cap in the Universe'],
+    ['Gorrito Cuántico', 'Quantum Cap'],
+    ['Gorrito Cósmico del Rey Gato', 'Cosmic Cap of the Cat King'],
   ];
   static const _hatJokes = [
     ['3 estrellas en el primer combate.', '3 stars on the first battle.'],
@@ -298,7 +301,38 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
       'Tejido por un gato a las 3 a.m. con los ojos cerrados. Hasta la mosca se fue a vivir ahí. Nivel máximo de fealdad: desbloqueado.',
       'Knitted by a cat at 3 a.m. with its eyes closed. Even the fly moved in. Max ugliness: unlocked.'
     ],
+    [
+      'Existe y no existe al mismo tiempo, como el gato de Schrödinger. Solo se ve cuando nadie lo mira.',
+      "It exists and doesn't at the same time, like Schrödinger's cat. Only visible when nobody looks."
+    ],
+    [
+      'Tejido con una galaxia entera. Solo lo usa el Rey de todos los gatos. Trae un premio gigante.',
+      'Knitted from a whole galaxy. Only the King of all cats wears it. Comes with a giant prize.'
+    ],
   ];
+
+  bool _trading = false;
+
+  Future<void> _trade(Progress p, L l, int t, String next) async {
+    if (_trading || !p.tradeHats(t)) return;
+    _trading = true;
+    final top = t + 1 == Progress.kHatTrade.length;
+    final cats = top ? p.claimHatPrize() : const <CatMeme>[];
+    await HatCelebration.show(context,
+        tier: t + 1,
+        title: '¡${next.toUpperCase()}!',
+        subtitle: top
+            ? l.pick(
+                '¡PREMIO GIGANTE! +${Progress.kHatPrizeCoins} Miaudólares y ${cats.length} gatos nuevos',
+                'GIANT PRIZE! +${Progress.kHatPrizeCoins} Miaudólares and ${cats.length} new cats')
+            : l.pick(_hatJokes[t + 1][0], _hatJokes[t + 1][1]));
+    for (var i = 0; i < cats.length && mounted; i++) {
+      await MemeBurst.show(context, cats[i],
+          captionEs: 'Premio gigante: gato ${i + 1} de ${cats.length}',
+          captionEn: 'Giant prize: cat ${i + 1} of ${cats.length}');
+    }
+    _trading = false;
+  }
 
   Widget _hatsTab(Progress p, L l) {
     return KeyboardScroll(
@@ -415,14 +449,7 @@ class _BadgeShopScreenState extends State<BadgeShopScreen> {
                     'Trade ${Progress.kHatTrade[t]} for a surprise'),
                 child: FilledButton(
                   onPressed: have >= Progress.kHatTrade[t]
-                      ? () {
-                          p.tradeHats(t);
-                          HatCelebration.show(context,
-                              tier: t + 1,
-                              title: '¡${next.toUpperCase()}!',
-                              subtitle: l.pick(
-                                  _hatJokes[t + 1][0], _hatJokes[t + 1][1]));
-                        }
+                      ? () => _trade(p, l, t, next)
                       : null,
                   child: Text('${Progress.kHatTrade[t]} → 1'),
                 ),
