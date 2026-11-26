@@ -79,6 +79,10 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
     Navigator.of(context).pop();
   }
 
+  // Top caps wait until the Profe has the cap on.
+  bool get _canClose =>
+      _t.value > 0.7 && (widget.tier < 6 || _wear.value > 0.8);
+
   double _seg(double a, double b) => ((_t.value - a) / (b - a)).clamp(0.0, 1.0);
 
   @override
@@ -91,7 +95,7 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
       behavior: HitTestBehavior.opaque,
       // Skip the show only after the hat has landed.
       onTap: () {
-        if (_t.value > 0.7) _close();
+        if (_canClose) _close();
       },
       child: Material(
         type: MaterialType.transparency,
@@ -230,7 +234,8 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
                         Tooltip(
                           message: l.pick('Seguir jugando', 'Keep playing'),
                           child: FilledButton(
-                            onPressed: textIn > 0.5 ? _close : null,
+                            onPressed:
+                                textIn > 0.5 && _canClose ? _close : null,
                             child: Text(
                                 l.pick('¡Me lo pongo! 😼', 'Put it on! 😼')),
                           ),
