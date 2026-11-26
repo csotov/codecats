@@ -53,7 +53,13 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
     with TickerProviderStateMixin {
   static const total = Duration(milliseconds: 3600);
   late final AnimationController _t =
-      AnimationController(vsync: this, duration: total)..forward();
+      AnimationController(vsync: this, duration: total)
+        ..forward().whenComplete(() {
+          if (mounted && widget.tier >= 6) _wear.forward();
+        });
+  // Top caps only: after the 3D show the Profe puts the cap on.
+  late final AnimationController _wear = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 2200));
   late final AnimationController _spin =
       AnimationController(vsync: this, duration: const Duration(seconds: 8))
         ..repeat();
@@ -62,6 +68,7 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
   @override
   void dispose() {
     _t.dispose();
+    _wear.dispose();
     _spin.dispose();
     super.dispose();
   }
@@ -71,6 +78,10 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
     _closed = true;
     Navigator.of(context).pop();
   }
+
+  // Top caps wait until the Profe has the cap on.
+  bool get _canClose =>
+      _t.value > 0.7 && (widget.tier < 6 || _wear.value > 0.8);
 
   double _seg(double a, double b) => ((_t.value - a) / (b - a)).clamp(0.0, 1.0);
 
@@ -84,12 +95,12 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
       behavior: HitTestBehavior.opaque,
       // Skip the show only after the hat has landed.
       onTap: () {
-        if (_t.value > 0.7) _close();
+        if (_canClose) _close();
       },
       child: Material(
         type: MaterialType.transparency,
         child: AnimatedBuilder(
-          animation: Listenable.merge([_t, _spin]),
+          animation: Listenable.merge([_t, _spin, _wear]),
           builder: (_, __) {
             // 0.00–0.30 launch, 0.30–0.55 return with the hat,
             // 0.55–0.75 hat lands big, then stays.
@@ -97,10 +108,10 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
             final down = Curves.easeOutBack.transform(_seg(0.30, 0.55));
             final land = Curves.elasticOut.transform(_seg(0.52, 0.80));
             final tier = widget.tier;
-            final shake =
-                _t.value < 0.08 || (tier == 5 && land > 0 && _t.value < 0.9)
-                    ? math.sin(_t.value * 600) * (tier == 5 ? 9 : 4)
-                    : 0.0;
+            final shake = _t.value < 0.08 ||
+                    (tier >= 5 && tier != 6 && land > 0 && _t.value < 0.9)
+                ? math.sin(_t.value * 600) * (tier >= 5 ? 9 : 4)
+                : 0.0;
             final wobble = tier == 1 || tier == 5
                 ? math.sin(_spin.value * 60) * 0.18
                 : 0.0;
@@ -110,6 +121,25 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
                 : size.height * 0.30 - up * size.height * 1.1;
             final showProfe = _t.value < 0.60 || !returning;
             final textIn = _seg(0.70, 0.85);
+            // Wear: Profe rises in, the cap stops spinning, shrinks and
+            // drops onto his head, then he bounces happily.
+            final w = _wear.value;
+            final rise = Curves.easeOutBack
+                .transform(((w - 0.0) / 0.35).clamp(0.0, 1.0));
+            final put = Curves.easeInOutCubic
+                .transform(((w - 0.30) / 0.45).clamp(0.0, 1.0));
+            final hop = w > 0.75
+                ? -math.sin((w - 0.75) / 0.25 * math.pi * 2).abs() *
+                    profe *
+                    0.15
+                : 0.0;
+            final wearProfe = profe * 1.5;
+            final wearY =
+                size.height * (1 - rise) * 0.7 + -hatSize * 0.05 + hop;
+            final headY = wearY - wearProfe * 0.56;
+            final small = wearProfe * 0.55 / hatSize;
+            // The frame fades away and only the cut-out cap lands on him.
+            final bare = (put / 0.35).clamp(0.0, 1.0);
             return Stack(
               alignment: Alignment.center,
               children: [
@@ -153,7 +183,38 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
                       ],
                     ),
                   ),
-                if (land > 0)
+                if (w > 0)
+                  Transform.translate(
+                    offset: Offset(0, wearY),
+                    child: Image.asset('assets/profe.png',
+                        width: wearProfe, height: wearProfe),
+                  ),
+                if (land > 0 && tier >= 6)
+                  Transform.translate(
+                    offset: Offset(-wearProfe * 0.04 * put, put * headY),
+                    child: Transform.scale(
+                      scale: land * (1 + (small - 1) * put),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          if (bare < 1)
+                            Opacity(
+                              opacity: 1 - bare,
+                              child: _hat3d(hatSize, land, settle: put),
+                            ),
+                          if (bare > 0)
+                            Opacity(
+                              opacity: bare,
+                              child: Image.asset(
+                                  'assets/badges/hat_${tier}_cut.png',
+                                  width: hatSize,
+                                  fit: BoxFit.contain),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                if (land > 0 && tier < 6)
                   Transform.scale(
                     scale: land,
                     child: Transform.rotate(
@@ -192,7 +253,8 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
                         Tooltip(
                           message: l.pick('Seguir jugando', 'Keep playing'),
                           child: FilledButton(
-                            onPressed: textIn > 0.5 ? _close : null,
+                            onPressed:
+                                textIn > 0.5 && _canClose ? _close : null,
                             child: Text(
                                 l.pick('¡Me lo pongo! 😼', 'Put it on! 😼')),
                           ),
@@ -216,6 +278,8 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
     Color(0xFFE0E0E0),
     Color(0xFF29B6F6),
     Color(0xFFFF4081),
+    Color(0xFFB388FF),
+    Color(0xFFFFD54F),
   ];
 
   Widget _hatArt(double s) => widget.tier == 0
@@ -240,13 +304,85 @@ class _HatCelebrationViewState extends State<HatCelebrationView>
           ),
         );
 
+  /// Top caps (Cuántico, Cósmico) spin in 3D: a thick card with depth
+  /// layers, perspective, a tilt and a floor shadow.
+  Widget _hat3d(double s, double land, {double settle = 0}) {
+    final spun = (1 - land) * 4 * math.pi + _spin.value * 4 * 2 * math.pi;
+    final rest = (spun / (2 * math.pi)).ceilToDouble() * 2 * math.pi;
+    final turn = spun + (rest - spun) * settle;
+    final tilt = 0.22 * math.sin(_spin.value * 2 * math.pi * 3) * (1 - settle);
+    const layers = 10;
+    final depth = s * 0.012;
+    final edge = _glow[widget.tier % _glow.length];
+    Matrix4 at(double z) => Matrix4.identity()
+      ..setEntry(3, 2, 0.0012)
+      ..rotateX(tilt)
+      ..rotateY(turn)
+      ..translateByDouble(0.0, 0.0, z, 1.0);
+    Widget layer(int k) {
+      final z = (k - layers / 2) * depth;
+      final face = k == 0 || k == layers;
+      return Transform(
+        alignment: Alignment.center,
+        transform: at(z),
+        child: face
+            ? _hatArt(s)
+            : Container(
+                width: s,
+                height: s,
+                decoration: BoxDecoration(
+                  color: Color.lerp(edge, Colors.black, 0.45),
+                  borderRadius: BorderRadius.circular(s * 0.16),
+                ),
+              ),
+      );
+    }
+
+    // Paint far layers first so the visible face ends on top.
+    final front = math.cos(turn) * math.cos(tilt) >= 0;
+    final order = [for (var k = 0; k <= layers; k++) front ? layers - k : k];
+    final bob =
+        math.sin(_spin.value * 2 * math.pi * 2) * s * 0.04 * (1 - settle);
+    return SizedBox(
+      width: s * 1.3,
+      height: s * 1.45,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            bottom: 0,
+            child: Opacity(
+              opacity: 1 - settle,
+              child: Container(
+                width: s * (0.5 + 0.4 * math.cos(turn).abs()),
+                height: s * 0.09,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(s),
+                  boxShadow: [
+                    BoxShadow(
+                        color: edge.withValues(alpha: 0.5), blurRadius: 24)
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Transform.translate(
+            offset: Offset(0, bob - s * 0.08),
+            child: Stack(children: [for (final k in order) layer(k)]),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Per-tier effect: flies for the ugly caps, 4K tags for HD, silver
-  /// stars, water drops.
+  /// stars, water drops, orbiting atoms (quantum), falling planets (cosmic).
   Widget _extra(int i, double land, double hatSize, Size size) {
-    const marks = ['', '🪰', '4K', '💎', '💧', '🪰'];
+    const marks = ['', '🪰', '4K', '💎', '💧', '🪰', '⚛️', '🪐'];
     final t = widget.tier;
     final mark = marks[t % marks.length];
-    if (t == 4 || t == 3) {
+    if (t == 4 || t == 3 || t == 7) {
       // Falling from the top.
       final fall = ((_spin.value * 3 + i / 10) % 1.0);
       return Positioned(

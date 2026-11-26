@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  for (var tier = 0; tier <= 5; tier++) {
+  for (var tier = 0; tier <= 7; tier++) {
     testWidgets('hat celebration tier $tier plays without errors',
         (tester) async {
       await tester.pumpWidget(MaterialApp(
