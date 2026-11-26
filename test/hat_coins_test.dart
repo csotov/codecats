@@ -77,6 +77,19 @@ void main() {
     expect(pr.hatsInHand(0), 0);
   });
 
+  test('the next 2 new levels pay 10 gift caps each, once', () async {
+    SharedPreferences.setMockInitialValues({});
+    final pr = Progress.instance;
+    await pr.ensureLoaded();
+    await pr.reset();
+    expect(pr.claimNewLevelGift(), isTrue);
+    expect(pr.hats, 10);
+    expect(pr.claimNewLevelGift(), isTrue);
+    expect(pr.hats, 20);
+    expect(pr.claimNewLevelGift(), isFalse);
+    expect(pr.hats, 20);
+  });
+
   test('top hat gives the giant prize', () async {
     SharedPreferences.setMockInitialValues({});
     final pr = Progress.instance;
