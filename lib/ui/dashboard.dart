@@ -279,7 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _chip('📓',
                   '$reviews ${l.pick('repasos', 'reviews')} · ${p.dueReviews.length} ${l.pick('pendientes', 'pending')}'),
               _chip('🔥',
-                  '${p.dayStreak} ${l.pick('días seguidos', 'day streak')}'),
+                  '${p.liveDayStreak} ${l.pick('días seguidos', 'day streak')}'),
             ],
           ),
           const SizedBox(height: 12),
