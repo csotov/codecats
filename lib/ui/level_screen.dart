@@ -49,6 +49,7 @@ import '../data/challenges.dart';
 import 'golden_card.dart';
 import '../data/halloween.dart';
 import '../data/grader_specs.dart';
+import 'gemini_tutor.dart';
 import 'professor.dart';
 import 'results.dart';
 import 'theme.dart';
@@ -2100,6 +2101,17 @@ class _LevelScreenState extends State<LevelScreen>
               onPressed: () => openLeadIn(context, widget.level),
               icon: const Icon(Icons.stairs_outlined, size: 16),
               label: Text(l.pick('No sé', 'I don\'t know')),
+            ),
+          ),
+        if (!widget.examMode && Cloud.configured)
+          Tooltip(
+            message: l.pick('Un tutor que te guía con preguntas',
+                'A tutor that guides you with questions'),
+            child: OutlinedButton.icon(
+              onPressed: () => openGeminiTutor(context,
+                  level: widget.level, code: () => _currentCode),
+              icon: const Text('✨'),
+              label: Text(l.pick('Preguntar a Gemini', 'Ask Gemini')),
             ),
           ),
         if (_failStreak >= 3 && !widget.examMode)
