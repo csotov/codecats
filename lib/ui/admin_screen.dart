@@ -853,7 +853,7 @@ class _AdminScreenState extends State<AdminScreen> {
             for (final d in days)
               () {
                 final w = _window(d, d.add(const Duration(days: 1)));
-                final idle = w['sessions'] == 0;
+                final idle = w['sessions'] == 0 && w['played'] == 0;
                 final style = TextStyle(
                     color: idle ? AppTheme.textLo : null, fontSize: 12);
                 return DataRow(cells: [
