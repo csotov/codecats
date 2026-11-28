@@ -48,6 +48,38 @@
     @keyframes pulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.12) } }
     @keyframes slide { 0% { margin-left: -40% } 100% { margin-left: 100% } }
   </style>
+  <script>
+    // PostHog: pantallas, pasos clave y grabación de sesiones (con su código), solo en el
+    // juego publicado (no local, ni vistas previas, ni demos).
+    (function () {
+      var l = location;
+      if (l.hostname !== 'csotov.github.io' || l.pathname.indexOf('/codecats/') !== 0 ||
+          /[?&]demo=/.test(l.search)) return;
+      !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once unregister opt_out_capturing opt_in_capturing has_opted_out_capturing startSessionRecording stopSessionRecording sessionRecordingStarted reset get_distinct_id".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+      posthog.init('phc_mzUm2AQ6dMngugGRkTEP6FKHs3ZtexibmeGF4AUQXp7F', {
+        api_host: 'https://us.i.posthog.com',
+        person_profiles: 'identified_only',
+        persistence: 'localStorage',
+        capture_pageview: true,
+        capture_pageleave: true,
+        autocapture: false,
+        disable_surveys: true,
+        advanced_disable_flags: true,
+        session_recording: {
+          maskAllInputs: false,
+          maskInputOptions: { password: true },
+          recordHeaders: false,
+          recordBody: false,
+          captureCanvas: { recordCanvas: true, canvasFps: 2, canvasQuality: '0.4' },
+          maskCapturedNetworkRequestFn: function (r) {
+            r.name = r.name.split('?')[0].split('#')[0];
+            return r;
+          }
+        }
+      });
+      posthog.register({ app: 'codecats' });
+    })();
+  </script>
 </head>
 <body>
   <div id="splash">

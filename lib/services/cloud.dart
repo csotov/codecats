@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'analytics.dart';
+
 /// Supabase glue: accounts, cloud progress snapshot and gameplay
 /// telemetry. Everything is a no-op when the app is built without
 /// `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...`,
@@ -140,6 +142,7 @@ class Cloud extends ChangeNotifier {
 
   /// Record a gameplay event. Cheap: buffered and flushed every 10 s.
   void log(String type, {String? levelId, Map<String, dynamic>? data}) {
+    Analytics.event(type, levelId: levelId, data: data);
     if (_c == null || user == null) return;
     _queue.add({
       'user_id': user!.id,
