@@ -36,7 +36,9 @@ Deno.serve(async (req) => {
       headers: { authorization: auth, apikey: Deno.env.get("SUPABASE_ANON_KEY") ?? "" },
     });
     if (!who.ok) return json({ error: "login" }, 401);
-    const { problem, code, messages, solution } = await req.json();
+    const raw = await req.text();
+    if (raw.length > 60000) return json({ error: "bad" }, 413);
+    const { problem, code, messages, solution } = JSON.parse(raw);
     const msgs = (messages as Msg[] ?? []).slice(-16).filter((m) => typeof m?.text === "string");
     if (!msgs.length || typeof problem !== "string") return json({ error: "bad" }, 400);
     const ctx = `PROBLEMA:\n${problem.slice(0, 6000)}\n\nCÓDIGO ACTUAL DEL CHICO:\n\`\`\`cpp\n${String(code ?? "").slice(0, 6000)}\n\`\`\``;
@@ -45,7 +47,7 @@ Deno.serve(async (req) => {
       parts: [{ text: i === msgs.length - 1 ? `${ctx}\n\nPREGUNTA: ${m.text.slice(0, 2000)}` : m.text.slice(0, 2000) }],
     }));
     const body = JSON.stringify({
-      systemInstruction: { parts: [{ text: rules(typeof solution === "string" && solution ? solution : null) }] },
+      systemInstruction: { parts: [{ text: rules(typeof solution === "string" && solution ? solution.slice(0, 8000) : null) }] },
       contents,
       generationConfig: { temperature: 0.4, maxOutputTokens: 3000 },
     });

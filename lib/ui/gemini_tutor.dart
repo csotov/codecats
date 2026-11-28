@@ -7,7 +7,6 @@ import 'package:http/http.dart' as http;
 import '../data/ref_solutions.dart';
 import '../models.dart';
 import '../services/cloud.dart';
-import '../services/progress.dart';
 
 /// Lost battles and questions to Gemini before it may show the solution.
 const kTutorFailsForSolution = 3;
@@ -17,7 +16,10 @@ final _chats = <String, List<({bool me, String text})>>{};
 
 /// Gemini as a tutor in a side panel (half the screen on wide layouts).
 Future<void> openGeminiTutor(BuildContext context,
-    {required Level level, required String Function() code}) {
+    {required Level level,
+    required String problem,
+    required String Function() code,
+    required int Function() fails}) {
   return showGeneralDialog(
     context: context,
     barrierDismissible: true,
@@ -29,7 +31,12 @@ Future<void> openGeminiTutor(BuildContext context,
         alignment: Alignment.centerRight,
         child: SizedBox(
           width: w < 700 ? w : math.max(w * 0.5, 420),
-          child: _TutorPanel(level: level, code: code),
+          child: Padding(
+            padding:
+                EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
+            child: _TutorPanel(
+                level: level, problem: problem, code: code, fails: fails),
+          ),
         ),
       );
     },
@@ -42,9 +49,15 @@ Future<void> openGeminiTutor(BuildContext context,
 }
 
 class _TutorPanel extends StatefulWidget {
-  const _TutorPanel({required this.level, required this.code});
+  const _TutorPanel(
+      {required this.level,
+      required this.problem,
+      required this.code,
+      required this.fails});
   final Level level;
+  final String problem;
   final String Function() code;
+  final int Function() fails;
 
   @override
   State<_TutorPanel> createState() => _TutorPanelState();
@@ -55,28 +68,14 @@ class _TutorPanelState extends State<_TutorPanel> {
   final _scroll = ScrollController();
   bool _busy = false;
 
-  List<({bool me, String text})> get _msgs =>
-      _chats.putIfAbsent(widget.level.id, () => []);
+  List<({bool me, String text})> get _msgs => _chats.putIfAbsent(
+      '${Cloud.instance.user?.id}/${widget.level.id}', () => []);
 
   int get _asked => _msgs.where((m) => m.me).length;
 
-  bool get _solutionOpen {
-    final p = Progress.instance.of(widget.level.id);
-    final lost = p.attempts - (p.solved ? 1 : 0);
-    return lost >= kTutorFailsForSolution && _asked >= kTutorAsksForSolution;
-  }
-
-  String get _problem {
-    final lv = widget.level;
-    return [
-      lv.titleEs,
-      lv.statementEs,
-      if (lv.inputEs.isNotEmpty) 'Entrada: ${lv.inputEs}',
-      if (lv.outputEs.isNotEmpty) 'Salida: ${lv.outputEs}',
-      for (final s in lv.samples)
-        'Ejemplo:\nentrada:\n${s.input}\nsalida:\n${s.output}',
-    ].join('\n\n');
-  }
+  bool get _solutionOpen =>
+      widget.fails() >= kTutorFailsForSolution &&
+      _asked >= kTutorAsksForSolution;
 
   @override
   void dispose() {
@@ -109,7 +108,7 @@ class _TutorPanelState extends State<_TutorPanel> {
               'Content-Type': 'application/json',
             },
             body: jsonEncode({
-              'problem': _problem,
+              'problem': widget.problem,
               'code': code,
               'solution': sol,
               'messages': [
