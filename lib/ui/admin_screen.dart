@@ -674,6 +674,7 @@ class _AdminScreenState extends State<AdminScreen> {
     }
     return {
       'sessions': sessions.length,
+      'played': activeSeconds(_spans, from, to),
       'secs': secs,
       'fights': fights,
       'wins': wins,
@@ -742,7 +743,12 @@ class _AdminScreenState extends State<AdminScreen> {
         '${prev['sessions']}'
       ],
       [
-        l.pick('Tiempo', 'Time'),
+        l.pick('Tiempo jugado (todo el juego)', 'Time played (whole game)'),
+        '${_fmtMin(cur['played']!)}${arrow(cur['played']!, prev['played']!)}',
+        _fmtMin(prev['played']!)
+      ],
+      [
+        l.pick('…dentro de niveles', '…inside levels'),
         '${_fmtMin(cur['secs']!)}${arrow(cur['secs']!, prev['secs']!)}',
         _fmtMin(prev['secs']!)
       ],
@@ -836,6 +842,7 @@ class _AdminScreenState extends State<AdminScreen> {
             DataColumn(label: Text(l.pick('Día', 'Day'))),
             DataColumn(label: Text(l.pick('Sesiones', 'Sess.'))),
             DataColumn(label: Text(l.pick('Tiempo', 'Time'))),
+            DataColumn(label: Text(l.pick('En niveles', 'In levels'))),
             DataColumn(label: Text(l.pick('Batallas', 'Battles'))),
             DataColumn(label: Text(l.pick('Ganadas', 'Won'))),
             DataColumn(label: Text(l.pick('Pistas', 'Hints'))),
@@ -852,6 +859,8 @@ class _AdminScreenState extends State<AdminScreen> {
                 return DataRow(cells: [
                   DataCell(Text(_day(d).substring(5), style: style)),
                   DataCell(Text('${w['sessions']}', style: style)),
+                  DataCell(
+                      Text(idle ? '—' : _fmtMin(w['played']!), style: style)),
                   DataCell(
                       Text(idle ? '—' : _fmtMin(w['secs']!), style: style)),
                   DataCell(Text('${w['fights']}', style: style)),
