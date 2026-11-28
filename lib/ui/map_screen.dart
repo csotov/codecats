@@ -526,7 +526,7 @@ class _MapScreenState extends State<MapScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('🔥 ${p.dayStreak} ${l.t('streak_days')}',
+          Text('🔥 ${p.liveDayStreak} ${l.t('streak_days')}',
               style:
                   const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
           if (Progress.instance.earlyDeadlineAt != null) ...[

@@ -194,6 +194,9 @@ class Progress extends ChangeNotifier {
   /// 'yyyy-mm-dd' of the last day a level was solved.
   String lastSolveDay = '';
 
+  /// Set once [_repairStreakOnce] has run for this profile on this device.
+  bool streakFixed = false;
+
   /// Rotation counters so the professor never repeats his last phrasing.
   final Map<String, int> rot = {};
 
@@ -568,6 +571,7 @@ class Progress extends ChangeNotifier {
     streak = 0;
     dayStreak = 0;
     lastSolveDay = '';
+    streakFixed = false;
     ghostStartDay = 0;
     levels.clear();
     unlockedCats.clear();
@@ -624,6 +628,7 @@ class Progress extends ChangeNotifier {
             kStartCoins + 15 * levels.values.where((p) => p.solved).length;
         dayStreak = (j['dsk'] as num?)?.toInt() ?? 0;
         lastSolveDay = j['rd'] as String? ?? '';
+        streakFixed = j['skf'] == true;
         ghostStartDay = (j['gh'] as num?)?.toInt() ?? 0;
         rot
           ..clear()
@@ -828,9 +833,14 @@ class Progress extends ChangeNotifier {
   void _mergeFrom(Map<String, dynamic> d) {
     xp = math.max(xp, (d['xp'] as num?)?.toInt() ?? 0);
     coins = math.max(coins, (d['mc'] as num?)?.toInt() ?? 0);
-    dayStreak = math.max(dayStreak, (d['dsk'] as num?)?.toInt() ?? 0);
-    if ((d['rd'] as String? ?? '').compareTo(lastSolveDay) > 0) {
-      lastSolveDay = d['rd'] as String;
+    // A streak only makes sense next to the day it was counted on.
+    final rd = d['rd'] as String? ?? '';
+    final dsk = (d['dsk'] as num?)?.toInt() ?? 0;
+    if (rd.compareTo(lastSolveDay) > 0) {
+      lastSolveDay = rd;
+      dayStreak = dsk;
+    } else if (rd == lastSolveDay) {
+      dayStreak = math.max(dayStreak, dsk);
     }
     unlockedCats.addAll(List<String>.from(d['cats'] ?? const []));
     ((d['co'] as Map?) ?? const {}).forEach((k, v) {
@@ -869,6 +879,7 @@ class Progress extends ChangeNotifier {
     earlyAdminDl = math.max(earlyAdminDl, (d['ead'] as num?)?.toInt() ?? 0);
     if (equippedBadge.isEmpty) equippedBadge = d['bde'] as String? ?? '';
     if (!equippedBadge.startsWith('s_')) equippedBadge = '';
+    _repairStreakOnce();
     if (cfHandle.isEmpty) cfHandle = d['cfh'] as String? ?? '';
     if (atcoderUser.isEmpty) atcoderUser = d['acu'] as String? ?? '';
     ((d['sc'] as Map?) ?? const {}).forEach((k, v) {
@@ -918,6 +929,7 @@ class Progress extends ChangeNotifier {
           'st': streak,
           'dsk': dayStreak,
           'rd': lastSolveDay,
+          'skf': streakFixed,
           'gh': ghostStartDay,
           'cats': unlockedCats.toList(),
           'co': catOrigin,
@@ -1132,6 +1144,47 @@ class Progress extends ChangeNotifier {
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   static int _epochDay(DateTime d) => d.millisecondsSinceEpoch ~/ 86400000;
+
+  static const _streakBadges = {
+    'g_inc': 3,
+    'g_inf': 7,
+    'g_streak14': 14,
+    'g_streak30': 30,
+  };
+
+  /// One-time fix for streaks inflated by the old max() cloud merge:
+  /// recount the streak from the daily log and drop streak badges whose
+  /// days in a row never happened.
+  void _repairStreakOnce() {
+    if (streakFixed) return;
+    streakFixed = true;
+    final keys = days.keys
+        .where((k) => (days[k]?.isNotEmpty ?? false) && days[k]![0] > 0)
+        .toList()
+      ..sort();
+    var best = 0, run = 0;
+    DateTime? prev;
+    for (final k in keys) {
+      final d = DateTime.parse('${k}T00:00:00Z');
+      run = prev != null && d.difference(prev).inDays == 1 ? run + 1 : 1;
+      prev = d;
+      best = math.max(best, run);
+      if (k == lastSolveDay) dayStreak = run;
+    }
+    final reached = math.max(best, dayStreak);
+    _streakBadges.forEach((id, need) {
+      if (need > reached) badges.remove(id);
+    });
+  }
+
+  /// The streak still alive today: 0 once a whole day went by unsolved.
+  int get liveDayStreak {
+    final now = DateTime.now();
+    return lastSolveDay == _dayKey(now) ||
+            lastSolveDay == _dayKey(now.subtract(const Duration(days: 1)))
+        ? dayStreak
+        : 0;
+  }
 
   /// A solve on a new day extends the daily streak if it continues
   /// yesterday's, otherwise it restarts at 1.
@@ -1833,6 +1886,9 @@ class Progress extends ChangeNotifier {
     xp = 0;
     coins = kStartCoins;
     streak = 0;
+    dayStreak = 0;
+    lastSolveDay = '';
+    streakFixed = false;
     unlockedCats.clear();
     catOrigin.clear();
     taughtBigO.clear();
