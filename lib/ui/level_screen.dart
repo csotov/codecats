@@ -49,6 +49,7 @@ import '../data/challenges.dart';
 import 'golden_card.dart';
 import '../data/halloween.dart';
 import '../data/grader_specs.dart';
+import 'gemini_tutor.dart';
 import 'professor.dart';
 import 'results.dart';
 import 'theme.dart';
@@ -1760,6 +1761,22 @@ class _LevelScreenState extends State<LevelScreen>
     );
   }
 
+  /// The statement as shown on screen, in Spanish, for the tutor.
+  String get _tutorProblem {
+    final lv = widget.level;
+    return [
+      lv.titleEs,
+      _problem?.es ?? (_grader?.storyEs ?? lv.storyEs),
+      _grader?.es ?? lv.statementEs,
+      if (_grader == null) ...[
+        if (lv.inputEs.isNotEmpty) 'Entrada: ${lv.inputEs}',
+        if (lv.outputEs.isNotEmpty) 'Salida: ${lv.outputEs}',
+        for (final s in lv.samples)
+          'Ejemplo:\nentrada:\n${s.input}\nsalida:\n${s.output}',
+      ],
+    ].where((t) => t.isNotEmpty).join('\n\n');
+  }
+
   Widget _mathTerms() {
     final l = L.instance;
     final lv = widget.level;
@@ -2100,6 +2117,20 @@ class _LevelScreenState extends State<LevelScreen>
               onPressed: () => openLeadIn(context, widget.level),
               icon: const Icon(Icons.stairs_outlined, size: 16),
               label: Text(l.pick('No sé', 'I don\'t know')),
+            ),
+          ),
+        if (!widget.examMode && Cloud.configured)
+          Tooltip(
+            message: l.pick('Un tutor que te guía con preguntas',
+                'A tutor that guides you with questions'),
+            child: OutlinedButton.icon(
+              onPressed: () => openGeminiTutor(context,
+                  level: widget.level,
+                  problem: _tutorProblem,
+                  code: () => _currentCode,
+                  fails: () => _failStreak),
+              icon: const Text('✨'),
+              label: Text(l.pick('Preguntar a Gemini', 'Ask Gemini')),
             ),
           ),
         if (_failStreak >= 3 && !widget.examMode)
